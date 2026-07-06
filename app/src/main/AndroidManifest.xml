@@ -8,6 +8,10 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <permission
+        android:name="dev.dimension.flare.permission.QUERY"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="dev.dimension.flare.permission.QUERY" />
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
@@ -119,6 +123,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths" />
         </provider>
+        <!-- Intent IPC Service for RikkaHub integration -->
+        <service
+            android:name=".mcp.FlareQueryService"
+            android:exported="true"
+            android:permission="dev.dimension.flare.permission.QUERY">
+            <intent-filter>
+                <action android:name="dev.dimension.flare.QUERY" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

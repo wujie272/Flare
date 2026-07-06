@@ -15,18 +15,41 @@ import coil3.video.VideoFrameDecoder
 import dev.dimension.flare.common.AnimatedPngDecoder
 import dev.dimension.flare.common.AnimatedWebPDecoder
 import dev.dimension.flare.data.network.ktorClient
+import dev.dimension.flare.mcp.FlareBridge
 import dev.dimension.flare.di.AndroidKoinApplication
+import dev.dimension.flare.mcp.FlareMcpServer
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.koin.plugin.module.dsl.startKoin
 
 class App :
     Application(),
+    KoinComponent,
     SingletonImageLoader.Factory {
+
+    private val bridge: FlareBridge by inject()
+    private var mcpServer: FlareMcpServer? = null
+
     override fun onCreate() {
         super.onCreate()
         startKoin<AndroidKoinApplication> {
             androidContext(this@App)
         }
+
+        // Start MCP Server (background, localhost:8899)
+        val server = FlareMcpServer(
+            context = this,
+            bridge = bridge,
+        )
+        server.start()
+        mcpServer = server
+    }
+
+    override fun onTerminate() {
+        mcpServer?.stop()
+        mcpServer = null
+        super.onTerminate()
     }
 
     @OptIn(ExperimentalCoilApi::class)

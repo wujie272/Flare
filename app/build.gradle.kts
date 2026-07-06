@@ -162,6 +162,11 @@ dependencies {
         implementation("com.google.mlkit:genai-prompt:1.0.0-beta2")
         implementation("com.google.mlkit:genai-summarization:1.0.0-beta1")
     }
+
+    // MCP Server (plain Ktor REST API)
+    implementation("io.ktor:ktor-server-netty:${libs.versions.ktor.get()}")
+    implementation("io.ktor:ktor-server-content-negotiation:${libs.versions.ktor.get()}")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:${libs.versions.ktor.get()}")
     // END Non-FOSS component
 
     testImplementation(libs.junit)
