@@ -95,6 +95,13 @@ android {
     if (!project.file("google-services.json").exists()){
         sourceSets.getByName("main").kotlin.directories.add("src/foss/java")
     }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/INDEX.LIST"
+            excludes += "/META-INF/DEPENDENCIES"
+        }
+    }
 }
 
 dependencies {
