@@ -1,0 +1,50 @@
+name: Test Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - release
+      - develop
+    paths-ignore:
+      - "**.md"
+  pull_request:
+    branches:
+      - master
+      - release
+      - develop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx8g -Dorg.gradle.daemon=true -Dkotlin.daemon.jvmargs=-Xmx4g
+
+jobs:
+  test:
+    runs-on: [ubuntu-latest]
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "jetbrains"
+          java-version: 25
+          cache: "gradle"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/release' }}
+          gradle-home-cache-cleanup: true
+
+      - name: Run Tests (Android only)
+        run: |
+          ./gradlew :app:testDebugUnitTest --stacktrace --parallel --build-cache --configuration-cache
