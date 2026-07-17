@@ -20,6 +20,8 @@ public enum class PlatformType {
     VVo,
     Nostr,
     Fanbox,
+    Cbart,
+    Toutiao,
 }
 
 @Immutable

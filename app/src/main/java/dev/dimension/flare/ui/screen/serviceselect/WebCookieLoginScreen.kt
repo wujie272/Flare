@@ -19,12 +19,7 @@ import dev.dimension.flare.ui.component.FlareScaffold
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
-private val userAgent =
-    mapOf(
-        "user-agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.3",
-        "Pragma" to "no-cache",
-        "Cache-Control" to "no-cache",
-    )
+private const val USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
 
 @Composable
 internal fun WebCookieLoginScreen(
@@ -63,15 +58,16 @@ internal fun WebCookieLoginScreen(
                     .padding(it)
                     .fillMaxSize(),
             onCreated = {
-                WebStorage.getInstance().deleteAllData()
-                CookieManager.getInstance().removeAllCookies(null)
                 with(it.settings) {
-                    userAgentString = userAgent.toString()
+                    userAgentString = USER_AGENT
                     javaScriptEnabled = true
                     domStorageEnabled = true
-                    javaScriptCanOpenWindowsAutomatically = false
-                    cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+                    javaScriptCanOpenWindowsAutomatically = true
+                    cacheMode = WebSettings.LOAD_NO_CACHE
+                    mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 }
+                CookieManager.getInstance().setAcceptCookie(true)
+                CookieManager.getInstance().setAcceptThirdPartyCookies(it, true)
             },
         )
     }

@@ -141,6 +141,8 @@ dependencies {
     implementation(projects.social.misskey)
     implementation(projects.social.nostr)
     implementation(projects.social.pixiv)
+    implementation(projects.social.cbart)
+    implementation(projects.social.toutiao)
     implementation(projects.social.vvo)
     implementation(projects.social.xqt)
     implementation(projects.feature.login)

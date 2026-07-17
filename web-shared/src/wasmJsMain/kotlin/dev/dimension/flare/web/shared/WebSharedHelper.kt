@@ -3,6 +3,8 @@
 package dev.dimension.flare.web.shared
 
 import dev.dimension.flare.data.platform.AllRssTimelineLoaderFactory
+import dev.dimension.flare.data.platform.CbartPlatformSpec
+import dev.dimension.flare.data.platform.ToutiaoPlatformSpec
 import dev.dimension.flare.data.platform.BlueskyPlatformSpec
 import dev.dimension.flare.data.platform.MastodonPlatformSpec
 import dev.dimension.flare.data.platform.MisskeyPlatformSpec
@@ -72,6 +74,8 @@ internal fun runtimeData(allRssTimelineLoaderFactory: AllRssTimelineLoaderFactor
                 MastodonPlatformSpec,
                 MisskeyPlatformSpec,
                 BlueskyPlatformSpec,
+                CbartPlatformSpec,
+                ToutiaoPlatformSpec,
             ),
         extraTimelineSpecs = RssTimelineSpecs.timelineSpecs(allRssTimelineLoaderFactory),
     )
