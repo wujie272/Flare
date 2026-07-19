@@ -814,11 +814,12 @@ internal class ZhihuService(
             val item = element.jsonObject
             try {
                 val target = item["target"]?.jsonObject ?: return@mapNotNull null
-                val type = item["feed_type"]?.jsonPrimitive?.content 
-                    ?: item["type"]?.jsonPrimitive?.content ?: ""
+                val targetType = target["type"]?.jsonPrimitive?.content ?: ""
+                val feedType = item["feed_type"]?.jsonPrimitive?.content ?: ""
+                val type = feedType.ifEmpty { targetType }
                 val id = target["id"]?.jsonPrimitive?.content ?: return@mapNotNull null
                 when {
-                    type.contains("answer") || target["type"]?.jsonPrimitive?.content == "answer" -> {
+                    type.contains("answer") || targetType == "answer" -> {
                         val question = target["question"]?.jsonObject
                         ZhihuFeedItem(
                             id = id, type = "answer", title = question?.get("title")?.jsonPrimitive?.content ?: "",
@@ -833,7 +834,7 @@ internal class ZhihuService(
                             updatedAt = target["updated_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                         )
                     }
-                    type.contains("article") || target["type"]?.jsonPrimitive?.content == "article" -> {
+                    type.contains("article") || targetType == "article" -> {
                         ZhihuFeedItem(
                             id = id, type = "article", title = target["title"]?.jsonPrimitive?.content ?: "",
                             excerpt = target["excerpt"]?.jsonPrimitive?.content ?: target["content"]?.jsonPrimitive?.content?.take(200) ?: "",
@@ -845,6 +846,48 @@ internal class ZhihuService(
                             commentCount = target["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                             createdAt = target["created_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                             updatedAt = target["updated_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                        )
+                    }
+                    type.contains("zvideo") || targetType == "zvideo" -> {
+                        ZhihuFeedItem(
+                            id = id, type = "video",
+                            title = target["title"]?.jsonPrimitive?.content ?: "",
+                            excerpt = target["description"]?.jsonPrimitive?.content ?: target["excerpt"]?.jsonPrimitive?.content ?: "",
+                            url = target["url"]?.jsonPrimitive?.content ?: "",
+                            authorName = target["author"]?.jsonObject?.get("name")?.jsonPrimitive?.content,
+                            authorId = target["author"]?.jsonObject?.get("id")?.jsonPrimitive?.content ?: target["author"]?.jsonObject?.get("url_token")?.jsonPrimitive?.content,
+                            authorAvatar = target["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
+                            voteCount = target["vote_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: target["voteup_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            commentCount = target["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                        )
+                    }
+                    type.contains("pin") || targetType == "pin" -> {
+                        ZhihuFeedItem(
+                            id = id, type = "pin",
+                            title = target["excerpt_title"]?.jsonPrimitive?.content ?: "想法",
+                            excerpt = target["excerpt_title"]?.jsonPrimitive?.content ?: "",
+                            url = target["url"]?.jsonPrimitive?.content ?: "https://www.zhihu.com/pin/$id",
+                            authorName = target["author"]?.jsonObject?.get("name")?.jsonPrimitive?.content,
+                            authorId = target["author"]?.jsonObject?.get("id")?.jsonPrimitive?.content ?: target["author"]?.jsonObject?.get("url_token")?.jsonPrimitive?.content,
+                            authorAvatar = target["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
+                            voteCount = target["like_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: target["reaction_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            commentCount = target["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            createdAt = target["created"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                            updatedAt = target["updated"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                        )
+                    }
+                    type.contains("question") || targetType == "question" -> {
+                        ZhihuFeedItem(
+                            id = id, type = "question",
+                            title = target["title"]?.jsonPrimitive?.content ?: target["name"]?.jsonPrimitive?.content ?: "",
+                            excerpt = target["detail"]?.jsonPrimitive?.content ?: target["excerpt"]?.jsonPrimitive?.content ?: "",
+                            url = target["url"]?.jsonPrimitive?.content ?: "https://www.zhihu.com/question/$id",
+                            authorName = null,
+                            authorId = null,
+                            authorAvatar = null,
+                            voteCount = target["follower_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            commentCount = target["answer_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            createdAt = target["created"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                         )
                     }
                     else -> null
@@ -890,6 +933,33 @@ internal class ZhihuService(
                             commentCount = objectType["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                             createdAt = objectType["created_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                             updatedAt = objectType["updated_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                        )
+                    }
+                    type == "zvideo" -> {
+                        ZhihuFeedItem(
+                            id = id, type = "video",
+                            title = objectType["title"]?.jsonPrimitive?.content ?: "",
+                            excerpt = objectType["description"]?.jsonPrimitive?.content ?: objectType["excerpt"]?.jsonPrimitive?.content ?: "",
+                            url = objectType["url"]?.jsonPrimitive?.content ?: "",
+                            authorName = objectType["author"]?.jsonObject?.get("name")?.jsonPrimitive?.content,
+                            authorId = objectType["author"]?.jsonObject?.get("id")?.jsonPrimitive?.content ?: objectType["author"]?.jsonObject?.get("url_token")?.jsonPrimitive?.content,
+                            authorAvatar = objectType["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
+                            voteCount = objectType["vote_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            commentCount = objectType["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                        )
+                    }
+                    type == "pin" || type == "moments" -> {
+                        ZhihuFeedItem(
+                            id = id, type = "pin",
+                            title = objectType["excerpt_title"]?.jsonPrimitive?.content ?: "想法",
+                            excerpt = objectType["excerpt_title"]?.jsonPrimitive?.content ?: "",
+                            url = objectType["url"]?.jsonPrimitive?.content ?: "https://www.zhihu.com/pin/$id",
+                            authorName = objectType["author"]?.jsonObject?.get("name")?.jsonPrimitive?.content,
+                            authorId = objectType["author"]?.jsonObject?.get("id")?.jsonPrimitive?.content ?: objectType["author"]?.jsonObject?.get("url_token")?.jsonPrimitive?.content,
+                            authorAvatar = objectType["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
+                            voteCount = objectType["like_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            commentCount = objectType["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            createdAt = objectType["created"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                         )
                     }
                     else -> null
