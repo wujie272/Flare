@@ -92,7 +92,6 @@ internal fun SettingsScreen(
     toLocalFilter: () -> Unit,
     toAiConfig: () -> Unit,
     toTranslationConfig: () -> Unit,
-    toAppLogging: () -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -392,30 +391,9 @@ internal fun SettingsScreen(
                 }
                 SegmentedListItem(
                     onClick = {
-                        toAppLogging.invoke()
-                    },
-                    shapes =
-                        if (BuildConfig.DEBUG) {
-                            ListItemDefaults.item()
-                        } else {
-                            ListItemDefaults.first()
-                        },
-                    content = {
-                        Text(text = stringResource(id = R.string.settings_app_logging_title))
-                    },
-                    leadingContent = {
-                        ThemedIcon(
-                            imageVector = FontAwesomeIcons.Solid.CircleInfo,
-                            contentDescription = null,
-                            color = ThemeIconData.Color.CharcoalGrey,
-                        )
-                    },
-                )
-                SegmentedListItem(
-                    onClick = {
                         toAbout.invoke()
                     },
-                    shapes = ListItemDefaults.last(),
+                    shapes = ListItemDefaults.single(),
                     content = {
                         Text(text = stringResource(id = R.string.settings_about_title))
                     },
