@@ -288,39 +288,6 @@ internal class ZhihuDailyTimelineLoader(
 /**
  * 知乎推荐流 Loader
  */
-internal class ZhihuRecommendTimelineLoader(
-    private val service: ZhihuService,
-    private val accountKey: MicroBlogKey,
-) : CacheableRemoteLoader<UiTimelineV2> {
-    override val pagingKey: String = "zhihu_recommend"
-    override val supportPrepend: Boolean = false
-
-    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
-        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
-        val items = service.fetchRecommendFeed()
-        return PagingResult(
-            data = items.map { it.toUiTimelineItem(accountKey) },
-            endOfPaginationReached = true,
-        )
-    }
-}
-
-/**
- * 知乎搜索 Loader
- */
-internal class ZhihuSearchTimelineLoader(
-    private val service: ZhihuService,
-    private val accountKey: MicroBlogKey,
-    private val query: String,
-) : CacheableRemoteLoader<UiTimelineV2> {
-    override val pagingKey: String = "zhihu_search_$query"
-    override val supportPrepend: Boolean = false
-
-    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
-        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
-        val items = service.search(query)
-        return PagingResult(
-            data = items.map { it.toUiTimelineItem(accountKey) },
             endOfPaginationReached = true,
         )
     }

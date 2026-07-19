@@ -250,21 +250,6 @@ internal class ZhihuService(
 
     // ========== 推荐流（需要签名，需要 ensureSession） ==========
     
-    suspend fun fetchRecommendFeed(): List<ZhihuFeedItem> {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v3/feed/topstory/recommend") {
-            header("desktop", "true")
-        }
-        val text = response.bodyAsText()
-        client.close()
-        return try {
-            val root = json.parseToJsonElement(text).jsonObject
-            val data = root["data"]?.jsonArray ?: return emptyList()
-            parseFeedItems(data)
-        } catch (_: Exception) { emptyList() }
-    }
-
     // ========== 搜索（需要签名，需要 ensureSession） ==========
     
     suspend fun search(query: String): List<ZhihuFeedItem> {
@@ -305,18 +290,6 @@ internal class ZhihuService(
     }
 
     // ========== 内容详情 ==========
-
-    suspend fun fetchAnswerDetail(questionId: String, answerId: String): String? {
-        val response = httpClient().get("$ZHIHU_BASE/question/$questionId/answer/$answerId")
-        val text = response.bodyAsText()
-        return if (text.contains("AnswerContent") || text.contains("answer-content")) text else null
-    }
-
-    suspend fun fetchArticleDetail(articleId: String): String? {
-        val response = httpClient().get("https://zhuanlan.zhihu.com/p/$articleId")
-        val text = response.bodyAsText()
-        return if (text.contains("PostContent") || text.contains("article-content")) text else null
-    }
 
     // ========== 互动操作（需要签名，需要 ensureSession） ==========
 
