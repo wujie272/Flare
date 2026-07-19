@@ -237,7 +237,7 @@ internal class ZhihuRecommendPagingLoader(
     override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
         if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
         if (request is PagingRequest.Refresh) cursor = null
-        val (items, nextCursor) = service.fetchRecommendFeedWithCursor(cursor)
+        val (items, nextCursor) = service.fetchRecommendFeedWithCursor(cursor, limit = pageSize)
         cursor = nextCursor
         return PagingResult(
             data = items.map { it.toUiTimelineItem(accountKey) },

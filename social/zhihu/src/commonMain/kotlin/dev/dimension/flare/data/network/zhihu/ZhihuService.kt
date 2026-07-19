@@ -788,12 +788,13 @@ internal class ZhihuService(
      * 带光标分页的推荐流
      * API: /api/v3/feed/topstory/recommend?cursor={cursor}
      */
-    suspend fun fetchRecommendFeedWithCursor(cursor: String? = null): Pair<List<ZhihuFeedItem>, String?> {
+    suspend fun fetchRecommendFeedWithCursor(cursor: String? = null, limit: Int = 20): Pair<List<ZhihuFeedItem>, String?> {
         ensureSession()
         val client = signedClient()
         val url = "$ZHIHU_API/v3/feed/topstory/recommend"
         val response = client.get(url) {
             header("desktop", "true")
+            header("limit", "$limit")
             if (cursor != null) {
                 header("cursor", cursor)
             }

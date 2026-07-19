@@ -246,5 +246,5 @@ internal class ZhihuDataSource(
 
     fun hotTimelineLoader(): RemoteLoader<UiTimelineV2> = ZhihuHotTimelineLoader(service = service, accountKey = accountKey)
     fun dailyTimelineLoader(): RemoteLoader<UiTimelineV2> = ZhihuDailyTimelineLoader(service = service, accountKey = accountKey)
-    fun recommendTimelineLoader(): RemoteLoader<UiTimelineV2> = ZhihuRecommendTimelineLoader(service = service, accountKey = accountKey)
+    fun recommendTimelineLoader(): RemoteLoader<UiTimelineV2> = ZhihuRecommendPagingLoader(service = service, accountKey = accountKey)
 }
