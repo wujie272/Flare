@@ -263,7 +263,22 @@ internal class ZhihuService(
         return try {
             val root = json.parseToJsonElement(text).jsonObject
             val data = root["data"]?.jsonArray ?: return emptyList()
-            parseSearchItems(data)
+            val items = parseSearchItems(data)
+            // 异步获取视频播放地址
+            items.map { item ->
+                if (item.type == "video" && item.videoId != null) {
+                    val videoInfo = kotlinx.coroutines.runCatching {
+                        fetchVideoPlayInfo(item.videoId, item.id, "answer")
+                    }.getOrNull()
+                    if (videoInfo?.url != null) {
+                        item.copy(
+                            videoPlayUrl = videoInfo.url,
+                            videoWidth = videoInfo.width,
+                            videoHeight = videoInfo.height,
+                        )
+                    } else item
+                } else item
+            }
         } catch (_: Exception) { emptyList() }
     }
 
@@ -783,7 +798,23 @@ internal class ZhihuService(
             val root = json.parseToJsonElement(text).jsonObject
             val data = root["data"]?.jsonArray ?: return Pair(emptyList(), null)
             val nextCursor = root["paging"]?.jsonObject?.get("next")?.jsonPrimitive?.content
-            Pair(parseFeedItems(data), nextCursor)
+            val items = parseFeedItems(data)
+            // 异步获取视频播放地址
+            val enriched = items.map { item ->
+                if (item.type == "video" && item.videoId != null) {
+                    val videoInfo = kotlinx.coroutines.runCatching {
+                        fetchVideoPlayInfo(item.videoId, item.id, "answer")
+                    }.getOrNull()
+                    if (videoInfo?.url != null) {
+                        item.copy(
+                            videoPlayUrl = videoInfo.url,
+                            videoWidth = videoInfo.width,
+                            videoHeight = videoInfo.height,
+                        )
+                    } else item
+                } else item
+            }
+            Pair(enriched, nextCursor)
         } catch (_: Exception) { Pair(emptyList(), null) }
     }
     // ========== 数据解析辅助 ==========
@@ -927,6 +958,8 @@ internal class ZhihuService(
                             authorAvatar = objectType["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
                             voteCount = objectType["vote_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                             commentCount = objectType["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            videoCover = objectType["thumbnail"]?.jsonPrimitive?.content,
+                            videoId = id,
                         )
                     }
                     type == "pin" || type == "moments" -> {
@@ -986,6 +1019,9 @@ internal data class ZhihuFeedItem(
     val updatedAt: Long = 0,
     val videoCover: String? = null,
     val videoId: String? = null,
+    val videoPlayUrl: String? = null,
+    val videoWidth: Int = 0,
+    val videoHeight: Int = 0,
 )
 
 internal data class ZhihuComment(

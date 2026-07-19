@@ -237,16 +237,28 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
         }
     }
     val pictures = if (type == "video" && videoCover != null) {
-        persistentListOf(
-            UiMedia.Image(
-                url = videoCover,
-                previewUrl = videoCover,
-                description = title,
-                width = 0f,
-                height = 0f,
-                sensitive = false,
+        if (videoPlayUrl != null) {
+            persistentListOf(
+                UiMedia.Video(
+                    url = videoPlayUrl,
+                    thumbnailUrl = videoCover,
+                    width = videoWidth.toFloat(),
+                    height = videoHeight.toFloat().coerceAtLeast(1f),
+                    description = title,
+                )
             )
-        )
+        } else {
+            persistentListOf(
+                UiMedia.Image(
+                    url = videoCover,
+                    previewUrl = videoCover,
+                    description = title,
+                    width = 0f,
+                    height = 0f,
+                    sensitive = false,
+                )
+            )
+        }
     } else {
         persistentListOf()
     }
