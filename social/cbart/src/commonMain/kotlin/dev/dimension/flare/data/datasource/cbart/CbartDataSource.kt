@@ -45,6 +45,7 @@ import dev.dimension.flare.ui.model.UiIcon
 import dev.dimension.flare.ui.model.UiProfile
 import dev.dimension.flare.ui.model.UiStrings
 import dev.dimension.flare.ui.model.UiTimelineV2
+import dev.dimension.flare.ui.model.UiText
 import dev.dimension.flare.data.network.cbart.api.CbartVideoDetailItem
 import dev.dimension.flare.data.network.cbart.api.CbartVideoOwner
 import kotlin.time.Instant
@@ -109,14 +110,14 @@ internal class CbartDataSource(
         persistentListOf(
             CbartPlatformSpec.announcementTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)),
             CbartPlatformSpec.latestResourceTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey), icon = IconType.Material(UiIcon.Cbart)),
-            CbartPlatformSpec.discoverTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey), icon = IconType.Material(UiIcon.Cbart)),
+            CbartPlatformSpec.discoverTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey), icon = IconType.Material(UiIcon.Cbart), title = UiText.Raw("工作室")),
             CbartPlatformSpec.hotTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)),
         )
     }
 
     override val shortcuts: ImmutableList<ShortcutSpec> by lazy {
         persistentListOf(
-            ShortcutSpec(title = dev.dimension.flare.ui.model.UiText.Raw("工作室"), icon = UiIcon.List, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.discoverTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
+            ShortcutSpec(title = UiStrings.Discover, icon = UiIcon.List, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.discoverTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
             ShortcutSpec(title = UiStrings.Featured, icon = UiIcon.Featured, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.hotTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
             ShortcutSpec(title = UiStrings.LatestResource, icon = UiIcon.Eye, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.latestResourceTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
             ShortcutSpec(title = UiStrings.Announcement, icon = UiIcon.Info, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.announcementTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
