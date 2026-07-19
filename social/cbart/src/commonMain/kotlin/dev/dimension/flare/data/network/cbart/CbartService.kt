@@ -12,7 +12,7 @@ internal class CbartService(
     credentialFlow: Flow<CbartCredential>,
     onCredentialRefreshed: suspend (CbartCredential) -> Unit = {},
 ) {
-    val api = CbartApiClient(credentialFlow = credentialFlow)
+    val api = CbartApiClient(credentialFlow = credentialFlow, onCredentialRefreshed = onCredentialRefreshed)
     private val credentialFlowRef = credentialFlow
 
     suspend fun fetchArticles(page: Int = 1, limit: Int = 20): List<CbartArticleItem> {

@@ -3,6 +3,7 @@ package dev.dimension.flare.data.network.cbart.api
 import dev.dimension.flare.data.network.ktorClient
 import dev.dimension.flare.data.platform.CbartCredential
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -10,6 +11,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.decodeURLPart
 import kotlinx.coroutines.flow.Flow
@@ -25,9 +27,39 @@ private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
 internal class CbartApiClient(
     private val credentialFlow: Flow<CbartCredential>,
+    private val onCredentialRefreshed: suspend (CbartCredential) -> Unit = {},
 ) {
-    private suspend fun credential(): CbartCredential? =
-        credentialFlow.firstOrNull()
+    private var currentCredential: CbartCredential? = null
+
+    private suspend fun credential(): CbartCredential? {
+        if (currentCredential == null) {
+            currentCredential = credentialFlow.firstOrNull()
+        }
+        return currentCredential
+    }
+
+    private val sessionRegex = Regex("""laravel_session=([^;]+)""")
+    private val xsrfTokenRegex = Regex("""XSRF-TOKEN=([^;]+)""")
+
+    /**
+     * 从 Set-Cookie 头中提取新的会话凭证并更新
+     */
+    private suspend fun updateCredentialsFromHeaders(setCookieHeaders: List<String>) {
+        var newSession: String? = null
+        var newXsrfToken: String? = null
+        for (header in setCookieHeaders) {
+            sessionRegex.find(header)?.let { newSession = it.groupValues[1] }
+            xsrfTokenRegex.find(header)?.let { newXsrfToken = it.groupValues[1] }
+        }
+        val session = newSession ?: return
+        val old = currentCredential ?: return
+        val updated = old.copy(
+            laravelSession = session,
+            xsrfToken = newXsrfToken ?: old.xsrfToken,
+        )
+        currentCredential = updated
+        onCredentialRefreshed(updated)
+    }
 
     private suspend fun buildCookie(): String? {
         val cred = credential() ?: return null
@@ -40,6 +72,16 @@ internal class CbartApiClient(
         val cookie = buildCookie()
         val cred = credential()
         return ktorClient {
+            install(HttpSend) {
+                intercept { request ->
+                    val call = execute(request)
+                    val setCookieHeaders = call.response.headers.getAll(HttpHeaders.SetCookie)
+                    if (!setCookieHeaders.isNullOrEmpty()) {
+                        updateCredentialsFromHeaders(setCookieHeaders)
+                    }
+                    call
+                }
+            }
             defaultRequest {
                 headers {
                     append("User-Agent", CBART_USER_AGENT)
