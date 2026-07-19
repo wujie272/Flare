@@ -300,7 +300,7 @@ internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
         actions = persistentListOf<ActionMenu>(
             ActionMenu.cbartFavourite(
                 statusKey = MicroBlogKey(id = id.toString(), host = CBART_HOST),
-                favourited = isFav == true,
+                favourited = isFav == 1,
                 count = (favNum ?: 0).toLong(),
                 accountKey = accountKey,
             ),

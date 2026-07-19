@@ -481,7 +481,7 @@ internal data class CbartVideoItem(
     /** 传 get_studio=1 时返回 */
     val studio: CbartVideoStudio? = null,
     @SerialName("is_fav")
-    val isFav: Boolean? = null,
+    val isFav: Int? = null,
     @SerialName("is_new")
     val isNew: Int? = null,
     @SerialName("content_short")
@@ -656,7 +656,7 @@ internal data class CbartVideoDetailItem(
     val imageHeight: Int? = null,
     val images: List<CbartContentImage>? = null,
     @SerialName("is_fav")
-    val isFav: Boolean? = null,
+    val isFav: Int? = null,
     val comment: List<CbartVideoComment>? = null,
     val owner: CbartVideoOwner? = null,
 )

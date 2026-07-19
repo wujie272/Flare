@@ -225,7 +225,7 @@ internal fun CbartVideoDetailItem.toGalleryDetail(
         accountKey = accountKey,
         postEvent = dev.dimension.flare.data.datasource.microblog.PostEvent.Cbart.Favourite(
             postKey = statusKey,
-            favourited = isFav == true,
+            favourited = isFav == 1,
             count = (favNum ?: 0).toLong(),
             accountKey = accountKey,
         ),
@@ -298,7 +298,7 @@ internal fun CbartVideoDetailItem.toGalleryDetail(
         author = author,
         createdAt = (posttime?.let { tryParseDate(it) } ?: Instant.fromEpochMilliseconds(0)).toUi(),
         content = contentText?.toUiPlainText(),
-        isBookmarked = isFav == true,
+        isBookmarked = isFav == 1,
         bookmarkAction = bookmarkAction,
         matrix = matrix,
     )
