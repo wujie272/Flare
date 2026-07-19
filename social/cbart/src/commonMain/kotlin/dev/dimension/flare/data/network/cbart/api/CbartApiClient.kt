@@ -72,6 +72,9 @@ internal class CbartApiClient(
         val cookie = buildCookie()
         val cred = credential()
         return ktorClient {
+            // Laravel 每次响应都会 Set-Cookie 刷新 laravel_session 和 XSRF-TOKEN
+            // 如果不捕获更新，一直用旧 session 发请求，24h 后服务端回收旧 session 导致 419
+            // 这个拦截器在每次请求后提取新 cookie，更新内存凭证并持久化
             install(HttpSend) {
                 intercept { request ->
                     val call = execute(request)
