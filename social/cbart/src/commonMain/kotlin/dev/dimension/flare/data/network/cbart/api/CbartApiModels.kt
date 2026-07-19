@@ -418,8 +418,11 @@ internal data class CbartVideoListResponse(
     val code: Int,
     val info: String = "",
     @SerialName("data")
-    val data: CbartVideoListData? = null,
-)
+    private val rawData: JsonElement? = null,
+) {
+    val data: CbartVideoListData?
+        get() = (rawData as? JsonObject)?.let { apiJson.decodeFromJsonElement(it) }
+}
 
 @Serializable
 internal data class CbartVideoListData(
