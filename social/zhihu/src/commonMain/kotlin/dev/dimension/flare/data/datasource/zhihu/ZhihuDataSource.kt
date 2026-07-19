@@ -143,7 +143,8 @@ internal class ZhihuDataSource(
         if (mediaOnly) return notSupported()
         return ZhihuUserTimelineLoader(service = service, accountKey = accountKey, userKey = userKey, type = "answers")
     }
-    override fun context(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = notSupported()
+    override fun context(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = 
+        ZhihuCommentsLoader(service = service, accountKey = accountKey, statusKey = statusKey)
     
     override fun galleryDetail(statusKey: MicroBlogKey): dev.dimension.flare.common.Cacheable<GalleryDetail> = 
         dev.dimension.flare.common.Cacheable(

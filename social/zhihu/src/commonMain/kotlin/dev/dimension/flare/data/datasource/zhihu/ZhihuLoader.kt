@@ -31,8 +31,11 @@ internal class ZhihuLoader(
         RelationActionType.Follow,
     )
 
-    override suspend fun userByHandleAndHost(uiHandle: UiHandle): UiProfile =
-        throw UnsupportedOperationException("Zhihu user lookup by handle is not supported")
+    override suspend fun userByHandleAndHost(uiHandle: UiHandle): UiProfile {
+        val member = service.fetchMemberByUrlToken(uiHandle.normalizedRaw)
+        if (member != null) return member.toUiProfile(accountKey = null)
+        throw Exception("User not found: ${uiHandle.normalizedRaw}")
+    }
 
     override suspend fun userById(id: String): UiProfile {
         // 尝试从 API 获取真实用户信息（先当 urlToken 查，不行再当数字 ID）
