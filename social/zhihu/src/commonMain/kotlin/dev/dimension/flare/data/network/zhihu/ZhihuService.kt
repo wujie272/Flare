@@ -394,7 +394,7 @@ internal class ZhihuService(
         } catch (_: Exception) { null }
     }
 
-    suspend fun fetchComments(contentType: String, contentId: String, page: Int = 1): List<ZhihuComment> {
+    suspend fun fetchComments(contentType: String, contentId: String, page: Int = 1): ZhihuPagingResponse<ZhihuComment> {
         ensureSession()
         val client = signedClient()
         val response = client.get("$ZHIHU_API/v4/$contentType/$contentId/comments") {
@@ -404,21 +404,26 @@ internal class ZhihuService(
         client.close()
         return try {
             val root = json.parseToJsonElement(text).jsonObject
-            val data = root["data"]?.jsonArray ?: return emptyList()
-            data.mapNotNull { element ->
+            val data = root["data"]?.jsonArray ?: return ZhihuPagingResponse(emptyList(), isEnd = true)
+            val paging = root["paging"]?.jsonObject
+            val isEnd = paging?.get("is_end")?.jsonPrimitive?.content?.toBoolean() ?: true
+            val total = paging?.get("totals")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
+            val comments = data.mapNotNull { element ->
                 val comment = element.jsonObject
                 try {
                     ZhihuComment(
                         id = comment["id"]?.jsonPrimitive?.content ?: "",
                         content = comment["content"]?.jsonPrimitive?.content ?: "",
                         authorName = comment["author"]?.jsonObject?.get("name")?.jsonPrimitive?.content,
+                        authorId = comment["author"]?.jsonObject?.get("id")?.jsonPrimitive?.content ?: comment["author"]?.jsonObject?.get("url_token")?.jsonPrimitive?.content,
                         authorAvatar = comment["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
                         likeCount = comment["like_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                         createdAt = comment["created_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                     )
                 } catch (_: Exception) { null }
             }
-        } catch (_: Exception) { emptyList() }
+            ZhihuPagingResponse(data = comments, isEnd = isEnd, total = total)
+        } catch (_: Exception) { ZhihuPagingResponse(emptyList(), isEnd = true) }
     }
 
 
@@ -1010,6 +1015,7 @@ internal data class ZhihuComment(
     val id: String,
     val content: String,
     val authorName: String?,
+    val authorId: String?,
     val authorAvatar: String?,
     val likeCount: Int,
     val createdAt: Long,

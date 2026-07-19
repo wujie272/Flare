@@ -325,3 +325,34 @@ internal class ZhihuSearchTimelineLoader(
         )
     }
 }
+
+/**
+ * 知乎评论列表 Loader
+ */
+internal class ZhihuCommentsLoader(
+    private val service: ZhihuService,
+    private val accountKey: MicroBlogKey,
+    private val statusKey: MicroBlogKey,
+) : CacheableRemoteLoader<UiTimelineV2> {
+    override val pagingKey: String = "zhihu_comments_${statusKey.id}_$accountKey"
+    override val supportPrepend: Boolean = false
+
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
+        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
+        val offset = (request as? PagingRequest.Append)?.nextKey?.toIntOrNull() ?: 0
+        // 判断 content type: answer 或 article
+        val id = statusKey.id
+        val contentType: String
+        val contentId: String
+        when {
+            id.startsWith("article_") -> { contentType = "articles"; contentId = id.removePrefix("article_") }
+            else -> { contentType = "answers"; contentId = id }
+        }
+        val response = service.fetchComments(contentType, contentId, page = (offset / pageSize) + 1)
+        return PagingResult(
+            data = response.data.map { it.toUiTimelineItem(accountKey) },
+            endOfPaginationReached = response.isEnd,
+            nextKey = if (!response.isEnd) "${offset + pageSize}" else null,
+        )
+    }
+}

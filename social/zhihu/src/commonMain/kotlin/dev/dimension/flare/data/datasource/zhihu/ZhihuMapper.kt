@@ -6,6 +6,7 @@ import dev.dimension.flare.data.network.zhihu.ZhihuPerson
 import dev.dimension.flare.data.network.zhihu.ZhihuDailyStory
 import dev.dimension.flare.data.network.zhihu.ZhihuFeedItem
 import dev.dimension.flare.data.network.zhihu.ZhihuHotItem
+import dev.dimension.flare.data.network.zhihu.ZhihuComment
 import dev.dimension.flare.data.platform.ZHIHU_HOST
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
@@ -307,4 +308,61 @@ private fun formatHotValue(value: String): String {
         num >= tenThousand -> "${(num.toDouble() / tenThousand.toDouble() * 10).toLong() / 10.0}万"
         else -> num.toString()
     }
+}
+
+internal fun ZhihuComment.toUiTimelineItem(
+    accountKey: MicroBlogKey,
+): UiTimelineV2 {
+    val statusKey = MicroBlogKey(id = id, host = ZHIHU_HOST)
+    val post = UiTimelineV2.Post(
+        platformType = PlatformType.Zhihu,
+        images = persistentListOf(),
+        sensitive = false,
+        contentWarning = null,
+        user = UiProfile(
+            key = MicroBlogKey(id = authorId ?: id, host = ZHIHU_HOST),
+            handle = UiHandle(raw = authorName ?: "匿名用户", host = ZHIHU_HOST),
+            avatar = authorAvatar?.let {
+                UiMedia.Image(url = it, previewUrl = it, description = authorName ?: "", height = 0f, width = 0f, sensitive = false)
+            },
+            nameInternal = (authorName ?: "匿名用户").toUiPlainText(),
+            platformType = PlatformType.Zhihu,
+            clickEvent = if (authorId != null) {
+                ClickEvent.Deeplink(
+                    dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
+                        accountType = AccountType.Specific(accountKey),
+                        userKey = MicroBlogKey(id = authorId, host = ZHIHU_HOST),
+                    )
+                )
+            } else ClickEvent.Noop,
+            banner = null,
+            description = null,
+            matrices = UiProfile.Matrices(0, 0, 0),
+            mark = persistentListOf(),
+            bottomContent = null,
+        ),
+        content = content.toUiPlainText(),
+        actions = persistentListOf(
+            ActionMenu.zhihuVoteUp(
+                statusKey = statusKey,
+                voted = false,
+                count = likeCount.toLong(),
+                accountKey = accountKey,
+            ),
+        ),
+        poll = null,
+        statusKey = statusKey,
+        card = null,
+        createdAt = if (createdAt > 0) Instant.fromEpochMilliseconds(createdAt * 1000).toUi() else Instant.fromEpochMilliseconds(0).toUi(),
+        emojiReactions = persistentListOf(),
+        sourceChannel = null,
+        visibility = null,
+        replyToHandle = null,
+        references = persistentListOf(),
+        clickEvent = ClickEvent.Noop,
+        mediaClickPolicy = UiTimelineV2.Post.MediaClickPolicy.OpenStatusMedia,
+        accountType = AccountType.Specific(accountKey),
+        itemKey = "zhihu_comment_$id",
+    )
+    return UiTimelineV2.TimelinePostItem(post = post, itemKey = "zhihu_comment_$id")
 }

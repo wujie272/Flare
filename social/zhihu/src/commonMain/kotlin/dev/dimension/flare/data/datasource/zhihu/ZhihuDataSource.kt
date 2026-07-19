@@ -154,7 +154,7 @@ internal class ZhihuDataSource(
                         orientation = GalleryOrientation.Vertical,
                         statusKey = statusKey,
                         accountType = AccountType.Specific(accountKey),
-                        url = "https://www.zhihu.com/question/",
+                        url = "https://www.zhihu.com/question/0/answer/${statusKey.id}",
                         images = persistentListOf(),
                         title = "",
                         author = null,
@@ -168,7 +168,8 @@ internal class ZhihuDataSource(
             },
         )
     
-    override fun galleryComments(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = notSupported()
+    override fun galleryComments(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = 
+        ZhihuCommentsLoader(service = service, accountKey = accountKey, statusKey = statusKey)
     override fun galleryRecommendations(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = 
         ZhihuHotTimelineLoader(service = service, accountKey = accountKey)
     
