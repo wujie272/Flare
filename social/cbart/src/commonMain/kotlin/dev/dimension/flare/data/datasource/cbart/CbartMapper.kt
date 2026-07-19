@@ -383,7 +383,7 @@ internal fun CbartNewContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiT
 
     // 优先用 API 返回的 owner 字段，其次用 username，最后 fallback 到 uid
     val ownerNickName = owner?.nickName ?: owner?.displayName ?: owner?.username
-    val displayName = ownerNickName ?: username ?: uid?.toString() ?: "Cbart"
+    val displayName = ownerNickName ?: username?.takeIf { it.isNotBlank() } ?: uid?.toString() ?: "Cbart"
     val avatarUrl = owner?.avatarUrl ?: owner?.avatar?.let { "$CBART_CDN$it" }
 
     val post = UiTimelineV2.Post(
