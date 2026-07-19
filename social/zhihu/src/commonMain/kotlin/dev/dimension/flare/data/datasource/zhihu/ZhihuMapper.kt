@@ -44,9 +44,9 @@ internal fun ZhihuPerson.toUiProfile(
         banner = null,
         description = headline?.toUiPlainText(),
         matrices = UiProfile.Matrices(
-            answerCount.toLong(),
             followerCount.toLong(),
-            articlesCount.toLong(),
+            followingCount.toLong(),
+            answerCount.toLong(),
         ),
         mark = persistentListOf(),
         bottomContent = null,
