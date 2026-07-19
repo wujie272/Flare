@@ -219,11 +219,11 @@ internal fun CbartVideoDetailItem.toGalleryDetail(
         if (url.isNullOrBlank()) null
         else UiMedia.Image(
             url = url,
-            previewUrl = img.mPath ?: img.mobPath,
+            previewUrl = img.mPath ?: img.mobPath ?: url,
             description = title,
-            aspectRatio = (img.imageWidth?.toFloat()?.div((img.imageHeight ?: 1).toFloat())) ?: 1f,
-            width = img.imageWidth ?: 0,
-            height = img.imageHeight ?: 0,
+            height = (img.imageHeight ?: 0).toFloat(),
+            width = (img.imageWidth ?: 0).toFloat(),
+            sensitive = true,
         )
     }.orEmpty().toImmutableList()
 
