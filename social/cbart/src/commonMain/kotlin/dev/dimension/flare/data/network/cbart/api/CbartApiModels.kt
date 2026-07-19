@@ -519,6 +519,10 @@ internal data class CbartNewContentItem(
     val title: String? = null,
     val summary: String? = null,
     val username: String? = null,
+    /** 传 get_owner=1 时返回 */
+    val owner: CbartVideoOwner? = null,
+    /** 传 get_studio=1 时返回 */
+    val studio: CbartVideoStudio? = null,
 )
 
 // ==================== 内容类型 ====================

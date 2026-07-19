@@ -393,6 +393,11 @@ internal fun CbartNewContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiT
         else -> "📄 Post"
     }
 
+    // 优先用 API 返回的 owner 字段，其次用 username，最后 fallback 到 uid
+    val ownerNickName = owner?.nickName ?: owner?.displayName ?: owner?.username
+    val displayName = ownerNickName ?: username ?: uid?.toString() ?: "Cbart"
+    val avatarUrl = owner?.avatarUrl ?: owner?.avatar?.let { "$CBART_CDN$it" }
+
     val post = UiTimelineV2.Post(
         platformType = PlatformType.Cbart,
         images = images,
@@ -400,9 +405,9 @@ internal fun CbartNewContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiT
         contentWarning = typeLabel.toUiPlainText(),
         user = UiProfile(
             key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
-            handle = UiHandle(raw = username ?: uid?.toString() ?: "", host = CBART_HOST),
-            avatar = null,
-            nameInternal = (username ?: uid?.toString() ?: "Cbart").toUiPlainText(),
+            handle = UiHandle(raw = displayName, host = CBART_HOST),
+            avatar = avatarUrl?.toUiImage(),
+            nameInternal = displayName.toUiPlainText(),
             platformType = PlatformType.Cbart,
             clickEvent = ClickEvent.Noop,
             banner = null,

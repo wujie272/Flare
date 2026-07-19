@@ -156,7 +156,12 @@ internal class CbartApiClient(
     // ==================== 最新内容 ====================
 
     suspend fun newContentList(page: Int = 1, limit: Int = 50): CbartNewContentListResponse? = postForm(
-        "/get_new_content", mapOf("page" to page.toString(), "limit" to limit.toString()),
+        "/get_new_content", mapOf(
+            "page" to page.toString(),
+            "limit" to limit.toString(),
+            "get_owner" to "1",
+            "get_studio" to "1",
+        ),
     )
 
     // ==================== 页面抓取 ====================
