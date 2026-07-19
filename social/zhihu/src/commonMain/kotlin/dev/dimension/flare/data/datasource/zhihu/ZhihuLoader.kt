@@ -15,6 +15,7 @@ import dev.dimension.flare.model.PlatformType
 import kotlinx.serialization.json.jsonPrimitive
 import dev.dimension.flare.ui.model.ClickEvent
 import dev.dimension.flare.ui.model.UiHandle
+import dev.dimension.flare.ui.model.UiHashtag
 import dev.dimension.flare.ui.model.UiProfile
 import dev.dimension.flare.ui.model.UiRelation
 import dev.dimension.flare.ui.model.UiTimelineV2
@@ -324,5 +325,43 @@ internal class ZhihuCommentsLoader(
             endOfPaginationReached = response.isEnd,
             nextKey = if (!response.isEnd) "${offset + pageSize}" else null,
         )
+    }
+}
+
+/**
+ * 知乎发现用户 Loader
+ */
+internal class ZhihuDiscoverUsersLoader(
+    private val service: ZhihuService,
+    private val accountKey: MicroBlogKey,
+) : CacheableRemoteLoader<UiProfile> {
+    override val pagingKey: String = "zhihu_discover_users_$accountKey"
+    override val supportPrepend: Boolean = false
+
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiProfile> {
+        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
+        val offset = (request as? PagingRequest.Append)?.nextKey?.toIntOrNull() ?: 0
+        val response = service.searchUsers("", offset = offset, limit = pageSize)
+        return PagingResult(
+            data = response.data.map { it.toUiProfile(accountKey) },
+            endOfPaginationReached = response.isEnd,
+            nextKey = if (!response.isEnd) "${offset + pageSize}" else null,
+        )
+    }
+}
+
+/**
+ * 知乎发现话题 Loader
+ */
+internal class ZhihuDiscoverHashtagsLoader(
+    private val service: ZhihuService,
+    private val accountKey: MicroBlogKey,
+) : CacheableRemoteLoader<UiHashtag> {
+    override val pagingKey: String = "zhihu_discover_hashtags_$accountKey"
+    override val supportPrepend: Boolean = false
+
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiHashtag> {
+        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
+        return PagingResult(endOfPaginationReached = true)
     }
 }

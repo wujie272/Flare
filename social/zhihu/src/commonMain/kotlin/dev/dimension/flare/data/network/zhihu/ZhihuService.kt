@@ -14,6 +14,9 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -307,6 +310,24 @@ internal class ZhihuService(
     // ========== 内容详情 ==========
 
     // ========== 互动操作（需要签名，需要 ensureSession） ==========
+
+    suspend fun submitComment(contentType: String, contentId: String, content: String, replyCommentId: String? = null): Boolean {
+        ensureSession()
+        val client = signedClient()
+        val url = "$ZHIHU_API/v4/comment_v5/${contentType}s/$contentId/comment"
+        val escapedText = content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        val bodyObj = buildJsonObject {
+            put("content", "<p>$escapedText</p>")
+            replyCommentId?.let { put("reply_comment_id", it) }
+        }
+        val response = client.post(url) {
+            contentType(ContentType.Application.Json)
+            setBody(bodyObj.toString())
+        }
+        val text = response.bodyAsText()
+        client.close()
+        return response.status.isSuccess()
+    }
 
     suspend fun voteAnswer(answerId: String, voteType: String): Boolean {
         ensureSession()

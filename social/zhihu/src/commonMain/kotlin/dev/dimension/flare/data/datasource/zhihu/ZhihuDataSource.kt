@@ -1,6 +1,10 @@
 package dev.dimension.flare.data.datasource.zhihu
 
 import dev.dimension.flare.data.datasource.microblog.AuthenticatedMicroblogDataSource
+import dev.dimension.flare.data.datasource.microblog.ComposeConfig
+import dev.dimension.flare.data.datasource.microblog.ComposeData
+import dev.dimension.flare.data.datasource.microblog.ComposeDataSource
+import dev.dimension.flare.data.datasource.microblog.ComposeType
 import dev.dimension.flare.data.datasource.microblog.DatabaseUpdater
 import dev.dimension.flare.data.datasource.microblog.NotificationFilter
 import dev.dimension.flare.data.datasource.microblog.NotificationTimelineDataSource
@@ -10,8 +14,7 @@ import dev.dimension.flare.data.datasource.microblog.datasource.GalleryDataSourc
 import dev.dimension.flare.data.datasource.microblog.datasource.GalleryDetail
 import dev.dimension.flare.data.datasource.microblog.datasource.GalleryOrientation
 import dev.dimension.flare.data.datasource.microblog.datasource.NotificationDataSource
-import dev.dimension.flare.data.datasource.microblog.datasource.PinnableTimelineTabDataSource
-import dev.dimension.flare.data.datasource.microblog.datasource.PinnableTimelineTabSection
+
 import dev.dimension.flare.data.datasource.microblog.datasource.PostDataSource
 import dev.dimension.flare.data.datasource.microblog.datasource.RelationDataSource
 import dev.dimension.flare.data.datasource.microblog.datasource.TimelineTabConfigurationDataSource
@@ -40,6 +43,7 @@ import dev.dimension.flare.ui.model.UiProfile
 import dev.dimension.flare.ui.model.UiStrings
 import dev.dimension.flare.ui.model.UiText
 import dev.dimension.flare.ui.model.UiTimelineV2
+import dev.dimension.flare.ui.presenter.compose.ComposeStatus
 import dev.dimension.flare.ui.render.toUi
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -51,9 +55,9 @@ internal class ZhihuDataSource(
     private val credentialFlow: Flow<ZhihuCredential>,
     private val updateCredential: suspend (ZhihuCredential) -> Unit,
 ) : AuthenticatedMicroblogDataSource,
+    ComposeDataSource,
     NotificationTimelineDataSource,
     NotificationDataSource,
-    PinnableTimelineTabDataSource,
     TimelineTabConfigurationDataSource,
     GalleryDataSource,
     UserDataSource,
@@ -81,8 +85,6 @@ internal class ZhihuDataSource(
         )
     }
     override val supportedNotificationFilter: List<NotificationFilter> = listOf(NotificationFilter.All)
-    override val pinnableTimelineTabs: List<PinnableTimelineTabSection> = emptyList()
-
     override val defaultTabs: ImmutableList<TimelineCandidate<*>> by lazy {
         persistentListOf(
             ZhihuPlatformSpec.recommendTimelineSpec.candidate(
@@ -179,11 +181,13 @@ internal class ZhihuDataSource(
     
     override fun searchUser(query: String): RemoteLoader<UiProfile> = 
         ZhihuSearchUserLoader(service = service, accountKey = accountKey, query = query)
-    override fun discoverUsers(): RemoteLoader<UiProfile> = notSupported()
+    override fun discoverUsers(): RemoteLoader<UiProfile> = 
+        ZhihuDiscoverUsersLoader(service = service, accountKey = accountKey)
     override fun discoverStatuses(): RemoteLoader<UiTimelineV2> = 
         ZhihuDailyTimelineLoader(service = service, accountKey = accountKey)
     
-    override fun discoverHashtags(): RemoteLoader<UiHashtag> = notSupported()
+    override fun discoverHashtags(): RemoteLoader<UiHashtag> = 
+        ZhihuDiscoverHashtagsLoader(service = service, accountKey = accountKey)
     override fun following(userKey: MicroBlogKey): RemoteLoader<UiProfile> = 
         ZhihuFolloweesLoader(service = service, accountKey = accountKey, userKey = userKey)
     override fun fans(userKey: MicroBlogKey): RemoteLoader<UiProfile> = 
@@ -245,6 +249,28 @@ internal class ZhihuDataSource(
             service.followMember(event.postKey.id)
         }
     }
+
+    override suspend fun compose(data: ComposeData, progress: () -> Unit) {
+        val referenceStatus = data.referenceStatus
+        val composeStatus = referenceStatus?.composeStatus
+        if (composeStatus is ComposeStatus.Reply) {
+            val id = composeStatus.statusKey.id
+            val contentType: String
+            val contentId: String
+            when {
+                id.startsWith("article_") -> { contentType = "article"; contentId = id.removePrefix("article_") }
+                else -> { contentType = "answer"; contentId = id }
+            }
+            val replyToId = (composeStatus as? ComposeStatus.VVOComment)?.let { it.statusKey.id }
+            service.submitComment(contentType, contentId, data.content, replyToId)
+        }
+    }
+
+    override fun composeConfig(type: ComposeType): ComposeConfig =
+        ComposeConfig(
+            text = ComposeConfig.Text(2000),
+            media = ComposeConfig.Media(0, false, altTextMaxLength = -1, allowMediaOnly = false),
+        )
 
     fun hotTimelineLoader(): RemoteLoader<UiTimelineV2> = ZhihuHotTimelineLoader(service = service, accountKey = accountKey)
     fun dailyTimelineLoader(): RemoteLoader<UiTimelineV2> = ZhihuDailyTimelineLoader(service = service, accountKey = accountKey)
