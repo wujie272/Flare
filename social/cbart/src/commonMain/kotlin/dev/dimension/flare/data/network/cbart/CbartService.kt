@@ -187,11 +187,29 @@ internal class CbartService(
 
     suspend fun currentCredential(): CbartCredential? = credentialFlowRef.firstOrNull()
 
+    // ==================== 用户昵称缓存 ====================
+
+    /**
+     * 从视频详情页爬到的 owner 昵称，key=uid, value=displayName
+     */
+    private val userNameCache = mutableMapOf<Long, String>()
+
+    fun getCachedUserName(uid: Long): String? = userNameCache[uid]
+
+    fun cacheUserName(uid: Long, name: String) {
+        userNameCache[uid] = name
+    }
+
     // ==================== 视频详情 ====================
 
     suspend fun fetchVideoDetail(videoId: Long): CbartVideoDetailItem? {
         val html = api.fetchVideoDetailPage(videoId) ?: return null
-        return parseVideoDetailFromHtml(html)
+        val detail = parseVideoDetailFromHtml(html)
+        detail?.owner?.let { owner ->
+            val name = owner.displayName ?: owner.nickName ?: owner.username
+            if (name != null) userNameCache[owner.uid] = name
+        }
+        return detail
     }
 
     suspend fun addVideoComment(videoId: Long, content: String): Boolean {

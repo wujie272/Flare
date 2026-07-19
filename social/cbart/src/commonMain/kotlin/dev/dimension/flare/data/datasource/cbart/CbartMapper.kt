@@ -60,7 +60,7 @@ internal fun CbartContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
             key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
             handle = UiHandle(raw = uid?.toString() ?: "", host = CBART_HOST),
             avatar = null,
-            nameInternal = (title?.take(20) ?: uid?.toString() ?: "Cbart").toUiPlainText(),
+            nameInternal = (uid?.toString() ?: "Cbart").toUiPlainText(),
             platformType = PlatformType.Cbart,
             clickEvent = ClickEvent.Noop,
             banner = null,
@@ -271,13 +271,13 @@ internal fun CbartStudioItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
 /**
  * 从 video_list API 的 CbartVideoItem 映射到 UiTimelineV2
  */
-internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimelineV2 {
+internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey, ownerName: String? = null): UiTimelineV2 {
     val images = images?.mapNotNull { img ->
         val fullUrl = if (img.path.startsWith("http")) img.path else "$CBART_CDN${img.path}"
         fullUrl.toUiImage()
     }.orEmpty().toImmutableList()
 
-    val displayName = "🎬 #${uid ?: ""}"
+    val displayName = ownerName ?: uid?.toString() ?: "Cbart"
     val post = UiTimelineV2.Post(
         platformType = PlatformType.Cbart,
         images = images,
@@ -291,7 +291,7 @@ internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
             key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
             handle = UiHandle(raw = uid?.toString() ?: "", host = CBART_HOST),
             avatar = null,
-            nameInternal = (title?.take(20) ?: displayName).toUiPlainText(),
+            nameInternal = displayName.toUiPlainText(),
             platformType = PlatformType.Cbart,
             clickEvent = ClickEvent.Noop,
             banner = null,

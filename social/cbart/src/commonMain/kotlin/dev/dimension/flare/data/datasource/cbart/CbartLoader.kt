@@ -101,7 +101,7 @@ internal class CbartHotTimelineLoader(
         }
         val items = service.fetchVideos(page = page)
         return PagingResult(
-            data = items.map { it.toUiTimelineItem(accountKey) },
+            data = items.map { it.toUiTimelineItem(accountKey, ownerName = it.uid?.let { uid -> service.getCachedUserName(uid) }) },
             nextKey = if (items.isEmpty()) null else (page + 1).toString(),
         )
     }
@@ -122,7 +122,7 @@ internal class CbartPurchasedVideoLoader(
         }
         val items = service.fetchPurchasedVideos(page = page)
         return PagingResult(
-            data = items.map { it.toUiTimelineItem(accountKey) },
+            data = items.map { it.toUiTimelineItem(accountKey, ownerName = it.uid?.let { uid -> service.getCachedUserName(uid) }) },
             nextKey = if (items.isEmpty()) null else (page + 1).toString(),
         )
     }
