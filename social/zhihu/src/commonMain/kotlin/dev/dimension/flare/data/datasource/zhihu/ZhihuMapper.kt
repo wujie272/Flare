@@ -233,9 +233,7 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
         appendLine()
         if (excerpt.isNotBlank()) {
             append(excerpt.take(200))
-            appendLine()
         }
-        append("👍 $voteCount · 💬 $commentCount")
     }
     val post = UiTimelineV2.Post(
         platformType = PlatformType.Zhihu,
@@ -279,7 +277,7 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
             description = "$authorName · 👍 $voteCount · 💬 $commentCount",
             url = url,
         ),
-        createdAt = Instant.fromEpochMilliseconds(0).toUi(),
+        createdAt = if (createdAt > 0) Instant.fromEpochMilliseconds(createdAt * 1000).toUi() else Instant.fromEpochMilliseconds(0).toUi(),
         emojiReactions = persistentListOf(),
         sourceChannel = null,
         visibility = null,

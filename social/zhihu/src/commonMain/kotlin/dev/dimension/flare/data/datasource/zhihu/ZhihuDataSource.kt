@@ -137,7 +137,7 @@ internal class ZhihuDataSource(
     }
 
     override fun homeTimeline(): RemoteLoader<UiTimelineV2> = 
-        ZhihuRecommendTimelineLoader(service = service, accountKey = accountKey)
+        ZhihuRecommendPagingLoader(service = service, accountKey = accountKey)
     
     override fun userTimeline(userKey: MicroBlogKey, mediaOnly: Boolean): RemoteLoader<UiTimelineV2> {
         if (mediaOnly) return notSupported()
@@ -191,6 +191,10 @@ internal class ZhihuDataSource(
             ProfileTab(
                 name = UiStrings.Posts,
                 loader = ZhihuUserTimelineLoader(service = service, accountKey = accountKey, userKey = userKey, type = "answers"),
+            ),
+            ProfileTab(
+                name = UiStrings.Articles,
+                loader = ZhihuUserTimelineLoader(service = service, accountKey = accountKey, userKey = userKey, type = "articles"),
             ),
         )
 

@@ -230,6 +230,7 @@ private val UiStrings.desktopStringResource: StringResource
             UiStrings.Announcement -> Res.string.home_tab_announcement_title
             UiStrings.LatestResource -> Res.string.home_tab_latest_resource_title
             UiStrings.PurchasedVideo -> Res.string.profile_tab_purchased_video_title
+            UiStrings.Articles -> Res.string.profile_tab_articles
             UiStrings.Discover -> Res.string.home_tab_discover_title
 
             UiStrings.Me -> Res.string.home_tab_me_title

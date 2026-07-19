@@ -463,6 +463,8 @@ internal class ZhihuService(
                             authorAvatar = author?.get("avatar_url")?.jsonPrimitive?.content,
                             voteCount = obj["voteup_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                             commentCount = obj["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            createdAt = obj["created_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                            updatedAt = obj["updated_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                         )
                     } catch (_: Exception) { null }
                 },
@@ -504,6 +506,8 @@ internal class ZhihuService(
                             authorAvatar = author?.get("avatar_url")?.jsonPrimitive?.content,
                             voteCount = obj["voteup_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                             commentCount = obj["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            createdAt = obj["created_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                            updatedAt = obj["updated_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                         )
                     } catch (_: Exception) { null }
                 },
@@ -833,6 +837,8 @@ internal class ZhihuService(
                             authorAvatar = target["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
                             voteCount = target["voteup_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                             commentCount = target["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            createdAt = target["created_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                            updatedAt = target["updated_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                         )
                     }
                     else -> null
@@ -860,6 +866,8 @@ internal class ZhihuService(
                             authorAvatar = objectType["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
                             voteCount = objectType["voteup_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                             commentCount = objectType["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            createdAt = objectType["created_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                            updatedAt = objectType["updated_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                         )
                     }
                     type == "article" -> {
@@ -872,6 +880,8 @@ internal class ZhihuService(
                             authorAvatar = objectType["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
                             voteCount = objectType["voteup_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                             commentCount = objectType["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            createdAt = objectType["created_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                            updatedAt = objectType["updated_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                         )
                     }
                     else -> null
@@ -912,6 +922,8 @@ internal data class ZhihuFeedItem(
     val authorAvatar: String?,
     val voteCount: Int,
     val commentCount: Int,
+    val createdAt: Long = 0,
+    val updatedAt: Long = 0,
 )
 
 internal data class ZhihuComment(
