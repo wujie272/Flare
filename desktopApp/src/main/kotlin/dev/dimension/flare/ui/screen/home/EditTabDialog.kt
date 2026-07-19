@@ -38,6 +38,9 @@ import dev.dimension.flare.fanbox_recommended_creators_title
 import dev.dimension.flare.fanbox_supported_title
 import dev.dimension.flare.home_tab_bookmarks_title
 import dev.dimension.flare.home_tab_discover_title
+import dev.dimension.flare.home_tab_announcement_title
+import dev.dimension.flare.home_tab_latest_resource_title
+import dev.dimension.flare.profile_tab_purchased_video_title
 import dev.dimension.flare.home_tab_favorite_title
 import dev.dimension.flare.home_tab_featured_title
 import dev.dimension.flare.home_tab_feeds_title
@@ -224,6 +227,9 @@ private val UiStrings.desktopStringResource: StringResource
 
             UiStrings.Notifications -> Res.string.home_tab_notifications_title
 
+            UiStrings.Announcement -> Res.string.home_tab_announcement_title
+            UiStrings.LatestResource -> Res.string.home_tab_latest_resource_title
+            UiStrings.PurchasedVideo -> Res.string.profile_tab_purchased_video_title
             UiStrings.Discover -> Res.string.home_tab_discover_title
 
             UiStrings.Me -> Res.string.home_tab_me_title

@@ -3,21 +3,26 @@ package dev.dimension.flare.data.datasource.cbart
 import dev.dimension.flare.common.Cacheable
 import dev.dimension.flare.data.datasource.microblog.AuthenticatedMicroblogDataSource
 import dev.dimension.flare.data.datasource.microblog.DatabaseUpdater
+import dev.dimension.flare.data.datasource.microblog.NotificationFilter
+import dev.dimension.flare.data.datasource.microblog.NotificationTimelineDataSource
 import dev.dimension.flare.data.datasource.microblog.PostEvent
 import dev.dimension.flare.data.datasource.microblog.ProfileTab
 import dev.dimension.flare.data.datasource.microblog.datasource.GalleryDataSource
 import dev.dimension.flare.data.datasource.microblog.datasource.GalleryDetail
 import dev.dimension.flare.data.datasource.microblog.datasource.GalleryOrientation
+import dev.dimension.flare.data.datasource.microblog.datasource.NotificationDataSource
 import dev.dimension.flare.data.datasource.microblog.datasource.PinnableTimelineTabDataSource
 import dev.dimension.flare.data.datasource.microblog.datasource.PinnableTimelineTabSection
 import dev.dimension.flare.data.datasource.microblog.datasource.PostDataSource
 import dev.dimension.flare.data.datasource.microblog.datasource.RelationDataSource
 import dev.dimension.flare.data.datasource.microblog.datasource.TimelineTabConfigurationDataSource
 import dev.dimension.flare.data.datasource.microblog.datasource.UserDataSource
+import dev.dimension.flare.data.datasource.microblog.handler.NotificationHandler
 import dev.dimension.flare.data.datasource.microblog.handler.PostEventHandler
 import dev.dimension.flare.data.datasource.microblog.handler.PostHandler
 import dev.dimension.flare.data.datasource.microblog.handler.RelationHandler
 import dev.dimension.flare.data.datasource.microblog.handler.UserHandler
+import dev.dimension.flare.data.datasource.microblog.loader.NotificationLoader
 import dev.dimension.flare.data.datasource.microblog.loader.RelationActionType
 import dev.dimension.flare.data.datasource.microblog.paging.RemoteLoader
 import dev.dimension.flare.data.datasource.microblog.paging.notSupported
@@ -36,13 +41,13 @@ import dev.dimension.flare.ui.model.UiHashtag
 import dev.dimension.flare.ui.model.UiIcon
 import dev.dimension.flare.ui.model.UiProfile
 import dev.dimension.flare.ui.model.UiStrings
-import dev.dimension.flare.ui.model.UiText
 import dev.dimension.flare.ui.model.UiTimelineV2
 import kotlin.time.Instant
 import dev.dimension.flare.ui.render.toUi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 
 internal class CbartDataSource(
@@ -50,6 +55,8 @@ internal class CbartDataSource(
     private val credentialFlow: Flow<CbartCredential>,
     private val updateCredential: suspend (CbartCredential) -> Unit,
 ) : AuthenticatedMicroblogDataSource,
+    NotificationTimelineDataSource,
+    NotificationDataSource,
     PinnableTimelineTabDataSource,
     TimelineTabConfigurationDataSource,
     GalleryDataSource,
@@ -67,37 +74,44 @@ internal class CbartDataSource(
     override val postHandler by lazy { PostHandler(accountType = AccountType.Specific(accountKey), loader = loader) }
     override val postEventHandler by lazy { PostEventHandler(accountType = AccountType.Specific(accountKey), handler = this) }
     override val relationHandler by lazy { RelationHandler(accountType = AccountType.Specific(accountKey), dataSource = loader) }
-    override val supportedRelationTypes: Set<RelationActionType> = emptySet()
+    override val supportedRelationTypes: Set<RelationActionType> = loader.supportedTypes
+
+    override val notificationHandler by lazy {
+        NotificationHandler(
+            accountKey = accountKey,
+            loader = loader as NotificationLoader,
+        )
+    }
+    override val supportedNotificationFilter: List<NotificationFilter> = listOf(NotificationFilter.All)
     override val pinnableTimelineTabs: List<PinnableTimelineTabSection> = emptyList()
 
     override val defaultTabs: ImmutableList<TimelineCandidate<*>> by lazy {
-        persistentListOf(
-            CbartPlatformSpec.newTimelineSpec.candidate(
-                data = TimelineSpec.AccountBasedData(accountKey),
-                icon = IconType.Material(UiIcon.Cbart),
-                title = UiText.Raw("Cbart"),
-            ),
-        )
+        persistentListOf()
     }
 
     override val builtInTimelineTabs: ImmutableList<TimelineCandidate<*>> by lazy {
         persistentListOf(
-            CbartPlatformSpec.newTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey), icon = IconType.Material(UiIcon.Cbart)),
+            CbartPlatformSpec.announcementTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)),
+            CbartPlatformSpec.latestResourceTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey), icon = IconType.Material(UiIcon.Cbart)),
+            CbartPlatformSpec.discoverTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey), icon = IconType.Material(UiIcon.Cbart)),
             CbartPlatformSpec.hotTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)),
-            CbartPlatformSpec.favouriteTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)),
         )
     }
 
     override val shortcuts: ImmutableList<ShortcutSpec> by lazy {
         persistentListOf(
-            ShortcutSpec(title = UiStrings.Discover, icon = UiIcon.Search, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.newTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
+            ShortcutSpec(title = UiStrings.Discover, icon = UiIcon.Search, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.discoverTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
             ShortcutSpec(title = UiStrings.Featured, icon = UiIcon.Featured, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.hotTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
-            ShortcutSpec(title = UiStrings.Favourite, icon = UiIcon.Heart, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.favouriteTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
+            ShortcutSpec(title = UiStrings.LatestResource, icon = UiIcon.Eye, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.latestResourceTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
+            ShortcutSpec(title = UiStrings.Announcement, icon = UiIcon.Info, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.announcementTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
         )
     }
 
-    override fun homeTimeline(): RemoteLoader<UiTimelineV2> = CbartHomeTimelineLoader(service = service, accountKey = accountKey)
-    override fun userTimeline(userKey: MicroBlogKey, mediaOnly: Boolean): RemoteLoader<UiTimelineV2> = notSupported()
+    override fun homeTimeline(): RemoteLoader<UiTimelineV2> = CbartArticleTimelineLoader(service = service, accountKey = accountKey)
+    override fun userTimeline(userKey: MicroBlogKey, mediaOnly: Boolean): RemoteLoader<UiTimelineV2> {
+        if (mediaOnly) return notSupported()
+        return CbartUserContentLoader(service = service, accountKey = accountKey, userKey = userKey)
+    }
     override fun context(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = notSupported()
     override fun galleryDetail(statusKey: MicroBlogKey): Cacheable<GalleryDetail> = Cacheable(
         fetchSource = {},
@@ -111,18 +125,63 @@ internal class CbartDataSource(
         },
     )
     override fun galleryComments(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = CbartGalleryCommentsLoader(service = service, accountKey = accountKey)
-    override fun galleryRecommendations(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = CbartHomeTimelineLoader(service = service, accountKey = accountKey)
-    override fun searchStatus(query: String): RemoteLoader<UiTimelineV2> = CbartHomeTimelineLoader(service = service, accountKey = accountKey)
-    override fun searchUser(query: String): RemoteLoader<UiProfile> = CbartSearchUserLoader(service = service, accountKey = accountKey)
+    override fun galleryRecommendations(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = CbartHotTimelineLoader(service = service, accountKey = accountKey)
+    override fun searchStatus(query: String): RemoteLoader<UiTimelineV2> = 
+        CbartStudioSearchLoader(service = service, accountKey = accountKey, query = query)
+    override fun searchUser(query: String): RemoteLoader<UiProfile> = notSupported()
     override fun discoverUsers(): RemoteLoader<UiProfile> = notSupported()
     override fun discoverStatuses(): RemoteLoader<UiTimelineV2> = CbartDiscoverTimelineLoader(service = service, accountKey = accountKey)
     override fun discoverHashtags(): RemoteLoader<UiHashtag> = notSupported()
-    override fun following(userKey: MicroBlogKey): RemoteLoader<UiProfile> = notSupported()
+    override fun following(userKey: MicroBlogKey): RemoteLoader<UiProfile> = CbartFollowingLoader(service = service)
     override fun fans(userKey: MicroBlogKey): RemoteLoader<UiProfile> = notSupported()
-    override fun profileTabs(userKey: MicroBlogKey): ImmutableList<ProfileTab> = persistentListOf()
-    override suspend fun handle(event: PostEvent, updater: DatabaseUpdater) {}
+    override fun profileTabs(userKey: MicroBlogKey): ImmutableList<ProfileTab> {
+        val base = persistentListOf(
+            ProfileTab(
+                name = UiStrings.Posts,
+                loader = CbartUserContentLoader(service = service, accountKey = accountKey, userKey = userKey),
+            ),
+        )
+        return if (userKey == accountKey) {
+            (base + ProfileTab(
+                name = UiStrings.PurchasedVideo,
+                loader = CbartPurchasedVideoLoader(service = service, accountKey = accountKey),
+            )).toImmutableList()
+        } else {
+            base
+        }
+    }
 
-    fun newTimelineLoader(): RemoteLoader<UiTimelineV2> = CbartHomeTimelineLoader(service = service, accountKey = accountKey)
+    override fun notification(type: NotificationFilter): RemoteLoader<UiTimelineV2> = 
+        CbartNotificationTimelineLoader(service = service, accountKey = accountKey)
+
+    override suspend fun handle(event: PostEvent, updater: DatabaseUpdater) {
+        require(event is PostEvent.Cbart)
+        when (event) {
+            is PostEvent.Cbart.Favourite -> handleFavourite(event)
+            is PostEvent.Cbart.Follow -> handleFollow(event)
+        }
+    }
+
+    private suspend fun handleFavourite(event: PostEvent.Cbart.Favourite) {
+        val contentId = event.postKey.id.toLongOrNull() ?: return
+        if (event.favourited) {
+            service.unfavouriteContent(contentId)
+        } else {
+            service.favouriteContent(contentId)
+        }
+    }
+
+    private suspend fun handleFollow(event: PostEvent.Cbart.Follow) {
+        val studioId = event.postKey.id.toLongOrNull() ?: return
+        if (event.following) {
+            service.unfollowStudio(studioId)
+        } else {
+            service.followStudio(studioId)
+        }
+    }
+
+    fun articleTimelineLoader(): RemoteLoader<UiTimelineV2> = CbartArticleTimelineLoader(service = service, accountKey = accountKey)
+    fun latestResourceTimelineLoader(): RemoteLoader<UiTimelineV2> = CbartLatestResourceTimelineLoader(service = service, accountKey = accountKey)
+    fun discoverTimelineLoader(): RemoteLoader<UiTimelineV2> = CbartDiscoverTimelineLoader(service = service, accountKey = accountKey)
     fun hotTimelineLoader(): RemoteLoader<UiTimelineV2> = CbartHotTimelineLoader(service = service, accountKey = accountKey)
-    fun favouriteTimelineLoader(): RemoteLoader<UiTimelineV2> = CbartFavouriteTimelineLoader(service = service, accountKey = accountKey)
 }

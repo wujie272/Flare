@@ -58,6 +58,20 @@ internal fun WebCookieLoginScreen(
                     .padding(it)
                     .fillMaxSize(),
             onCreated = {
+                val originalClient = it.webViewClient
+                it.webViewClient = object : android.webkit.WebViewClient() {
+                    override fun shouldOverrideUrlLoading(
+                        view: android.webkit.WebView?,
+                        request: android.webkit.WebResourceRequest?,
+                    ): Boolean {
+                        val url = request?.url?.toString() ?: return false
+                        // 拦截非 http/https 协议（如 snssdk143://），防止 ERR_UNKNOWN_URL_SCHEME
+                        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                            return true
+                        }
+                        return originalClient?.shouldOverrideUrlLoading(view, request) ?: false
+                    }
+                }
                 with(it.settings) {
                     userAgentString = USER_AGENT
                     javaScriptEnabled = true

@@ -16,14 +16,19 @@ import dev.dimension.flare.ui.model.UiAccount
 import dev.dimension.flare.ui.model.UiInstance
 import dev.dimension.flare.ui.model.UiInstanceMetadata
 import dev.dimension.flare.ui.model.UiStrings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 
 private const val LOGIN_ACTION = "login"
-private const val CBART_LOGIN_URL = "https://cbart.net/"
+private const val CBART_LOGIN_URL = "https://www.linzijiang.app/login"
 
 public data object CbartLoginProvider : LoginPlatformProvider {
     override val platformType: PlatformType = PlatformType.Cbart
@@ -35,7 +40,14 @@ public data object CbartLoginProvider : LoginPlatformProvider {
     override fun agreementUrl(host: String): String? = null
 
     override suspend fun recommendInstances(): List<RecommendedInstance> = listOf(
-        RecommendedInstance(instance = UiInstance(name = "Cbart", description = "Fetish content marketplace", iconUrl = null, domain = CBART_HOST, type = platformType, bannerUrl = null, usersCount = 0), priority = 50),
+        RecommendedInstance(
+            instance = UiInstance(
+                name = "Cbart",
+                description = "Fetish content marketplace",
+                iconUrl = null, domain = CBART_HOST,
+                type = platformType, bannerUrl = null, usersCount = 0,
+            ), priority = 50,
+        ),
     )
     override suspend fun instanceMetadata(host: String): UiInstanceMetadata =
         throw UnsupportedOperationException("${platformType.name} metadata is not supported yet")
@@ -50,8 +62,11 @@ private class CbartWebCookieLoginHandler(
     private val context: LoginContext,
 ) : LoginMethodHandler {
     private val accountService: AccountService by koinInject()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _state = MutableStateFlow(state())
     private val _effects = MutableSharedFlow<LoginEffect>(extraBufferCapacity = 1)
+    private val validatedSession = MutableStateFlow<String?>(null)
+    private val validatingSession = MutableStateFlow<String?>(null)
 
     override val state: StateFlow<LoginFlowState> = _state
     override val effects: Flow<LoginEffect> = _effects
@@ -65,32 +80,47 @@ private class CbartWebCookieLoginHandler(
     override suspend fun resume(value: String) {
         _state.value = state(loading = true)
         runCatching {
-            val sessionId = value.extractCbartSession()
-            require(!sessionId.isNullOrBlank()) { "Cbart session cookie (PHPSESSID) is missing" }
+            val laravelSession = value.extractCookieValue("laravel_session")
+                ?: error("Cbart session cookie (laravel_session) is missing")
 
-            val cfClearance = value.extractCfClearance()
+            val xsrfToken = value.extractCookieValue("XSRF-TOKEN")
+
             val credential = CbartCredential(
-                sessionId = sessionId,
-                cfClearance = cfClearance,
+                laravelSession = laravelSession,
+                xsrfToken = xsrfToken,
             )
 
             val service = CbartService(flowOf(credential))
 
-            // 用 API 验证 session
-            val isValid = service.validateSession()
-            require(isValid) { "Failed to verify Cbart session - session may be expired" }
+            // 验证 session
+            require(service.validateSession()) {
+                "Failed to verify Cbart session - session may be expired or invalid"
+            }
 
-            val userInfo = service.fetchCurrentUser()
-            val userId = userInfo?.uid
-            require(!userId.isNullOrBlank()) { "Failed to verify Cbart session" }
+            // 从首页 HTML 提取用户名
+            val userInfo = service.fetchUsernameFromHomePage()
+            val username = userInfo?.first ?: "cbart_user"
+            val displayName = userInfo?.second ?: username
+
+            // 从 /profile 页面提取头像 URL 和昵称
+            val profileInfo = service.fetchProfileInfo()
+            val avatarUrl = profileInfo?.first
+            val nickName = profileInfo?.second ?: displayName
+
+            // 尝试获取真实数字 uid
+            val numericUid = service.fetchNumericUid()
+            val realUid = if (numericUid != null) numericUid.toString() else null
+
+            val finalUid = realUid ?: "cb_${username}_${laravelSession.take(6)}"
+            val accountKey = MicroBlogKey(id = finalUid, host = CBART_HOST)
 
             val verifiedCredential = credential.copy(
-                userId = userId,
-                userName = userInfo.username,
-                nickName = userInfo.nickName,
-                avatarUrl = userInfo.avatarUrl,
+                userId = finalUid,
+                userName = username,
+                nickName = nickName,
+                avatarUrl = avatarUrl,
             )
-            val accountKey = MicroBlogKey(id = userId, host = CBART_HOST)
+
             context.requireReloginAccount(accountKey)
             accountService.addAccount(
                 account = UiAccount(accountKey = accountKey, platformType = PlatformType.Cbart),
@@ -103,8 +133,38 @@ private class CbartWebCookieLoginHandler(
         }
     }
 
-    override fun canResume(value: String): Boolean = value.extractCbartSession() != null
+    override fun canResume(value: String): Boolean {
+        val laravelSession = value.extractCookieValue("laravel_session") ?: return false
+        if (validatedSession.value == laravelSession) {
+            return true
+        }
+        if (validatingSession.value != laravelSession) {
+            validatingSession.value = laravelSession
+            scope.launch {
+                val isLoggedIn = runCatching {
+                    val xsrfToken = value.extractCookieValue("XSRF-TOKEN")
+                    val cred = CbartCredential(laravelSession = laravelSession, xsrfToken = xsrfToken)
+                    val service = CbartService(flowOf(cred))
+                    // 能提取到用户名 = 真的登录了
+                    val userInfo = service.fetchUsernameFromHomePage()
+                    userInfo != null && userInfo.first.isNotBlank()
+                }.getOrDefault(false)
+                if (isLoggedIn) {
+                    validatedSession.value = laravelSession
+                }
+                if (validatingSession.value == laravelSession) {
+                    validatingSession.value = null
+                }
+            }
+        }
+        return false
+    }
+
     override fun clear() { _state.value = state() }
+
+    override fun close() {
+        scope.cancel()
+    }
 
     private fun state(loading: Boolean = false, error: String? = null): LoginFlowState = LoginFlowState(
         actions = listOf(LoginAction(id = LOGIN_ACTION, label = UiStrings.Login, enabled = !loading)),
@@ -112,8 +172,11 @@ private class CbartWebCookieLoginHandler(
     )
 }
 
-private fun String.extractCbartSession(): String? =
-    split(";").map { it.trim() }.firstOrNull { it.startsWith("PHPSESSID=") }?.substringAfter("=")?.takeIf { it.isNotBlank() }
-
-private fun String.extractCfClearance(): String? =
-    split(";").map { it.trim() }.firstOrNull { it.startsWith("cf_clearance=") }?.substringAfter("=")?.takeIf { it.isNotBlank() }
+/**
+ * 从 Cookie 字符串中提取指定 key 的值
+ * "laravel_session=xxx; XSRF-TOKEN=yyy" → extractCookieValue("laravel_session") = "xxx"
+ */
+private fun String.extractCookieValue(key: String): String? {
+    val pattern = Regex("""${Regex.escape(key)}\s*=\s*([^;]+)""", RegexOption.IGNORE_CASE)
+    return pattern.find(this)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+}

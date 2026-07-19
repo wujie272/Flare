@@ -67,6 +67,7 @@ public enum class UiIcon {
     Fanbox,
     Cbart,
     Toutiao,
+    Zhihu,
     Eye,
 }
 
@@ -123,6 +124,7 @@ public val TabPickerUiIcons: List<UiIcon> =
         UiIcon.Info,
         UiIcon.Eye,
         UiIcon.Toutiao,
+        UiIcon.Zhihu,
         UiIcon.Pin,
         UiIcon.Check,
         UiIcon.UnFavourite,

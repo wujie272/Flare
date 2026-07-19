@@ -108,6 +108,7 @@ public fun UiIcon.toImageVector(): ImageVector =
         UiIcon.Fanbox -> FontAwesomeIcons.Brands.Pixiv
         UiIcon.Cbart -> FontAwesomeIcons.Solid.Eye
         UiIcon.Toutiao -> FontAwesomeIcons.Solid.Newspaper
+        UiIcon.Zhihu -> FontAwesomeIcons.Solid.Newspaper
         UiIcon.Nostr -> FontAwesomeIcons.Brands.Nostr
         UiIcon.Twitter -> FontAwesomeIcons.Brands.Twitter
         UiIcon.X -> FontAwesomeIcons.Brands.XTwitter

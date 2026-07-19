@@ -143,6 +143,7 @@ dependencies {
     implementation(projects.social.pixiv)
     implementation(projects.social.cbart)
     implementation(projects.social.toutiao)
+    implementation(projects.social.zhihu)
     implementation(projects.social.vvo)
     implementation(projects.social.xqt)
     implementation(projects.feature.login)

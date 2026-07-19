@@ -28,6 +28,7 @@ public val PlatformType.brandIcon: ImageVector
             PlatformType.Fanbox -> FontAwesomeIcons.Brands.Pixiv
         PlatformType.Cbart -> FontAwesomeIcons.Solid.Eye
         PlatformType.Toutiao -> FontAwesomeIcons.Solid.Newspaper
+        PlatformType.Zhihu -> FontAwesomeIcons.Solid.Newspaper
             PlatformType.xQt -> FontAwesomeIcons.Brands.XTwitter
             PlatformType.VVo -> FontAwesomeIcons.Brands.Weibo
         }

@@ -4,8 +4,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 public data class CbartCredential(
-    /** PHPSESSID session cookie */
-    val sessionId: String,
+    /** Laravel session cookie */
+    val laravelSession: String,
+    /** XSRF-TOKEN cookie */
+    val xsrfToken: String? = null,
     /** 用户ID */
     val userId: String? = null,
     /** 用户名（username） */
@@ -14,6 +16,4 @@ public data class CbartCredential(
     val nickName: String? = null,
     /** 头像URL */
     val avatarUrl: String? = null,
-    /** Cloudflare clearance cookie（免重复验证） */
-    val cfClearance: String? = null,
 )

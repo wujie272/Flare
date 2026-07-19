@@ -175,6 +175,9 @@ private val UiStrings.androidStringRes: Int
 
             UiStrings.Notifications -> R.string.home_tab_notifications_title
 
+            UiStrings.Announcement -> R.string.home_tab_announcement_title
+            UiStrings.LatestResource -> R.string.home_tab_latest_resource_title
+            UiStrings.PurchasedVideo -> R.string.profile_tab_purchased_video_title
             UiStrings.Discover -> R.string.home_tab_discover_title
 
             UiStrings.Me -> R.string.home_tab_me_title

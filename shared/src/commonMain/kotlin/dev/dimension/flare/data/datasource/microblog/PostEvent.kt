@@ -21,6 +21,9 @@ import dev.dimension.flare.ui.model.mapper.vvoLikeComment
 import dev.dimension.flare.ui.model.mapper.xqtBookmark
 import dev.dimension.flare.ui.model.mapper.xqtLike
 import dev.dimension.flare.ui.model.mapper.xqtRetweet
+import dev.dimension.flare.ui.model.mapper.zhihuVoteUp
+import dev.dimension.flare.ui.model.mapper.zhihuBookmark
+import dev.dimension.flare.ui.model.mapper.cbartFavourite
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 import kotlin.native.HiddenFromObjC
@@ -472,6 +475,75 @@ public sealed interface PostEvent {
                     accountKey = accountKey,
                 )
         }
+    }
+
+    @Serializable
+    public sealed interface Cbart : PostEvent {
+        @Serializable
+        public data class Favourite(
+            public override val postKey: MicroBlogKey,
+            public val favourited: Boolean,
+            public val count: Long = 0,
+            public val accountKey: MicroBlogKey,
+        ) : Cbart,
+            UpdatePostActionMenuEvent {
+            public override fun nextActionMenu(): ActionMenu.Item =
+                ActionMenu.cbartFavourite(
+                    statusKey = postKey,
+                    favourited = !favourited,
+                    count = (count + if (!favourited) 1 else -1).coerceAtLeast(0),
+                    accountKey = accountKey,
+                )
+        }
+
+        @Serializable
+        public data class Follow(
+            public override val postKey: MicroBlogKey,
+            public val following: Boolean,
+            public val accountKey: MicroBlogKey,
+        ) : Cbart
+    }
+
+    @Serializable
+    public sealed interface Zhihu : PostEvent {
+        @Serializable
+        public data class VoteUp(
+            public override val postKey: MicroBlogKey,
+            public val voted: Boolean,
+            public val count: Long = 0,
+            public val accountKey: MicroBlogKey,
+        ) : Zhihu,
+            UpdatePostActionMenuEvent {
+            public override fun nextActionMenu(): ActionMenu.Item =
+                ActionMenu.zhihuVoteUp(
+                    statusKey = postKey,
+                    voted = !voted,
+                    count = (count + if (!voted) 1 else -1).coerceAtLeast(0),
+                    accountKey = accountKey,
+                )
+        }
+
+        @Serializable
+        public data class Bookmark(
+            public override val postKey: MicroBlogKey,
+            public val bookmarked: Boolean,
+            public val accountKey: MicroBlogKey,
+        ) : Zhihu,
+            UpdatePostActionMenuEvent {
+            public override fun nextActionMenu(): ActionMenu.Item =
+                ActionMenu.zhihuBookmark(
+                    statusKey = postKey,
+                    bookmarked = !bookmarked,
+                    accountKey = accountKey,
+                )
+        }
+
+        @Serializable
+        public data class Follow(
+            public override val postKey: MicroBlogKey,
+            public val following: Boolean,
+            public val accountKey: MicroBlogKey,
+        ) : Zhihu
     }
 }
 

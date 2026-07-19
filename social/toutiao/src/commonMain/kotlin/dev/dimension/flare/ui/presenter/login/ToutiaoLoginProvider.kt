@@ -24,7 +24,11 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.firstOrNull
 
 private const val LOGIN_ACTION = "login"
-private const val TOUTIAO_LOGIN_URL = "https://www.toutiao.com/"
+// 用 /user/ 页面，未登录会自动跳转登录页
+// 首页在 WebView 里会跳到 snssdk143:// 私有 scheme
+// 用移动版 m.toutiao.com，WebView 友好度更高
+// PC 版首页会检测 WebView 环境并跳到 snssdk143:// 私有 scheme
+private const val TOUTIAO_LOGIN_URL = "https://m.toutiao.com/"
 
 public data object ToutiaoLoginProvider : LoginPlatformProvider {
     override val platformType: PlatformType = PlatformType.Toutiao

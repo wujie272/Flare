@@ -22,6 +22,7 @@ public enum class PlatformType {
     Fanbox,
     Cbart,
     Toutiao,
+    Zhihu,
 }
 
 @Immutable

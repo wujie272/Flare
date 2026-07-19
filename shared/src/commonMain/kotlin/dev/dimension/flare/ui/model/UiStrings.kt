@@ -60,6 +60,9 @@ public enum class UiStrings {
     PixivPrivateBookmarks,
     BlueskyFixDelegationScopes,
     PixivPrivateFavourites,
+    Announcement,
+    LatestResource,
+    PurchasedVideo,
 }
 
 public fun UiStrings.asText(): UiText = UiText.Localized(this)

@@ -1,164 +1,497 @@
 package dev.dimension.flare.data.network.cbart.api
 
 import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.Serializable
 
-// ==================== 通用响应 ====================
 
+/**
+ * 这个 API 的 data 字段在无结果时返回 []（空数组），
+ * 有结果时返回 {...}（对象），所以不能用 @Serializable 直接映射。
+ * 改为 JsonElement 后手动解析。
+ */
+internal val apiJson = Json { ignoreUnknownKeys = true; isLenient = true }
+
+// ==================== 通用响应包装 ====================
+
+/**
+ * Laravel API 统一响应格式：
+ * {code: 200, info: "", data: {...}}
+ */
 @Serializable
 internal data class CbartApiResponse<T>(
-    val success: Int? = null,
+    val code: Int,
+    val info: String = "",
     val data: T? = null,
-    val msg: String? = null,
-    @SerialName("api_load_completed")
-    val apiLoadCompleted: Int? = null,
-    @SerialName("amIInTheme")
-    val amIInTheme: Int? = null,
 )
 
 @Serializable
 internal data class CbartSimpleResponse(
-    val success: Int? = null,
-    val msg: String? = null,
-)
-
-// ==================== 统计排行 ====================
-
-@Serializable
-internal data class CbartStatsResponse(
-    val success: Int? = null,
-    val stats: List<CbartStatsItem>? = null,
-    @SerialName("api_load_completed")
-    val apiLoadCompleted: Int? = null,
+    val code: Int = 200,
+    val info: String = "",
 )
 
 @Serializable
-internal data class CbartStatsItem(
-    val uid: String,
-    val username: String? = null,
-    @SerialName("nick_name")
-    val nickName: String? = null,
-    val avatar: String? = null,
-    @SerialName("total_post")
-    val totalPost: String? = null,
-    @SerialName("total_earned")
-    val totalEarned: String? = null,
-    @SerialName("follower_num")
-    val followerNum: String? = null,
-    val hot: String? = null,
-    val rank: Int? = null,
-    @SerialName("rank_str")
-    val rankStr: String? = null,
-    val studio: CbartStudio? = null,
+internal data class CbartGenericResponse(
+    val message: String? = null,
+)
+
+// ==================== 内容列表 (Content) ====================
+
+@Serializable
+internal data class CbartContentListResponse(
+    val code: Int,
+    val info: String = "",
+    @SerialName("data")
+    private val rawData: JsonElement? = null,
+) {
+    val data: CbartContentListData?
+        get() = (rawData as? JsonObject)?.let { apiJson.decodeFromJsonElement(it) }
+}
+
+@Serializable
+internal data class CbartContentListData(
+    val contents: List<CbartContentItem> = emptyList(),
 )
 
 @Serializable
-internal data class CbartStudio(
-    val id: String? = null,
-    val uid: String? = null,
+internal data class CbartContentItem(
+    val id: Long,
+    val cid: Long? = null,
+    val vid: String? = null,
+    @SerialName("live_id")
+    val liveId: Long? = null,
+    val title: String? = null,
+    val content: String? = null,
+    val price: Int? = null,
+    @SerialName("price_diamond")
+    val priceDiamond: Int? = null,
+    @SerialName("purchased_num")
+    val purchasedNum: String? = null,
+    @SerialName("player_showed_num")
+    val playerShowedNum: Int? = null,
+    @SerialName("page_loaded_num")
+    val pageLoadedNum: Int? = null,
+    @SerialName("storage_life")
+    val storageLife: String? = null,
+    val posttime: String? = null,
+    val updatetime: String? = null,
+    val uid: Long? = null,
+    val inbox: Int? = null,
+    @SerialName("replyNum")
+    val replyNum: Int? = null,
+    @SerialName("fav_num")
+    val favNum: Int? = null,
+    @SerialName("hasAttachment")
+    val hasAttachment: Int? = null,
+    val docs: String? = null,
+    @SerialName("extra_text1")
+    val extraText1: String? = null,
+    @SerialName("extra_text2")
+    val extraText2: String? = null,
+    @SerialName("is_original")
+    val isOriginal: Int? = null,
+    @SerialName("is_public")
+    val isPublic: Int? = null,
+    @SerialName("is_featured")
+    val isFeatured: Int? = null,
+    @SerialName("is_discount")
+    val isDiscount: Int? = null,
+    @SerialName("is_archived")
+    val isArchived: Int? = null,
+    @SerialName("is_user_blocked")
+    val isUserBlocked: Boolean? = null,
+    val path: String? = null,
+    val mPath: String? = null,
+    @SerialName("image_width")
+    val imageWidth: Int? = null,
+    @SerialName("image_height")
+    val imageHeight: Int? = null,
+    val images: List<CbartContentImage>? = null,
+    val tiers: List<CbartTierRef>? = null,
+    @SerialName("tier_id_arr")
+    val tierIdArr: List<Long>? = null,
+)
+
+@Serializable
+internal data class CbartContentImage(
+    val id: Long,
+    val path: String,
+    @SerialName("image_width")
+    val imageWidth: Int? = null,
+    @SerialName("image_height")
+    val imageHeight: Int? = null,
+    val mPath: String? = null,
+    val mobPath: String? = null,
+    val orgPath: String? = null,
+)
+
+@Serializable
+internal data class CbartTierRef(
+    val id: Long? = null,
+    val name: String? = null,
+)
+
+// ==================== 工作室列表 (Studio) ====================
+
+@Serializable
+internal data class CbartStudioListResponse(
+    val code: Int,
+    val info: String = "",
+    @SerialName("data")
+    private val rawData: JsonElement? = null,
+) {
+    val data: CbartStudioListData?
+        get() = (rawData as? JsonObject)?.let { apiJson.decodeFromJsonElement(it) }
+}
+
+@Serializable
+internal data class CbartStudioListData(
+    @SerialName("total_num")
+    val totalNum: Int? = null,
+    val contents: List<CbartStudioItem> = emptyList(),
+    val currency: JsonElement? = null,
+    @SerialName("saved_filters")
+    val savedFilters: JsonElement? = null,
+)
+
+@Serializable
+internal data class CbartStudioItem(
+    val id: Long,
+    val uid: Long,
     val name: String? = null,
     val description: String? = null,
     @SerialName("cover_picture")
     val coverPicture: String? = null,
     @SerialName("supporter_num")
-    val supporterNum: String? = null,
-)
-
-// ==================== 收藏 ====================
-
-@Serializable
-internal data class CbartFavoriteResponse(
-    val success: Int? = null,
-    val msg: String? = null,
-    /** 收藏状态：1=已收藏, 0=未收藏 */
-    val favorite: Int? = null,
-)
-
-// ==================== 标签 ====================
-
-@Serializable
-internal data class CbartTagListResponse(
-    val success: Int? = null,
-    val data: List<CbartTag>? = null,
+    val supporterNum: Int? = null,
+    val inbox: Int? = null,
+    @SerialName("is_public")
+    val isPublic: Int? = null,
+    val updatetime: String? = null,
+    val posttime: String? = null,
+    @SerialName("uof_posttime")
+    val uofPosttime: String? = null,
+    @SerialName("follower_num")
+    val followerNum: Int? = null,
+    val owner: CbartUser? = null,
+    @SerialName("cover_picture_url")
+    val coverPictureUrl: String? = null,
+    @SerialName("is_followed")
+    val isFollowed: Boolean? = null,
+    @SerialName("content_num")
+    val contentNum: CbartContentCount? = null,
 )
 
 @Serializable
-internal data class CbartTag(
-    val id: String? = null,
-    val name: String? = null,
-    @SerialName("tag_type")
-    val tagType: String? = null,
-    val count: String? = null,
+internal data class CbartContentCount(
+    val tier: Int? = null,
+    val video: Int? = null,
+    val album: Int? = null,
+    val fiction: Int? = null,
+    val blog: Int? = null,
 )
 
-// ==================== 视频 ====================
+// ==================== 用户 ====================
 
 @Serializable
-internal data class CbartVideoResponse(
-    val success: Int? = null,
-    val url: String? = null,
-    val type: String? = null,
-    val msg: String? = null,
+internal data class CbartUser(
+    val uid: Long,
+    val username: String? = null,
+    val lang: String? = null,
+    @SerialName("email_verified")
+    val emailVerified: Int? = null,
+    @SerialName("nick_name")
+    val nickName: String? = null,
+    val description: String? = null,
+    val avatar: String? = null,
+    @SerialName("avatar_url")
+    val avatarUrl: String? = null,
+    @SerialName("display_name")
+    val displayName: String? = null,
+    val role: Int? = null,
+    val money: Int? = null,
+    val diamond: Int? = null,
+    @SerialName("follower_num")
+    val followerNum: Int? = null,
+    @SerialName("is_producer")
+    val isProducer: Int? = null,
+    @SerialName("is_performer")
+    val isPerformer: Int? = null,
+    @SerialName("vip_end_time")
+    val vipEndTime: String? = null,
 )
 
-// ==================== 内容条目（从首页 HTML / 用户主页解析） ====================
+// ==================== 博客列表 (Blog) ====================
 
-internal data class CbartApiContentItem(
-    val id: String,
-    val type: CbartApiContentType,
-    val coverImage: String?,
-    val title: String?,
-    val username: String?,
-    val uid: String?,
-    val avatarUrl: String?,
-    val priceDiamond: Int?,
-    val priceGold: Int?,
-    val isFree: Boolean,
-    val likeCount: Int?,
-    val commentCount: Int?,
-)
-
-internal enum class CbartApiContentType {
-    Video, Picture, Fiction, Unknown,
+@Serializable
+internal data class CbartBlogListResponse(
+    val code: Int,
+    val info: String = "",
+    @SerialName("data")
+    private val rawData: JsonElement? = null,
+) {
+    val data: CbartBlogListData?
+        get() = (rawData as? JsonObject)?.let { apiJson.decodeFromJsonElement(it) }
 }
 
-// ==================== 用户设置/信息 ====================
+@Serializable
+internal data class CbartBlogListData(
+    @SerialName("total_num")
+    val totalNum: Int? = null,
+    @SerialName("total_public_num")
+    val totalPublicNum: Int? = null,
+    @SerialName("content_num")
+    val contentNum: Int? = null,
+    val contents: List<CbartBlogItem> = emptyList(),
+)
 
 @Serializable
-internal data class CbartSettingResponse(
-    val success: Int? = null,
-    val data: CbartSettingData? = null,
+internal data class CbartBlogItem(
+    val id: Long,
+    val uid: Long? = null,
+    @SerialName("cover_picture_id")
+    val coverPictureId: Long? = null,
+    val title: String? = null,
+    @SerialName("studio_id")
+    val studioId: Long? = null,
+    @SerialName("studio_tier_id")
+    val studioTierId: Long? = null,
+    @SerialName("content_id")
+    val contentId: Long? = null,
+    @SerialName("content_type")
+    val contentType: String? = null,
+    val inbox: Int? = null,
+    val posttime: String? = null,
+    val locked: Int? = null,
+    val comment: List<String>? = null,
+    @SerialName("content_short")
+    val contentShort: String? = null,
+    @SerialName("cover_picture")
+    val coverPicture: List<String>? = null,
+    @SerialName("content_title")
+    val contentTitle: String? = null,
+    @SerialName("content_price_gold")
+    val contentPriceGold: Int? = null,
+    @SerialName("content_price_diamond")
+    val contentPriceDiamond: Int? = null,
+    @SerialName("content_locked")
+    val contentLocked: Int? = null,
+)
+
+// ==================== Tier 列表 ====================
+
+@Serializable
+internal data class CbartTierListResponse(
+    val code: Int,
+    val info: String = "",
+    @SerialName("data")
+    private val rawData: JsonElement? = null,
+) {
+    val data: CbartTierListData?
+        get() = (rawData as? JsonObject)?.let { apiJson.decodeFromJsonElement(it) }
+}
+
+@Serializable
+internal data class CbartTierListData(
+    @SerialName("is_my_studio")
+    val isMyStudio: Boolean? = null,
+    val title: String? = null,
+    val studio: CbartTierStudio? = null,
+    val contents: List<CbartTierItem> = emptyList(),
+    val owner: CbartUser? = null,
 )
 
 @Serializable
-internal data class CbartSettingData(
-    @SerialName("invite_code")
-    val inviteCode: String? = null,
-    @SerialName("customer_service_info")
-    val customerServiceInfo: String? = null,
+internal data class CbartTierStudio(
+    val id: Long? = null,
+    val uid: Long? = null,
+    val name: String? = null,
+    val description: String? = null,
 )
-
-// ==================== 内容列表（首页/用户页 HTML 解析产物） ====================
-
-internal data class CbartContentItem(
-    val id: String,
-    val type: CbartApiContentType,
-    val coverImage: String?,
-    val thumbnailImages: List<String>,
-    val title: String?,
-    val username: String?,
-    val uid: String?,
-    val avatarUrl: String?,
-    val priceDiamond: Int?,
-    val priceGold: Int?,
-    val isFree: Boolean,
-)
-
-// ==================== 用户关注操作 ====================
 
 @Serializable
-internal data class CbartFollowResponse(
-    val success: Int? = null,
-    val msg: String? = null,
+internal data class CbartTierItem(
+    val id: Long,
+    @SerialName("studio_id")
+    val studioId: Long? = null,
+    val uid: Long? = null,
+    val name: String? = null,
+    val description: String? = null,
+    val price: Int? = null,
+    @SerialName("supporter_num")
+    val supporterNum: Int? = null,
+    @SerialName("cover_picture")
+    val coverPicture: String? = null,
+    val locked: Int? = null,
+    @SerialName("num_arr")
+    val numArr: CbartContentCount? = null,
 )
+
+// ==================== 消息列表 ====================
+
+@Serializable
+internal data class CbartMessageListResponse(
+    val code: Int,
+    val info: String = "",
+    @SerialName("data")
+    private val rawData: JsonElement? = null,
+) {
+    val data: CbartMessageListData?
+        get() = (rawData as? JsonObject)?.let { apiJson.decodeFromJsonElement(it) }
+}
+
+@Serializable
+internal data class CbartMessageListData(
+    val contents: List<CbartMessageItem> = emptyList(),
+)
+
+@Serializable
+internal data class CbartMessageItem(
+    val uid: Long,
+    val username: String? = null,
+    @SerialName("nick_name")
+    val nickName: String? = null,
+    val title: String? = null,
+    val content: String? = null,
+    val viewed: Int? = null,
+    @SerialName("post_time")
+    val postTime: String? = null,
+    val user: CbartUser? = null,
+)
+
+// ==================== 文章列表 ====================
+
+@Serializable
+internal data class CbartArticleListResponse(
+    val code: Int? = null,
+    val info: String? = null,
+    @SerialName("data")
+    private val rawData: JsonElement? = null,
+) {
+    val data: CbartArticleListData?
+        get() = (rawData as? JsonObject)?.let { apiJson.decodeFromJsonElement(it) }
+}
+
+@Serializable
+internal data class CbartArticleListData(
+    val contents: List<CbartArticleItem>? = null,
+)
+
+@Serializable
+internal data class CbartArticleItem(
+    val id: Long? = null,
+    val cid: Long? = null,
+    val uid: Long? = null,
+    val owner: Long? = null,
+    val posttime: String? = null,
+    val updatetime: String? = null,
+    val title: String? = null,
+    val content: String? = null,
+    val tag: String? = null,
+    val views: Int? = null,
+    val inbox: Int? = null,
+    val hasAttachment: Int? = null,
+    val allowReply: Int? = null,
+    val replyNum: Int? = null,
+    val docs: String? = null,
+    val url: String? = null,
+    val is_public: Int? = null,
+    val has_en: Int? = null,
+    val has_jp: Int? = null,
+    val cn_name: String? = null,
+    val column_id: Long? = null,
+    val username: String? = null,
+    val content_short: String? = null,
+    val image: String? = null,
+    val image_path: String? = null,
+)
+
+// ==================== 视频列表 (Video) ====================
+
+@Serializable
+internal data class CbartVideoListResponse(
+    val code: Int,
+    val info: String = "",
+    @SerialName("data")
+    val data: CbartVideoListData? = null,
+)
+
+@Serializable
+internal data class CbartVideoListData(
+    @SerialName("total_num")
+    val totalNum: Int? = null,
+    val contents: List<CbartVideoItem> = emptyList(),
+    @SerialName("time_spent")
+    val timeSpent: Int? = null,
+)
+
+@Serializable
+internal data class CbartVideoItem(
+    val id: Long,
+    val title: String? = null,
+    val price: Int? = null,
+    @SerialName("price_diamond")
+    val priceDiamond: Int? = null,
+    @SerialName("purchased_num")
+    val purchasedNum: String? = null,
+    val posttime: String? = null,
+    val releasetime: String? = null,
+    val updatenum: Int? = null,
+    val uid: Long? = null,
+    val inbox: Int? = null,
+    @SerialName("fav_num")
+    val favNum: Int? = null,
+    @SerialName("extra_text2")
+    val extraText2: String? = null,
+    @SerialName("is_original")
+    val isOriginal: Int? = null,
+    @SerialName("has_repo")
+    val hasRepo: Int? = null,
+    @SerialName("has_preview")
+    val hasPreview: Int? = null,
+    @SerialName("has_tier")
+    val hasTier: Int? = null,
+    @SerialName("can_watch_online")
+    val canWatchOnline: Int? = null,
+    @SerialName("is_featured")
+    val isFeatured: Int? = null,
+    @SerialName("is_discount")
+    val isDiscount: Int? = null,
+    @SerialName("is_archived")
+    val isArchived: Int? = null,
+    @SerialName("is_user_blocked")
+    val isUserBlocked: Boolean? = null,
+    @SerialName("image_width")
+    val imageWidth: Int? = null,
+    @SerialName("image_height")
+    val imageHeight: Int? = null,
+    val images: List<CbartContentImage>? = null,
+)
+
+// ==================== 内容类型 ====================
+
+/**
+ * 为 UI 展示区分内容类型
+ */
+internal enum class CbartApiContentType(val label: String) {
+    Video(" Video"),
+    Picture(" Gallery"),
+    Fiction("📖 Fiction"),
+    Blog("📝 Blog"),
+    Unknown("❓");
+
+    companion object {
+        fun fromContentType(ct: String?): CbartApiContentType = when {
+            ct == null || ct == "video" -> Video
+            ct == "album" || ct == "picture" -> Picture
+            ct == "fiction" -> Fiction
+            ct == "blog" -> Blog
+            else -> Unknown
+        }
+    }
+}

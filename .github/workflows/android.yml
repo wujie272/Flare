@@ -10,6 +10,10 @@ on:
         options:
           - debug
           - release
+      bump_version:
+        description: 'Bump versionCode (CI run_number) & versionName (ref_name)'
+        default: false
+        type: boolean
 
 env:
   GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx8g -Dorg.gradle.daemon=true -Dkotlin.daemon.jvmargs=-Xmx4g
@@ -55,8 +59,8 @@ jobs:
 
       - name: Build with Gradle
         env:
-          BUILD_NUMBER: ${{github.run_number}}
-          BUILD_VERSION: ${{github.ref_name}}
+          BUILD_NUMBER: ${{ github.event.inputs.bump_version == 'true' && github.run_number || '' }}
+          BUILD_VERSION: ${{ github.event.inputs.bump_version == 'true' && github.ref_name || '' }}
         run: |
           if [ "${{ github.event.inputs.build_type }}" = "release" ]; then
             ./gradlew :app:assembleRelease --stacktrace --parallel --build-cache --configuration-cache
@@ -67,7 +71,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Flare-${{ github.event.inputs.build_type }}-${{ github.run_number }}
+          name: Flare-${{ github.event.inputs.build_type }}
           path: |
             app/build/outputs/apk/**/*.apk
             app/build/outputs/bundle/**/*.aab

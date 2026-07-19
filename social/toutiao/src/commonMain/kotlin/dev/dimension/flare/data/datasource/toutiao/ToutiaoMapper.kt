@@ -24,6 +24,13 @@ internal fun ToutiaoHotItem.toUiTimelineItem(
     accountKey: MicroBlogKey,
     rank: Int,
 ): UiTimelineV2 {
+    /**
+     * 今日头条 API 返回的 url 可能是 snssdk143:// 等私有的字节系 App scheme，
+     * WebView 不认识。用 clusterId 拼成标准网页 URL。
+     */
+    val webUrl = url.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+        ?: "https://www.toutiao.com/article/$clusterId/"
+
     val hotValueFormatted = formatHotValue(hotValue)
 
     val contentText = buildString {
@@ -60,7 +67,7 @@ internal fun ToutiaoHotItem.toUiTimelineItem(
                 media = UiMedia.Image(url = imageUrl, previewUrl = imageUrl, description = title, height = 0f, width = 0f, sensitive = false),
                 title = title,
                 description = "🔥 $hotValueFormatted",
-                url = url,
+                url = webUrl,
             )
         } else null,
         createdAt = Instant.fromEpochMilliseconds(0).toUi(),
@@ -69,7 +76,7 @@ internal fun ToutiaoHotItem.toUiTimelineItem(
         visibility = null,
         replyToHandle = null,
         references = persistentListOf(),
-        clickEvent = ClickEvent.Deeplink(url = url),
+        clickEvent = ClickEvent.Deeplink(url = webUrl),
         mediaClickPolicy = UiTimelineV2.Post.MediaClickPolicy.OpenStatusMedia,
         accountType = AccountType.Specific(accountKey),
         itemKey = "tt_hot_$clusterId",

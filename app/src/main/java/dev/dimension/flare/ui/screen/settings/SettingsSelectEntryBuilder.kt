@@ -59,6 +59,9 @@ internal fun EntryProviderScope<NavKey>.settingsSelectEntryBuilder(
             toTranslationConfig = {
                 navigate(Route.Settings.TranslationConfig)
             },
+            toAppLogging = {
+                navigate(Route.Settings.AppLogging)
+            },
             onBack = onBack,
         )
     }
