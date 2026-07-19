@@ -116,7 +116,7 @@ internal class CbartDataSource(
 
     override val shortcuts: ImmutableList<ShortcutSpec> by lazy {
         persistentListOf(
-            ShortcutSpec(title = UiStrings.Studio, icon = UiIcon.List, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.discoverTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
+            ShortcutSpec(title = dev.dimension.flare.ui.model.UiText.Raw("工作室"), icon = UiIcon.List, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.discoverTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
             ShortcutSpec(title = UiStrings.Featured, icon = UiIcon.Featured, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.hotTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
             ShortcutSpec(title = UiStrings.LatestResource, icon = UiIcon.Eye, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.latestResourceTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),
             ShortcutSpec(title = UiStrings.Announcement, icon = UiIcon.Info, target = ShortcutSpec.Target.Timeline(CbartPlatformSpec.announcementTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)))),

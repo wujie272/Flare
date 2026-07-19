@@ -40,7 +40,7 @@ public data object CbartPlatformSpec :
     internal val discoverTimelineSpec =
         TimelineSpec(
             id = "cbart.studios",
-            title = UiStrings.Studio,
+            title = dev.dimension.flare.ui.model.UiText.Raw("工作室"),
             icon = UiIcon.List.asType(),
             serializer = TimelineSpec.AccountBasedData.serializer(),
             targetId = { it.accountKey.toString() },

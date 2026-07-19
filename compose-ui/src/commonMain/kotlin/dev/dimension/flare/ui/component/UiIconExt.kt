@@ -114,5 +114,5 @@ public fun UiIcon.toImageVector(): ImageVector =
         UiIcon.X -> FontAwesomeIcons.Brands.XTwitter
         UiIcon.Weibo -> FontAwesomeIcons.Brands.Weibo
         UiIcon.Translate -> FontAwesomeIcons.Solid.Language
-        UiIcon.Clock -> FontAwesomeIcons.Solid.Info
+        UiIcon.Clock -> FontAwesomeIcons.Solid.CircleInfo
     }
