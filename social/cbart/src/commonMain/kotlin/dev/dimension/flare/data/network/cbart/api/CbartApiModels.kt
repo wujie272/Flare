@@ -475,6 +475,160 @@ internal data class CbartVideoItem(
 
 // ==================== 内容类型 ====================
 
+// ==================== 视频详情 ====================
+
+/**
+ * 从 /video/detail?id=xxx 页面 HTML 中 videoDetailJSON.list[0] 提取的完整视频详情
+ */
+@Serializable
+internal data class CbartVideoDetailItem(
+    val id: Long,
+    val cid: Long? = null,
+    val vid: String? = null,
+    @SerialName("live_id")
+    val liveId: Long? = null,
+    @SerialName("user_script_id")
+    val userScriptId: Long? = null,
+    val title: String? = null,
+    val content: String? = null,
+    @SerialName("supplyment_content")
+    val supplymentContent: String? = null,
+    val price: Int? = null,
+    @SerialName("price_diamond")
+    val priceDiamond: Int? = null,
+    @SerialName("purchased_num")
+    val purchasedNum: String? = null,
+    @SerialName("player_showed_num")
+    val playerShowedNum: Int? = null,
+    @SerialName("page_loaded_num")
+    val pageLoadedNum: Int? = null,
+    @SerialName("storage_life")
+    val storageLife: String? = null,
+    val posttime: String? = null,
+    val updatetime: String? = null,
+    val releasetime: String? = null,
+    val updatenum: Int? = null,
+    val uid: Long? = null,
+    val inbox: Int? = null,
+    @SerialName("replyNum")
+    val replyNum: Int? = null,
+    @SerialName("fav_num")
+    val favNum: Int? = null,
+    @SerialName("hasAttachment")
+    val hasAttachment: Int? = null,
+    val docs: String? = null,
+    @SerialName("extra_text1")
+    val extraText1: String? = null,
+    @SerialName("extra_text2")
+    val extraText2: String? = null,
+    @SerialName("duration_s")
+    val durationS: Int? = null,
+    val size: Long? = null,
+    @SerialName("play_only")
+    val playOnly: Int? = null,
+    @SerialName("is_earn_more_exp")
+    val isEarnMoreExp: Int? = null,
+    @SerialName("is_original")
+    val isOriginal: Int? = null,
+    @SerialName("has_repo")
+    val hasRepo: Int? = null,
+    @SerialName("has_cn_repo")
+    val hasCnRepo: Int? = null,
+    @SerialName("has_us_repo")
+    val hasUsRepo: Int? = null,
+    @SerialName("has_preview")
+    val hasPreview: Int? = null,
+    @SerialName("has_cn_oss")
+    val hasCnOss: Int? = null,
+    @SerialName("has_us_oss")
+    val hasUsOss: Int? = null,
+    @SerialName("has_playlist")
+    val hasPlaylist: Int? = null,
+    @SerialName("has_tier")
+    val hasTier: Int? = null,
+    @SerialName("repo_download_sent")
+    val repoDownloadSent: Int? = null,
+    @SerialName("is_public")
+    val isPublic: Int? = null,
+    @SerialName("can_watch_online")
+    val canWatchOnline: Int? = null,
+    @SerialName("has_en")
+    val hasEn: Int? = null,
+    @SerialName("has_jp")
+    val hasJp: Int? = null,
+    @SerialName("is_featured")
+    val isFeatured: Int? = null,
+    @SerialName("is_discount")
+    val isDiscount: Int? = null,
+    @SerialName("is_archived")
+    val isArchived: Int? = null,
+    val watermarked: Int? = null,
+    @SerialName("this_has_loop")
+    val thisHasLoop: Int? = null,
+    @SerialName("is_user_blocked")
+    val isUserBlocked: Boolean? = null,
+    @SerialName("has_wangpan")
+    val hasWangpan: Int? = null,
+    val path: String? = null,
+    val mPath: String? = null,
+    @SerialName("image_width")
+    val imageWidth: Int? = null,
+    @SerialName("image_height")
+    val imageHeight: Int? = null,
+    val images: List<CbartContentImage>? = null,
+    @SerialName("is_fav")
+    val isFav: Boolean? = null,
+    val comment: List<CbartVideoComment>? = null,
+    val owner: CbartVideoOwner? = null,
+)
+
+@Serializable
+internal data class CbartVideoOwner(
+    val uid: Long,
+    val username: String? = null,
+    @SerialName("nick_name")
+    val nickName: String? = null,
+    @SerialName("display_name")
+    val displayName: String? = null,
+    val avatar: String? = null,
+    @SerialName("avatar_url")
+    val avatarUrl: String? = null,
+    @SerialName("is_followed")
+    val isFollowed: Boolean? = null,
+    @SerialName("follower_num")
+    val followerNum: Int? = null,
+)
+
+@Serializable
+internal data class CbartVideoComment(
+    val id: Long? = null,
+    val uid: Long? = null,
+    val username: String? = null,
+    @SerialName("nick_name")
+    val nickName: String? = null,
+    @SerialName("avatar_url")
+    val avatarUrl: String? = null,
+    val content: String? = null,
+    val posttime: String? = null,
+    @SerialName("reply_num")
+    val replyNum: Int? = null,
+    val inbox: Int? = null,
+)
+
+// ==================== 视频评论提交响应 ====================
+
+@Serializable
+internal data class CbartVideoCommentAddResponse(
+    val code: Int? = null,
+    val info: String? = null,
+    val data: CbartVideoCommentAddData? = null,
+)
+
+@Serializable
+internal data class CbartVideoCommentAddData(
+    val comment: CbartVideoComment? = null,
+)
+
 /**
  * 为 UI 展示区分内容类型
  */

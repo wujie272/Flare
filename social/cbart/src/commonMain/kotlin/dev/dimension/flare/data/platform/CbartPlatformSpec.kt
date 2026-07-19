@@ -114,7 +114,7 @@ public data object CbartPlatformSpec :
     override fun deepLinks(accountKey: MicroBlogKey): ImmutableList<PlatformDeepLink<*>> =
         persistentListOf(
             PlatformDeepLink(
-                uriPattern = "https://cbart.net/picture/detail?id={id}",
+                uriPattern = "https://www.linzijiang.app/video/detail?id={id}",
                 serializer = CbartPicDeepLink.serializer(),
                 callback = { data ->
                     DeeplinkRoute.Gallery.Detail(

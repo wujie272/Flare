@@ -86,7 +86,7 @@ internal fun CbartContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
         visibility = null,
         replyToHandle = null,
         references = persistentListOf(),
-        clickEvent = ClickEvent.Deeplink(url = "https://cbart.net/picture/detail?id=$id"),
+        clickEvent = ClickEvent.Deeplink(url = "https://www.linzijiang.app/video/detail?id=$id"),
         mediaClickPolicy = UiTimelineV2.Post.MediaClickPolicy.OpenStatusMedia,
         accountType = AccountType.Specific(accountKey),
         itemKey = "cbart_${id}",
@@ -319,7 +319,7 @@ internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
         visibility = null,
         replyToHandle = null,
         references = persistentListOf(),
-        clickEvent = ClickEvent.Deeplink(url = "https://cbart.net/picture/detail?id=$id"),
+        clickEvent = ClickEvent.Deeplink(url = "https://www.linzijiang.app/video/detail?id=$id"),
         mediaClickPolicy = UiTimelineV2.Post.MediaClickPolicy.OpenStatusMedia,
         accountType = AccountType.Specific(accountKey),
         itemKey = "cbart_video_${id}",
@@ -374,15 +374,7 @@ internal fun CbartMessageItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
  * 尝试解析 "2026-07-09 23:19:16" 格式的时间戳
  * 转换为 ISO-8601 格式后用 Instant.parse()
  */
-private fun tryParseDate(dateStr: String): Instant? {
-    return try {
-        // "2026-07-09 23:19:16" → "2026-07-09T23:19:16Z"
-        val iso = dateStr.replace(" ", "T") + "Z"
-        Instant.parse(iso)
-    } catch (_: Exception) {
-        null
-    }
-}
+
 
 /**
  * 从 CbartStudioItem 映射到 UiProfile（用于关注列表展示）

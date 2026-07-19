@@ -116,12 +116,8 @@ internal class CbartService(
         return null
     }
 
-    /**
-     * 从个人设置页面 /profile 提取用户信息和头像 URL
-     */
     suspend fun fetchProfileInfo(): Pair<String?, String?>? {
         val html = api.fetchProfilePage() ?: return null
-        // profileJSON 中 JSON 转义了正斜杠 \/ → /，需要还原
         val avatarRegex = Regex("""avatar_url"\s*:\s*"([^"]+)"""")
         val avatarUrl = avatarRegex.find(html)?.groupValues?.get(1)?.trim()?.replace("\\/", "/")
         val nickRegex = Regex("""nick_name"\s*:\s*"([^"]+)"""")
@@ -132,10 +128,6 @@ internal class CbartService(
         return null
     }
 
-    /**
-     * 获取当前用户关注的工作室数量（= 正在关注数）
-     * 从 /studio/list 页面提取当前用户的 UID，调 API 传 followed_by_uid 获取
-     */
     suspend fun fetchFollowedStudioCount(): Int {
         val uid = fetchNumericUid() ?: return 0
         val response = api.studioList(
@@ -145,10 +137,6 @@ internal class CbartService(
         return response?.data?.totalNum ?: 0
     }
 
-    /**
-     * 获取当前用户关注的工作室列表（带分页）
-     * 返回 Pair<列表, 总数>，总数用于判断是否还有下一页
-     */
     suspend fun fetchFollowedStudios(page: Int = 1): Pair<List<CbartStudioItem>, Int> {
         val uid = fetchNumericUid() ?: return Pair(emptyList(), 0)
         val response = api.studioList(
@@ -164,25 +152,18 @@ internal class CbartService(
         return currentCredential()?.userId?.takeIf { it.isNotBlank() }
     }
 
-    /**
-     * 获取当前用户的数字 UID（用于 API 调用）
-     * 优先从首页 HTML 的 meJSON.uid 提取（meJSON 初始化后单独赋值，带真正 uid）
-     */
     suspend fun fetchNumericUid(): Long? {
         val html = api.fetchHomePage() ?: return null
-        // 优先匹配 meJSON.uid = 2186426（在 meJSON={...} 初始化之后设置的真实值）
         val meUid = Regex("""meJSON\.uid\s*=\s*(\d+)""").find(html)
         if (meUid != null) {
             val uid = meUid.groupValues[1].toLongOrNull()
             if (uid != null && uid > 0) return uid
         }
-        // 备选：profileJSON 中的 uid
         val profileHtml = api.fetchProfilePage()
         if (profileHtml != null) {
             val uidFromProfile = Regex("""profileJSON\s*=\s*\{[^}]*"uid"\s*:\s*(\d+)""").find(profileHtml)
             if (uidFromProfile != null) uidFromProfile.groupValues[1].toLongOrNull()?.let { if (it > 0) return it }
         }
-        // 备选：工作室 owner 的 uid
         val studios = fetchStudios()
         if (studios.isNotEmpty()) {
             studios.firstOrNull()?.owner?.uid?.let { if (it > 0) return it }
@@ -205,6 +186,18 @@ internal class CbartService(
     suspend fun validateSession(): Boolean = api.validateSession()
 
     suspend fun currentCredential(): CbartCredential? = credentialFlowRef.firstOrNull()
+
+    // ==================== 视频详情 ====================
+
+    suspend fun fetchVideoDetail(videoId: Long): CbartVideoDetailItem? {
+        val html = api.fetchVideoDetailPage(videoId) ?: return null
+        return parseVideoDetailFromHtml(html)
+    }
+
+    suspend fun addVideoComment(videoId: Long, content: String): Boolean {
+        val response = api.addVideoComment(videoId, content)
+        return response?.code == 200
+    }
 }
 
 internal data class CbartUserInfo(
@@ -213,3 +206,25 @@ internal data class CbartUserInfo(
     val nickName: String,
     val avatarUrl: String?,
 )
+
+/**
+ * 从 /video/detail?id=xxx 页面 HTML 中提取 videoDetailJSON.list[0] 并解析
+ */
+internal fun parseVideoDetailFromHtml(html: String): CbartVideoDetailItem? {
+    val listRegex = Regex("""videoDetailJSON\.list\s*=\s*(\[[^\]]+\])""")
+    val listMatch = listRegex.find(html) ?: return null
+    val rawJson = listMatch.groupValues[1]
+
+    val fixed = rawJson
+        .replace(Regex(",\\s*\\]"), "]")
+        .replace(Regex("(?<![\\\"\\w])true(?![\\\"\\w])"), "true")
+        .replace(Regex("(?<![\\\"\\w])false(?![\\\"\\w])"), "false")
+        .replace(Regex("(?<![\\\"\\w])null(?![\\\"\\w])"), "null")
+
+    return try {
+        val list = apiJson.decodeFromString<List<CbartVideoDetailItem>>(fixed)
+        list.firstOrNull()
+    } catch (_: Exception) {
+        null
+    }
+}

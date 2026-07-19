@@ -69,6 +69,7 @@ public enum class UiIcon {
     Toutiao,
     Zhihu,
     Eye,
+    Clock,
 }
 
 /**

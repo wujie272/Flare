@@ -37,11 +37,16 @@ import dev.dimension.flare.data.platform.CbartPlatformSpec
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
 import dev.dimension.flare.ui.model.ClickEvent
+import dev.dimension.flare.ui.model.UiMedia
+import dev.dimension.flare.ui.model.toUiImage
+import dev.dimension.flare.ui.render.toUiPlainText
 import dev.dimension.flare.ui.model.UiHashtag
 import dev.dimension.flare.ui.model.UiIcon
 import dev.dimension.flare.ui.model.UiProfile
 import dev.dimension.flare.ui.model.UiStrings
 import dev.dimension.flare.ui.model.UiTimelineV2
+import dev.dimension.flare.data.network.cbart.api.CbartVideoDetailItem
+import dev.dimension.flare.data.network.cbart.api.CbartVideoOwner
 import kotlin.time.Instant
 import dev.dimension.flare.ui.render.toUi
 import kotlinx.coroutines.flow.flowOf
@@ -116,12 +121,17 @@ internal class CbartDataSource(
     override fun galleryDetail(statusKey: MicroBlogKey): Cacheable<GalleryDetail> = Cacheable(
         fetchSource = {},
         cacheSource = {
-            flowOf(GalleryDetail(
-                orientation = GalleryOrientation.Vertical, statusKey = statusKey, accountType = AccountType.Specific(accountKey),
-                url = "https://cbart.net/picture/detail?id=${statusKey.id}", images = persistentListOf(),
-                title = "", author = null, createdAt = Instant.fromEpochMilliseconds(0).toUi(), content = null,
-                isBookmarked = false, bookmarkAction = ClickEvent.Noop, matrix = persistentListOf(),
-            ))
+            val videoId = statusKey.id.toLongOrNull()
+            if (videoId == null) {
+                flowOf(emptyGalleryDetail(statusKey))
+            } else {
+                val detail = service.fetchVideoDetail(videoId)
+                if (detail == null) {
+                    flowOf(emptyGalleryDetail(statusKey))
+                } else {
+                    flowOf(detail.toGalleryDetail(statusKey, accountKey))
+                }
+            }
         },
     )
     override fun galleryComments(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = CbartGalleryCommentsLoader(service = service, accountKey = accountKey)
@@ -184,4 +194,150 @@ internal class CbartDataSource(
     fun latestResourceTimelineLoader(): RemoteLoader<UiTimelineV2> = CbartLatestResourceTimelineLoader(service = service, accountKey = accountKey)
     fun discoverTimelineLoader(): RemoteLoader<UiTimelineV2> = CbartDiscoverTimelineLoader(service = service, accountKey = accountKey)
     fun hotTimelineLoader(): RemoteLoader<UiTimelineV2> = CbartHotTimelineLoader(service = service, accountKey = accountKey)
+
+    private fun emptyGalleryDetail(statusKey: MicroBlogKey): GalleryDetail = GalleryDetail(
+        orientation = GalleryOrientation.Vertical, statusKey = statusKey, accountType = AccountType.Specific(accountKey),
+        url = "https://www.linzijiang.app/video/detail?id=${statusKey.id}", images = persistentListOf(),
+        title = "", author = null, createdAt = Instant.fromEpochMilliseconds(0).toUi(), content = null,
+        isBookmarked = false, bookmarkAction = ClickEvent.Noop, matrix = persistentListOf(),
+    )
 }
+
+/**
+ * 将视频详情数据映射为 GalleryDetail
+ */
+internal fun CbartVideoDetailItem.toGalleryDetail(
+    statusKey: MicroBlogKey,
+    accountKey: MicroBlogKey,
+): GalleryDetail {
+    val images = images?.mapNotNull { img ->
+        val url = img.path
+        if (url.isNullOrBlank()) null
+        else UiMedia.Image(
+            url = url,
+            previewUrl = img.mPath ?: img.mobPath,
+            description = title,
+            aspectRatio = (img.imageWidth?.toFloat()?.div((img.imageHeight ?: 1).toFloat())) ?: 1f,
+            width = img.imageWidth ?: 0,
+            height = img.imageHeight ?: 0,
+        )
+    }.orEmpty().toImmutableList()
+
+    val author = owner?.toUiProfile()
+
+    val bookmarkAction = ClickEvent.event(
+        accountKey = accountKey,
+        event = dev.dimension.flare.data.datasource.microblog.PostEvent.Cbart.Favourite(
+            postKey = statusKey,
+            favourited = isFav == true,
+            count = (favNum ?: 0).toLong(),
+            accountKey = accountKey,
+        ),
+    )
+
+    val durationText = if (durationS != null && durationS > 0) {
+        val hours = durationS / 3600
+        val minutes = (durationS % 3600) / 60
+        val seconds = durationS % 60
+        if (hours > 0) "%d:%02d:%02d".format(hours, minutes, seconds)
+        else "%d:%02d".format(minutes, seconds)
+    } else ""
+
+    val sizeText = extraText2 ?: ""
+
+    val matrix = buildList {
+        if (playerShowedNum != null && playerShowedNum > 0) {
+            add(GalleryDetail.Matrix(
+                icon = UiIcon.Eye,
+                count = playerShowedNum.toLong(),
+            ))
+        }
+        if (favNum != null && favNum > 0) {
+            add(GalleryDetail.Matrix(
+                icon = UiIcon.Favourite,
+                count = favNum.toLong(),
+            ))
+        }
+        if (durationText.isNotEmpty()) {
+            add(GalleryDetail.Matrix(
+                icon = UiIcon.Clock,
+                count = 0,
+            ))
+        }
+    }.toImmutableList()
+
+    val contentText = buildString {
+        if (content != null && content.isNotBlank()) {
+            append(content)
+        }
+        if (supplymentContent != null && supplymentContent.isNotBlank()) {
+            if (isNotEmpty()) append("\n\n")
+            append(supplymentContent)
+        }
+        if (sizeText.isNotEmpty()) {
+            if (isNotEmpty()) append("\n")
+            append("📦 $sizeText")
+        }
+        if (canWatchOnline == 1) {
+            if (isNotEmpty()) append("\n")
+            append("▶️ 可在线观看")
+        }
+        if (priceDiamond != null && priceDiamond > 0) {
+            if (isNotEmpty()) append("\n")
+            append("💎 $priceDiamond")
+        }
+        if (purchasedNum != null && purchasedNum.isNotBlank()) {
+            if (isNotEmpty()) append("\n")
+            append("🛒 $purchasedNum 已购买")
+        }
+    }.takeIf { it.isNotEmpty() }
+
+    return GalleryDetail(
+        orientation = GalleryOrientation.Vertical,
+        statusKey = statusKey,
+        accountType = AccountType.Specific(accountKey),
+        url = "https://www.linzijiang.app/video/detail?id=${statusKey.id}",
+        images = images,
+        title = title ?: "",
+        author = author,
+        createdAt = (posttime?.let { tryParseDate(it) } ?: Instant.fromEpochMilliseconds(0)).toUi(),
+        content = contentText?.toUiPlainText(),
+        isBookmarked = isFav == true,
+        bookmarkAction = bookmarkAction,
+        matrix = matrix,
+    )
+}
+
+/**
+ * 将视频 owner 映射为 UiProfile
+ */
+internal fun CbartVideoOwner.toUiProfile(): UiProfile = UiProfile(
+    key = MicroBlogKey(id = uid.toString(), host = CBART_HOST),
+    handle = dev.dimension.flare.ui.model.UiHandle(raw = displayName ?: nickName ?: username ?: uid.toString(), host = CBART_HOST),
+    avatar = avatarUrl?.toUiImage(),
+    nameInternal = (displayName ?: nickName ?: username ?: "").toUiPlainText(),
+    platformType = dev.dimension.flare.model.PlatformType.Cbart,
+    clickEvent = ClickEvent.Noop,
+    banner = null,
+    description = null,
+    matrices = dev.dimension.flare.ui.model.UiProfile.Matrices(
+        fansCount = (followerNum ?: 0).toLong(),
+        followsCount = 0,
+        statusesCount = 0,
+    ),
+    mark = persistentListOf(),
+    bottomContent = null,
+)
+
+/**
+ * 尝试解析 "2026-07-09 23:19:16" 格式的时间戳
+ */
+internal fun tryParseDate(dateStr: String): Instant? {
+    return try {
+        val iso = dateStr.replace(" ", "T") + "Z"
+        Instant.parse(iso)
+    } catch (_: Exception) {
+        null
+    }
+}
+

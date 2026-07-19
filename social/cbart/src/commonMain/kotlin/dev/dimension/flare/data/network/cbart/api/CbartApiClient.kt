@@ -154,6 +154,19 @@ internal class CbartApiClient(
         "/studio_unfollow", mapOf("studio_id" to studioId.toString()),
     )
 
+
+    suspend fun fetchVideoDetailPage(videoId: Long): String? {
+        return try {
+            httpClient().get("$CBART_BASE/video/detail?id=$videoId").bodyAsText()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    suspend fun addVideoComment(videoId: Long, content: String): CbartVideoCommentAddResponse? = postForm(
+        "/update_video_comment", mapOf("id" to videoId.toString(), "content" to content),
+    )
+
     private inline fun <reified T> tryParse(text: String): T? {
         return try { json.decodeFromString<T>(text) } catch (_: Exception) { null }
     }
