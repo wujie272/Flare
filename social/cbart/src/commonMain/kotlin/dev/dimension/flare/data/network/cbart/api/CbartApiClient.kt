@@ -9,7 +9,6 @@ import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
-import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.decodeURLPart
@@ -26,7 +25,6 @@ private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
 internal class CbartApiClient(
     private val credentialFlow: Flow<CbartCredential>,
-    private val onCredentialRefreshed: suspend (CbartCredential) -> Unit = {},
 ) {
     private suspend fun credential(): CbartCredential? =
         credentialFlow.firstOrNull()
@@ -61,42 +59,11 @@ internal class CbartApiClient(
         path: String,
         body: Map<String, String> = emptyMap(),
     ): T? {
-        val response = httpClient().post("$CBART_API_BASE$path") {
+        val text = httpClient().post("$CBART_API_BASE$path") {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(body.map { (k, v) -> "$k=$v" }.joinToString("&"))
-        }
-        refreshSessionFromResponse(response)
-        val text = response.bodyAsText()
+        }.bodyAsText()
         return tryParse(text)
-    }
-
-    /**
-     * 从响应头中提取新的 laravel_session 和 XSRF-TOKEN，更新凭据
-     */
-    private suspend fun refreshSessionFromResponse(response: io.ktor.client.statement.HttpResponse) {
-        val setCookies = response.headers.values("Set-Cookie")
-        var newSession: String? = null
-        var newXsrf: String? = null
-        for (cookieStr in setCookies) {
-            val parts = cookieStr.split(";").firstOrNull()?.split("=", limit = 2) ?: continue
-            if (parts.size < 2) continue
-            val name = parts[0].trim()
-            val value = parts[1].trim()
-            when (name) {
-                "laravel_session" -> newSession = value
-                "XSRF-TOKEN" -> newXsrf = value
-            }
-        }
-        if (newSession != null) {
-            val cred = credential()
-            if (cred != null) {
-                val updated = cred.copy(
-                    laravelSession = newSession,
-                    xsrfToken = newXsrf ?: cred.xsrfToken,
-                )
-                onCredentialRefreshed(updated)
-            }
-        }
     }
 
     suspend fun contentList(uid: String, page: Int = 1, limit: Int = 20): CbartContentListResponse? = postForm(
@@ -155,35 +122,23 @@ internal class CbartApiClient(
     // ==================== 页面抓取 ====================
 
     suspend fun fetchHomePage(): String? {
-        return try {
-            val response = httpClient().get(CBART_BASE)
-            refreshSessionFromResponse(response)
-            response.bodyAsText()
-        } catch (_: Exception) { null }
+        return try { httpClient().get(CBART_BASE).bodyAsText() } catch (_: Exception) { null }
     }
 
     suspend fun fetchProfilePage(): String? {
-        return try {
-            val response = httpClient().get("$CBART_BASE/profile")
-            refreshSessionFromResponse(response)
-            response.bodyAsText()
-        } catch (_: Exception) { null }
+        return try { httpClient().get("$CBART_BASE/profile").bodyAsText() } catch (_: Exception) { null }
     }
 
     suspend fun fetchStudioListPage(): String? {
-        return try {
-            val response = httpClient().get("$CBART_BASE/studio/list")
-            refreshSessionFromResponse(response)
-            response.bodyAsText()
-        } catch (_: Exception) { null }
+        return try { httpClient().get("$CBART_BASE/studio/list").bodyAsText() } catch (_: Exception) { null }
     }
 
     suspend fun fetchVideoDetailPage(videoId: Long): String? {
         return try {
-            val response = httpClient().get("$CBART_BASE/video/detail?id=$videoId")
-            refreshSessionFromResponse(response)
-            response.bodyAsText()
-        } catch (_: Exception) { null }
+            httpClient().get("$CBART_BASE/video/detail?id=$videoId").bodyAsText()
+        } catch (_: Exception) {
+            null
+        }
     }
 
     suspend fun validateSession(): Boolean {
