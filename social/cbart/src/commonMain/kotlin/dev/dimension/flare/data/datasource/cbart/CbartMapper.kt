@@ -56,19 +56,7 @@ internal fun CbartContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
         images = images,
         sensitive = true,
         contentWarning = typeLabel.toUiPlainText(),
-        user = UiProfile(
-            key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
-            handle = UiHandle(raw = uid?.toString() ?: "", host = CBART_HOST),
-            avatar = null,
-            nameInternal = (uid?.toString() ?: "Cbart").toUiPlainText(),
-            platformType = PlatformType.Cbart,
-            clickEvent = ClickEvent.Noop,
-            banner = null,
-            description = null,
-            matrices = UiProfile.Matrices(0, 0, 0),
-            mark = persistentListOf(),
-            bottomContent = null,
-        ),
+        user = null,
         content = (title ?: "").toUiPlainText(),
         actions = persistentListOf<ActionMenu>(
             ActionMenu.cbartFavourite(

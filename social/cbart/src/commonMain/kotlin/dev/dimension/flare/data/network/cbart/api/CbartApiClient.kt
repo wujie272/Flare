@@ -103,8 +103,13 @@ internal class CbartApiClient(
         return tryParse(text)
     }
 
-    suspend fun contentList(uid: String, page: Int = 1, limit: Int = 20): CbartContentListResponse? = postForm(
-        "/content_list", mapOf("limit" to limit.toString(), "page" to page.toString(), "uid" to uid),
+    suspend fun contentList(uid: String, page: Int = 1, limit: Int = 20, getOwner: Int = 0): CbartContentListResponse? = postForm(
+        "/content_list", mapOf(
+            "limit" to limit.toString(),
+            "page" to page.toString(),
+            "uid" to uid,
+            "get_owner" to getOwner.toString(),
+        ),
     )
 
     suspend fun studioList(

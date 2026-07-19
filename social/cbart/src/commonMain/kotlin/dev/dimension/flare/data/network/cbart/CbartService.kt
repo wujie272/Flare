@@ -31,8 +31,17 @@ internal class CbartService(
     }
 
     suspend fun fetchUserContent(uid: String, page: Int = 1): List<CbartContentItem> {
-        val response = api.contentList(uid = uid, page = page)
+        val response = api.contentList(uid = uid, page = page, getOwner = 1)
         return response?.data?.contents ?: emptyList()
+    }
+
+    /**
+     * 根据 uid 获取用户信息（昵称+头像）
+     * 调 content_list?uid=xxx&get_owner=1&limit=1，从第一条内容的 owner 字段提取
+     */
+    suspend fun fetchUserByUid(uid: String): CbartVideoOwner? {
+        val response = api.contentList(uid = uid, page = 1, limit = 1, getOwner = 1)
+        return response?.data?.contents?.firstOrNull()?.owner
     }
 
     suspend fun fetchMyBlogs(page: Int = 1): List<CbartBlogItem> {

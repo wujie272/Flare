@@ -115,6 +115,8 @@ internal data class CbartContentItem(
     val tiers: List<CbartTierRef>? = null,
     @SerialName("tier_id_arr")
     val tierIdArr: List<Long>? = null,
+    /** 传 get_owner=1 时返回 */
+    val owner: CbartVideoOwner? = null,
 )
 
 @Serializable

@@ -53,13 +53,36 @@ internal class CbartLoader(
         throw UnsupportedOperationException("Cbart user lookup by handle is not supported")
 
     override suspend fun userById(id: String): UiProfile {
-        // 从 credential 构建用户信息，避免抛出异常导致账户列表显示"加载失败"
+        // 用 fetchUserByUid 获取目标用户的昵称和头像
+        val owner = runCatching { service.fetchUserByUid(id) }.getOrNull()
+        if (owner != null) {
+            val name = owner.nickName ?: owner.displayName ?: owner.username ?: id
+            val avatarUrl = owner.avatarUrl ?: owner.avatar?.let { "https://www.tpzf001.com$it" }
+            return UiProfile(
+                key = MicroBlogKey(id = id, host = "cbart.net"),
+                handle = UiHandle(raw = "$name@cbart.net", host = "cbart.net"),
+                avatar = avatarUrl.toUiImage(),
+                nameInternal = name.toUiPlainText(),
+                platformType = PlatformType.Cbart,
+                clickEvent = ClickEvent.Noop,
+                banner = null,
+                description = null,
+                matrices = UiProfile.Matrices(
+                    fansCount = (owner.followerNum ?: 0).toLong(),
+                    followsCount = 0,
+                    statusesCount = 0,
+                ),
+                mark = persistentListOf(),
+                bottomContent = null,
+            )
+        }
+
+        // 兜底：从 credential 构建用户信息
         val cred = service.currentCredential()
         val userInfo = service.fetchCurrentUser()
         val username = userInfo?.username ?: cred?.userName ?: id.removePrefix("cb_").substringBefore("_")
         val nickName = userInfo?.nickName ?: cred?.nickName ?: username
 
-        // 尝试获取关注的工作室数量
         val followsCount = try {
             service.fetchFollowedStudioCount()
         } catch (_: Exception) {
