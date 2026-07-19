@@ -473,6 +473,42 @@ internal data class CbartVideoItem(
     val images: List<CbartContentImage>? = null,
 )
 
+// ==================== 最新内容 (New Content) ====================
+
+@Serializable
+internal data class CbartNewContentListResponse(
+    val code: Int? = null,
+    val info: String? = null,
+    val data: CbartNewContentListData? = null,
+)
+
+@Serializable
+internal data class CbartNewContentListData(
+    @SerialName("new_content")
+    val newContent: List<CbartNewContentItem>? = null,
+)
+
+@Serializable
+internal data class CbartNewContentItem(
+    val id: Long,
+    @SerialName("content_id")
+    val contentId: Long,
+    @SerialName("content_type")
+    val contentType: String? = null,
+    @SerialName("is_public")
+    val isPublic: Int? = null,
+    @SerialName("is_featured")
+    val isFeatured: Int? = null,
+    val posttime: String? = null,
+    @SerialName("cover_picture")
+    val coverPicture: String? = null,
+    val ratio: Int? = null,
+    val uid: Long? = null,
+    val title: String? = null,
+    val summary: String? = null,
+    val username: String? = null,
+)
+
 // ==================== 内容类型 ====================
 
 // ==================== 视频详情 ====================

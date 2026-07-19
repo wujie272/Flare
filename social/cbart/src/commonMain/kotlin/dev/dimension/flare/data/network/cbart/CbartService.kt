@@ -18,9 +18,9 @@ internal class CbartService(
         return response?.data?.contents ?: emptyList()
     }
 
-    suspend fun fetchLatestResources(page: Int = 1, limit: Int = 20): List<CbartArticleItem> {
-        val response = api.articleList(page = page, limit = limit, news = 0)
-        return response?.data?.contents ?: emptyList()
+    suspend fun fetchLatestResources(page: Int = 1, limit: Int = 50): List<CbartNewContentItem> {
+        val response = api.newContentList(page = page, limit = limit)
+        return response?.data?.newContent ?: emptyList()
     }
 
     suspend fun fetchMyContent(page: Int = 1): List<CbartContentItem> {

@@ -113,6 +113,14 @@ internal class CbartApiClient(
         "/message_user_list", mapOf("limit" to limit.toString(), "page" to page.toString(), "short_content" to shortContent.toString(), "order" to order),
     )
 
+    // ==================== 最新内容 ====================
+
+    suspend fun newContentList(page: Int = 1, limit: Int = 50): CbartNewContentListResponse? = postForm(
+        "/get_new_content", mapOf("page" to page.toString(), "limit" to limit.toString()),
+    )
+
+    // ==================== 页面抓取 ====================
+
     suspend fun fetchHomePage(): String? {
         return try { httpClient().get(CBART_BASE).bodyAsText() } catch (_: Exception) { null }
     }
@@ -123,6 +131,14 @@ internal class CbartApiClient(
 
     suspend fun fetchStudioListPage(): String? {
         return try { httpClient().get("$CBART_BASE/studio/list").bodyAsText() } catch (_: Exception) { null }
+    }
+
+    suspend fun fetchVideoDetailPage(videoId: Long): String? {
+        return try {
+            httpClient().get("$CBART_BASE/video/detail?id=$videoId").bodyAsText()
+        } catch (_: Exception) {
+            null
+        }
     }
 
     suspend fun validateSession(): Boolean {
@@ -154,14 +170,7 @@ internal class CbartApiClient(
         "/studio_unfollow", mapOf("studio_id" to studioId.toString()),
     )
 
-
-    suspend fun fetchVideoDetailPage(videoId: Long): String? {
-        return try {
-            httpClient().get("$CBART_BASE/video/detail?id=$videoId").bodyAsText()
-        } catch (_: Exception) {
-            null
-        }
-    }
+    // ==================== 视频评论 ====================
 
     suspend fun addVideoComment(videoId: Long, content: String): CbartVideoCommentAddResponse? = postForm(
         "/update_video_comment", mapOf("id" to videoId.toString(), "content" to content),

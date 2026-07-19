@@ -8,6 +8,7 @@ import dev.dimension.flare.data.network.cbart.api.CbartVideoItem
 import dev.dimension.flare.data.network.cbart.api.CbartStudioItem
 import dev.dimension.flare.data.network.cbart.api.CbartMessageItem
 import dev.dimension.flare.data.network.cbart.api.CbartApiContentType
+import dev.dimension.flare.data.network.cbart.api.CbartNewContentItem
 import dev.dimension.flare.data.platform.CBART_HOST
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
@@ -368,6 +369,62 @@ internal fun CbartMessageItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
         itemKey = "cbart_msg_$uid",
     )
     return UiTimelineV2.TimelinePostItem(post = post, itemKey = "cbart_msg_$uid")
+}
+
+/**
+ * 从 /api/get_new_content 的 CbartNewContentItem 映射到 UiTimelineV2
+ */
+internal fun CbartNewContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimelineV2 {
+    val images = listOfNotNull(coverPicture).mapNotNull { url ->
+        val fullUrl = if (url.startsWith("http")) url else "$CBART_CDN$url"
+        fullUrl.toUiImage()
+    }.toImmutableList()
+
+    val typeLabel = when (contentType) {
+        "video" -> "🎬 Video"
+        "album" -> "🖼 Gallery"
+        "fiction" -> "📖 Fiction"
+        else -> "📄 Post"
+    }
+
+    val post = UiTimelineV2.Post(
+        platformType = PlatformType.Cbart,
+        images = images,
+        sensitive = true,
+        contentWarning = typeLabel.toUiPlainText(),
+        user = UiProfile(
+            key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
+            handle = UiHandle(raw = username ?: uid?.toString() ?: "", host = CBART_HOST),
+            avatar = null,
+            nameInternal = (username ?: uid?.toString() ?: "Cbart").toUiPlainText(),
+            platformType = PlatformType.Cbart,
+            clickEvent = ClickEvent.Noop,
+            banner = null,
+            description = null,
+            matrices = UiProfile.Matrices(0, 0, 0),
+            mark = persistentListOf(),
+            bottomContent = null,
+        ),
+        content = (title ?: "").toUiPlainText(),
+        actions = persistentListOf<ActionMenu>(),
+        poll = null,
+        statusKey = MicroBlogKey(id = contentId.toString(), host = CBART_HOST),
+        card = null,
+        createdAt = (posttime?.let { tryParseDate(it) } ?: Instant.fromEpochMilliseconds(0)).toUi(),
+        emojiReactions = persistentListOf(),
+        sourceChannel = null,
+        visibility = null,
+        replyToHandle = null,
+        references = persistentListOf(),
+        clickEvent = when (contentType) {
+            "video" -> ClickEvent.Deeplink(url = "https://www.linzijiang.app/video/detail?id=$contentId")
+            else -> ClickEvent.Noop
+        },
+        mediaClickPolicy = UiTimelineV2.Post.MediaClickPolicy.OpenStatusMedia,
+        accountType = AccountType.Specific(accountKey),
+        itemKey = "cbart_new_content_${id}",
+    )
+    return UiTimelineV2.TimelinePostItem(post = post, itemKey = "cbart_new_content_${id}")
 }
 
 /**
