@@ -865,6 +865,8 @@ internal class ZhihuService(
                             authorAvatar = target["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
                             voteCount = target["vote_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: target["voteup_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                             commentCount = target["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            videoCover = target["thumbnail"]?.jsonPrimitive?.content ?: target["excerpt"]?.jsonPrimitive?.content,
+                            videoId = id,
                         )
                     }
                     type.contains("pin") || targetType == "pin" -> {
@@ -1009,6 +1011,8 @@ internal data class ZhihuFeedItem(
     val commentCount: Int,
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
+    val videoCover: String? = null,
+    val videoId: String? = null,
 )
 
 internal data class ZhihuComment(

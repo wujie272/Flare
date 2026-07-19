@@ -236,9 +236,23 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
             append(excerpt.take(200))
         }
     }
+    val pictures = if (type == "video" && videoCover != null) {
+        persistentListOf(
+            UiMedia.Image(
+                url = videoCover,
+                previewUrl = videoCover,
+                description = title,
+                width = 0f,
+                height = 0f,
+                sensitive = false,
+            )
+        )
+    } else {
+        persistentListOf()
+    }
     val post = UiTimelineV2.Post(
         platformType = PlatformType.Zhihu,
-        images = persistentListOf(),
+        images = pictures,
         sensitive = false,
         contentWarning = null,
         user = UiProfile(
@@ -258,7 +272,14 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
                 )
             } else ClickEvent.Noop,
             banner = null,
-            description = (if (type == "answer") "回答" else "文章").toUiPlainText(),
+            description = when (type) {
+                "answer" -> "回答".toUiPlainText()
+                "article" -> "文章".toUiPlainText()
+                "video" -> "视频".toUiPlainText()
+                "pin" -> "想法".toUiPlainText()
+                "question" -> "问题".toUiPlainText()
+                else -> "".toUiPlainText()
+            },
             matrices = UiProfile.Matrices(voteCount.toLong(), 0, commentCount.toLong()),
             mark = persistentListOf(),
             bottomContent = null,
