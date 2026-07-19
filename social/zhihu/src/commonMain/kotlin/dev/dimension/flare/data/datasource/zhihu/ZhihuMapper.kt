@@ -241,14 +241,21 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
         sensitive = false,
         contentWarning = null,
         user = UiProfile(
-            key = MicroBlogKey(id = id, host = ZHIHU_HOST),
+            key = MicroBlogKey(id = authorId ?: id, host = ZHIHU_HOST),
             handle = UiHandle(raw = authorName, host = ZHIHU_HOST),
             avatar = authorAvatar?.let { 
                 UiMedia.Image(url = it, previewUrl = it, description = authorName, height = 0f, width = 0f, sensitive = false) 
             },
             nameInternal = authorName.toUiPlainText(),
             platformType = PlatformType.Zhihu,
-            clickEvent = ClickEvent.Noop,
+            clickEvent = if (authorId != null) {
+                ClickEvent.Deeplink(
+                    dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
+                        accountType = AccountType.Specific(accountKey),
+                        userKey = MicroBlogKey(id = authorId, host = ZHIHU_HOST),
+                    )
+                )
+            } else ClickEvent.Noop,
             banner = null,
             description = (if (type == "answer") "回答" else "文章").toUiPlainText(),
             matrices = UiProfile.Matrices(voteCount.toLong(), 0, commentCount.toLong()),

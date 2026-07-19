@@ -35,7 +35,14 @@ internal class ZhihuLoader(
         throw UnsupportedOperationException("Zhihu user lookup by handle is not supported")
 
     override suspend fun userById(id: String): UiProfile {
-        // 从 credential 构建基本信息，避免账户列表显示"加载失败"
+        // 尝试从 API 获取真实用户信息（先当 urlToken 查，不行再当数字 ID）
+        val member = runCatching {
+            service.fetchMemberByUrlToken(id)
+        }.getOrNull()
+        if (member != null) {
+            return member.toUiProfile(accountKey = null)
+        }
+        // 兜底：从 credential 构建基本信息
         val cred = service.currentCredential()
         val userName = cred?.userName ?: id
         val avatarUrl = cred?.avatarUrl
