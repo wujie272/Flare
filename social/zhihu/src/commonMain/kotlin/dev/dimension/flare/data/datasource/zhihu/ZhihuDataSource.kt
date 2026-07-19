@@ -177,7 +177,7 @@ internal class ZhihuDataSource(
         ZhihuHotTimelineLoader(service = service, accountKey = accountKey)
     
     override fun searchStatus(query: String): RemoteLoader<UiTimelineV2> = 
-        ZhihuSearchTimelineLoader(service = service, accountKey = accountKey, query = query)
+        notSupported()
     
     override fun searchUser(query: String): RemoteLoader<UiProfile> = 
         ZhihuSearchUserLoader(service = service, accountKey = accountKey, query = query)

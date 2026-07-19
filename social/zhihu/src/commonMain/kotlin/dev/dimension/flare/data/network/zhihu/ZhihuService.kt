@@ -270,9 +270,9 @@ internal class ZhihuService(
             // 异步获取视频播放地址
             items.map { item ->
                 if (item.type == "video" && item.videoId != null) {
-                    val videoInfo = kotlinx.coroutines.runCatching {
+                    val videoInfo = try {
                         fetchVideoPlayInfo(item.videoId, item.id, "answer")
-                    }.getOrNull()
+                    } catch (_: Exception) { null }
                     if (videoInfo?.url != null) {
                         item.copy(
                             videoPlayUrl = videoInfo.url,
@@ -823,9 +823,9 @@ internal class ZhihuService(
             // 异步获取视频播放地址
             val enriched = items.map { item ->
                 if (item.type == "video" && item.videoId != null) {
-                    val videoInfo = kotlinx.coroutines.runCatching {
+                    val videoInfo = try {
                         fetchVideoPlayInfo(item.videoId, item.id, "answer")
-                    }.getOrNull()
+                    } catch (_: Exception) { null }
                     if (videoInfo?.url != null) {
                         item.copy(
                             videoPlayUrl = videoInfo.url,
