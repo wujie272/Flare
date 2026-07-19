@@ -289,13 +289,6 @@ internal class ZhihuDailyTimelineLoader(
     }
 }
 
-/**
- * 知乎推荐流 Loader
- */
-            endOfPaginationReached = true,
-        )
-    }
-}
 
 /**
  * 知乎评论列表 Loader
