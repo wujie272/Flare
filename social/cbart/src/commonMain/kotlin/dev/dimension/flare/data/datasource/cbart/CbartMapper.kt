@@ -60,7 +60,7 @@ internal fun CbartContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
             key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
             handle = UiHandle(raw = uid?.toString() ?: "", host = CBART_HOST),
             avatar = null,
-            nameInternal = (uid?.toString() ?: "Cbart").toUiPlainText(),
+            nameInternal = (title?.take(20) ?: uid?.toString() ?: "Cbart").toUiPlainText(),
             platformType = PlatformType.Cbart,
             clickEvent = ClickEvent.Noop,
             banner = null,
@@ -277,23 +277,21 @@ internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
         fullUrl.toUiImage()
     }.orEmpty().toImmutableList()
 
-    val subtitle = buildString {
-        if (priceDiamond != null && priceDiamond > 0) append("💎$priceDiamond ")
-        if (isOriginal == 1) append("原创 ")
-        if (favNum != null && favNum > 0) append("❤️$favNum ")
-        if (extraText2 != null) append("📦$extraText2 ")
-    }
-
+    val displayName = "🎬 #${uid ?: ""}"
     val post = UiTimelineV2.Post(
         platformType = PlatformType.Cbart,
         images = images,
         sensitive = true,
-        contentWarning = "🎬 Video".toUiPlainText(),
+        contentWarning = buildString {
+            append("🎬 Video")
+            if (priceDiamond != null && priceDiamond > 0) append(" 💎$priceDiamond")
+            if (extraText2 != null) append(" 📦$extraText2")
+        }.toUiPlainText(),
         user = UiProfile(
             key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
             handle = UiHandle(raw = uid?.toString() ?: "", host = CBART_HOST),
             avatar = null,
-            nameInternal = (uid?.toString() ?: "Cbart").toUiPlainText(),
+            nameInternal = (title?.take(20) ?: displayName).toUiPlainText(),
             platformType = PlatformType.Cbart,
             clickEvent = ClickEvent.Noop,
             banner = null,
@@ -302,7 +300,11 @@ internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = (title ?: "").toUiPlainText(),
+        content = buildString {
+            append(title ?: "")
+            if (favNum != null && favNum > 0) append("\n❤️ $favNum 收藏")
+            if (isOriginal == 1) append(" 原创")
+        }.toUiPlainText(),
         actions = persistentListOf<ActionMenu>(
             ActionMenu.cbartFavourite(
                 statusKey = MicroBlogKey(id = id.toString(), host = CBART_HOST),
