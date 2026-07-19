@@ -3,7 +3,7 @@ package dev.dimension.flare.data.network.cbart.api
 import dev.dimension.flare.data.network.ktorClient
 import dev.dimension.flare.data.platform.CbartCredential
 import io.ktor.client.HttpClient
-import io.ktor.client.plugins.HttpSend
+import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -41,9 +41,6 @@ internal class CbartApiClient(
     private val sessionRegex = Regex("""laravel_session=([^;]+)""")
     private val xsrfTokenRegex = Regex("""XSRF-TOKEN=([^;]+)""")
 
-    /**
-     * 从 Set-Cookie 头中提取新的会话凭证并更新
-     */
     private suspend fun updateCredentialsFromHeaders(setCookieHeaders: List<String>) {
         var newSession: String? = null
         var newXsrfToken: String? = null
@@ -72,17 +69,12 @@ internal class CbartApiClient(
         val cookie = buildCookie()
         val cred = credential()
         return ktorClient {
-            // Laravel 每次响应都会 Set-Cookie 刷新 laravel_session 和 XSRF-TOKEN
-            // 如果不捕获更新，一直用旧 session 发请求，24h 后服务端回收旧 session 导致 419
-            // 这个拦截器在每次请求后提取新 cookie，更新内存凭证并持久化
-            install(HttpSend) {
-                intercept { request ->
-                    val call = execute(request)
-                    val setCookieHeaders = call.response.headers.getAll(HttpHeaders.SetCookie)
+            HttpResponseValidator {
+                validateResponse { response ->
+                    val setCookieHeaders = response.headers.getAll(HttpHeaders.SetCookie)
                     if (!setCookieHeaders.isNullOrEmpty()) {
                         updateCredentialsFromHeaders(setCookieHeaders)
                     }
-                    call
                 }
             }
             defaultRequest {
@@ -197,20 +189,12 @@ internal class CbartApiClient(
 
     // ==================== 收藏（toggle） ====================
 
-    /**
-     * 收藏/取消收藏 toggle，JS 源码实际调用 update_video_fav
-     * 返回 {"data": {"update": "+"}} 表示收藏，"-" 表示取消
-     */
     suspend fun toggleVideoFav(videoId: Long): CbartVideoFavResponse? = postForm(
         "/update_video_fav", mapOf("video_id" to videoId.toString()),
     )
 
     // ==================== 关注（toggle） ====================
 
-    /**
-     * 关注/取消关注用户，JS 源码实际调用 update_follow
-     * action: "add" 关注, "remove" 取消
-     */
     suspend fun toggleFollow(fromUid: Long, toUid: Long, action: String): CbartFollowResponse? = postForm(
         "/update_follow", mapOf("from_uid" to fromUid.toString(), "to_uid" to toUid.toString(), "action" to action),
     )

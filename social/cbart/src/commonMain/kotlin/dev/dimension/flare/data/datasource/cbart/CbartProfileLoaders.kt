@@ -32,12 +32,12 @@ internal class CbartLoader(
 
     override suspend fun follow(userKey: MicroBlogKey) {
         val studioId = userKey.id.toLongOrNull() ?: throw UnsupportedOperationException("Cbart follow requires numeric studio ID")
-        service.followStudio(studioId)
+        service.toggleFollow(0, studioId, follow = true)
     }
 
     override suspend fun unfollow(userKey: MicroBlogKey) {
         val studioId = userKey.id.toLongOrNull() ?: throw UnsupportedOperationException("Cbart unfollow requires numeric studio ID")
-        service.unfollowStudio(studioId)
+        service.toggleFollow(0, studioId, follow = false)
     }
 
     override suspend fun relation(userKey: MicroBlogKey): UiRelation {

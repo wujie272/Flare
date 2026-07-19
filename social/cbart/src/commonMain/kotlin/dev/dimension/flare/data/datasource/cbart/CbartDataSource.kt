@@ -49,7 +49,7 @@ import dev.dimension.flare.data.network.cbart.api.CbartVideoDetailItem
 import dev.dimension.flare.data.network.cbart.api.CbartVideoOwner
 import kotlin.time.Instant
 import dev.dimension.flare.ui.render.toUi
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -132,15 +132,17 @@ internal class CbartDataSource(
     override fun galleryDetail(statusKey: MicroBlogKey): Cacheable<GalleryDetail> = Cacheable(
         fetchSource = {},
         cacheSource = {
-            val videoId = statusKey.id.toLongOrNull()
-            if (videoId == null) {
-                flowOf(emptyGalleryDetail(statusKey))
-            } else {
-                val detail = service.fetchVideoDetail(videoId)
-                if (detail == null) {
-                    flowOf(emptyGalleryDetail(statusKey))
+            flow {
+                val videoId = statusKey.id.toLongOrNull()
+                if (videoId == null) {
+                    emit(emptyGalleryDetail(statusKey))
                 } else {
-                    flowOf(detail.toGalleryDetail(statusKey, accountKey))
+                    val detail = service.fetchVideoDetail(videoId)
+                    if (detail == null) {
+                        emit(emptyGalleryDetail(statusKey))
+                    } else {
+                        emit(detail.toGalleryDetail(statusKey, accountKey))
+                    }
                 }
             }
         },
@@ -231,7 +233,7 @@ internal fun CbartVideoDetailItem.toGalleryDetail(
 
     val bookmarkAction = ClickEvent.event(
         accountKey = accountKey,
-        event = dev.dimension.flare.data.datasource.microblog.PostEvent.Cbart.Favourite(
+        postEvent = dev.dimension.flare.data.datasource.microblog.PostEvent.Cbart.Favourite(
             postKey = statusKey,
             favourited = isFav == true,
             count = (favNum ?: 0).toLong(),
