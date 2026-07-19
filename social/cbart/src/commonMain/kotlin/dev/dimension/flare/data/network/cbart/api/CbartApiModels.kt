@@ -471,6 +471,18 @@ internal data class CbartVideoItem(
     @SerialName("image_height")
     val imageHeight: Int? = null,
     val images: List<CbartContentImage>? = null,
+    /** 传 get_owner=1 时返回 */
+    val owner: CbartVideoOwner? = null,
+    /** 传 get_studio=1 时返回 */
+    val studio: CbartVideoStudio? = null,
+    @SerialName("is_fav")
+    val isFav: Boolean? = null,
+    @SerialName("is_new")
+    val isNew: Int? = null,
+    @SerialName("content_short")
+    val contentShort: String? = null,
+    @SerialName("duration_hr")
+    val durationHr: String? = null,
 )
 
 // ==================== 最新内容 (New Content) ====================
@@ -646,12 +658,27 @@ internal data class CbartVideoOwner(
     val username: String? = null,
     @SerialName("nick_name")
     val nickName: String? = null,
+    @SerialName("display_name")
+    val displayName: String? = null,
     /** 相对路径，需拼 CDN 前缀 */
     val avatar: String? = null,
+    @SerialName("avatar_url")
+    val avatarUrl: String? = null,
     @SerialName("is_followed")
     val isFollowed: Boolean? = null,
     @SerialName("follower_num")
     val followerNum: Int? = null,
+    @SerialName("is_producer")
+    val isProducer: Int? = null,
+)
+
+/**
+ * 视频列表 API 传 get_studio=1 时返回的工作室信息
+ */
+@Serializable
+internal data class CbartVideoStudio(
+    val id: Long,
+    val name: String? = null,
 )
 
 @Serializable

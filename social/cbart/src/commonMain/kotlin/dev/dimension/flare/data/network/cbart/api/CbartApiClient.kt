@@ -141,6 +141,9 @@ internal class CbartApiClient(
     suspend fun videoList(page: Int = 1, limit: Int = 20, uid: String? = null, purchasedVideo: Boolean = false): CbartVideoListResponse? = postForm(
         "/video_list", buildMap {
             put("limit", limit.toString()); put("page", page.toString())
+            put("get_owner", "1")
+            put("get_studio", "1")
+            put("check_fav", "1")
             uid?.let { put("uid", it) }
             if (purchasedVideo) put("purchased_video", "1")
         },

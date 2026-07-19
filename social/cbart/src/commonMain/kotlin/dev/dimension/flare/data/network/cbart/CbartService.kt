@@ -5,8 +5,7 @@ import dev.dimension.flare.data.platform.CBART_HOST
 import dev.dimension.flare.data.platform.CbartCredential
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+
 
 internal class CbartService(
     credentialFlow: Flow<CbartCredential>,
@@ -187,51 +186,11 @@ internal class CbartService(
 
     suspend fun currentCredential(): CbartCredential? = credentialFlowRef.firstOrNull()
 
-    // ==================== 用户昵称缓存 ====================
-
-    /**
-     * 从视频详情页爬到的 owner 昵称，key=uid, value=displayName
-     */
-    private val userNameCache = mutableMapOf<Long, String>()
-
-    fun getCachedUserName(uid: Long): String? = userNameCache[uid]
-
-    fun cacheUserName(uid: Long, name: String) {
-        userNameCache[uid] = name
-    }
-
-    /**
-     * 预加载用户昵称：遍历已购视频列表，提取唯一 uid，并发抓详情页缓存昵称
-     */
-    suspend fun preloadUserNames() {
-        val purchased = fetchPurchasedVideos(page = 1)
-        val uidToVideoId = mutableMapOf<Long, Long>()
-        for (video in purchased) {
-            val uid = video.uid ?: continue
-            if (uid !in uidToVideoId) {
-                uidToVideoId[uid] = video.id
-            }
-        }
-        // 并发抓取，最多同时 5 个
-        coroutineScope {
-            uidToVideoId.values.chunked(5).forEach { batch ->
-                batch.map { videoId ->
-                    async { fetchVideoDetail(videoId) }
-                }.forEach { it.await() }
-            }
-        }
-    }
-
     // ==================== 视频详情 ====================
 
     suspend fun fetchVideoDetail(videoId: Long): CbartVideoDetailItem? {
         val html = api.fetchVideoDetailPage(videoId) ?: return null
-        val detail = parseVideoDetailFromHtml(html)
-        detail?.owner?.let { owner ->
-            val name = owner.nickName ?: owner.username
-            if (name != null) userNameCache[owner.uid] = name
-        }
-        return detail
+        return parseVideoDetailFromHtml(html)
     }
 
     suspend fun addVideoComment(videoId: Long, content: String): Boolean {

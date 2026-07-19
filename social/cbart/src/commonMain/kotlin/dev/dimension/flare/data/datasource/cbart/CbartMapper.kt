@@ -271,13 +271,17 @@ internal fun CbartStudioItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
 /**
  * 从 video_list API 的 CbartVideoItem 映射到 UiTimelineV2
  */
-internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey, ownerName: String? = null): UiTimelineV2 {
+internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimelineV2 {
     val images = images?.mapNotNull { img ->
         val fullUrl = if (img.path.startsWith("http")) img.path else "$CBART_CDN${img.path}"
         fullUrl.toUiImage()
     }.orEmpty().toImmutableList()
 
-    val displayName = ownerName ?: uid?.toString() ?: "Cbart"
+    // 优先用 API 返回的 owner 字段，其次用缓存兜底，最后 fallback 到 uid
+    val ownerNickName = owner?.nickName ?: owner?.displayName ?: owner?.username
+    val displayName = ownerNickName ?: uid?.toString() ?: "Cbart"
+    val avatarUrl = owner?.avatarUrl ?: owner?.avatar?.let { "$CBART_CDN$it" }
+
     val post = UiTimelineV2.Post(
         platformType = PlatformType.Cbart,
         images = images,
@@ -289,8 +293,8 @@ internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey, ownerName
         }.toUiPlainText(),
         user = UiProfile(
             key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
-            handle = UiHandle(raw = uid?.toString() ?: "", host = CBART_HOST),
-            avatar = null,
+            handle = UiHandle(raw = displayName, host = CBART_HOST),
+            avatar = avatarUrl?.toUiImage(),
             nameInternal = displayName.toUiPlainText(),
             platformType = PlatformType.Cbart,
             clickEvent = ClickEvent.Noop,
@@ -308,7 +312,7 @@ internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey, ownerName
         actions = persistentListOf<ActionMenu>(
             ActionMenu.cbartFavourite(
                 statusKey = MicroBlogKey(id = id.toString(), host = CBART_HOST),
-                favourited = false,
+                favourited = isFav == true,
                 count = (favNum ?: 0).toLong(),
                 accountKey = accountKey,
             ),
