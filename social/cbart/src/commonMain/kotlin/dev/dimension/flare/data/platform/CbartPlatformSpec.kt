@@ -39,9 +39,9 @@ public data object CbartPlatformSpec :
 
     internal val discoverTimelineSpec =
         TimelineSpec(
-            id = "cbart.new",
-            title = UiStrings.Discover,
-            icon = UiIcon.Search.asType(),
+            id = "cbart.studios",
+            title = UiStrings.Studio,
+            icon = UiIcon.List.asType(),
             serializer = TimelineSpec.AccountBasedData.serializer(),
             targetId = { it.accountKey.toString() },
             loaderFactory =

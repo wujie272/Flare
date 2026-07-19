@@ -505,6 +505,7 @@
     <string name="home_tab_me_title">Me</string>
     <string name="home_tab_announcement_title">公告</string>
     <string name="home_tab_latest_resource_title">最新资源</string>
+    <string name="home_tab_studio_title">工作室</string>
     <string name="profile_tab_purchased_video_title">已购视频</string>
     <string name="profile_tab_articles">文章</string>
     <string name="home_tab_discover_title">Discover</string>

@@ -298,6 +298,7 @@ internal val UiStrings.res: StringResource
             UiStrings.LatestResource -> Res.string.home_tab_latest_resource_title
             UiStrings.PurchasedVideo -> Res.string.profile_tab_purchased_video_title
             UiStrings.Articles -> Res.string.profile_tab_articles
+            UiStrings.Studio -> Res.string.home_tab_studio_title
             UiStrings.Discover -> Res.string.home_tab_discover_title
 
             UiStrings.Me -> Res.string.home_tab_me_title
