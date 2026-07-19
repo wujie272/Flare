@@ -5,6 +5,8 @@ import dev.dimension.flare.data.platform.CBART_HOST
 import dev.dimension.flare.data.platform.CbartCredential
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 internal class CbartService(
     credentialFlow: Flow<CbartCredential>,
@@ -72,27 +74,25 @@ internal class CbartService(
         return response?.data?.contents ?: emptyList()
     }
 
-    // ==================== 收藏/取消收藏 ====================
+    // ==================== 收藏/取消收藏（toggle） ====================
 
-    suspend fun favouriteContent(contentId: Long, contentType: String = "video"): Boolean {
-        val response = api.favouriteContent(contentId = contentId, contentType = contentType)
-        return response?.code == 200
+    /**
+     * 收藏/取消收藏视频，返回 true 表示收藏成功，false 表示取消收藏
+     */
+    suspend fun toggleVideoFav(videoId: Long): Boolean? {
+        val response = api.toggleVideoFav(videoId)
+        return when (response?.data?.update) {
+            "+" -> true
+            "-" -> false
+            else -> null
+        }
     }
 
-    suspend fun unfavouriteContent(contentId: Long, contentType: String = "video"): Boolean {
-        val response = api.unfavouriteContent(contentId = contentId, contentType = contentType)
-        return response?.code == 200
-    }
+    // ==================== 关注/取消关注（toggle） ====================
 
-    // ==================== 关注/取消关注工作室 ====================
-
-    suspend fun followStudio(studioId: Long): Boolean {
-        val response = api.followStudio(studioId = studioId)
-        return response?.code == 200
-    }
-
-    suspend fun unfollowStudio(studioId: Long): Boolean {
-        val response = api.unfollowStudio(studioId = studioId)
+    suspend fun toggleFollow(fromUid: Long, toUid: Long, follow: Boolean): Boolean {
+        val action = if (follow) "add" else "remove"
+        val response = api.toggleFollow(fromUid, toUid, action)
         return response?.code == 200
     }
 
@@ -201,23 +201,24 @@ internal class CbartService(
     }
 
     /**
-     * 预加载用户昵称：遍历已购视频列表，提取唯一 uid，逐个抓详情页缓存昵称
-     * 建议在登录完成后或首次加载时调用一次
+     * 预加载用户昵称：遍历已购视频列表，提取唯一 uid，并发抓详情页缓存昵称
      */
     suspend fun preloadUserNames() {
-        // 取第一页已购视频（通常够用了，除非买了 50+ 个不同作者）
         val purchased = fetchPurchasedVideos(page = 1)
-        // 每个 uid 只需要查一次，取该 uid 的第一个视频 id
-        val uidToVideoId = linkedMapOf<Long, Long>()
+        val uidToVideoId = mutableMapOf<Long, Long>()
         for (video in purchased) {
             val uid = video.uid ?: continue
             if (uid !in uidToVideoId) {
                 uidToVideoId[uid] = video.id
             }
         }
-        // 逐个抓详情页（自动缓存 owner 昵称）
-        for (videoId in uidToVideoId.values) {
-            fetchVideoDetail(videoId)
+        // 并发抓取，最多同时 5 个
+        coroutineScope {
+            uidToVideoId.values.chunked(5).forEach { batch ->
+                batch.map { videoId ->
+                    async { fetchVideoDetail(videoId) }
+                }.forEach { it.await() }
+            }
         }
     }
 
@@ -227,7 +228,7 @@ internal class CbartService(
         val html = api.fetchVideoDetailPage(videoId) ?: return null
         val detail = parseVideoDetailFromHtml(html)
         detail?.owner?.let { owner ->
-            val name = owner.displayName ?: owner.nickName ?: owner.username
+            val name = owner.nickName ?: owner.username
             if (name != null) userNameCache[owner.uid] = name
         }
         return detail

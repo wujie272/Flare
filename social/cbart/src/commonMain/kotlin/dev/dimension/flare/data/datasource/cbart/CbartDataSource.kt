@@ -184,21 +184,14 @@ internal class CbartDataSource(
     }
 
     private suspend fun handleFavourite(event: PostEvent.Cbart.Favourite) {
-        val contentId = event.postKey.id.toLongOrNull() ?: return
-        if (event.favourited) {
-            service.unfavouriteContent(contentId)
-        } else {
-            service.favouriteContent(contentId)
-        }
+        val videoId = event.postKey.id.toLongOrNull() ?: return
+        service.toggleVideoFav(videoId)
     }
 
     private suspend fun handleFollow(event: PostEvent.Cbart.Follow) {
-        val studioId = event.postKey.id.toLongOrNull() ?: return
-        if (event.following) {
-            service.unfollowStudio(studioId)
-        } else {
-            service.followStudio(studioId)
-        }
+        val fromUid = accountKey.id.toLongOrNull() ?: return
+        val toUid = event.postKey.id.toLongOrNull() ?: return
+        service.toggleFollow(fromUid, toUid, follow = event.following)
     }
 
     fun articleTimelineLoader(): RemoteLoader<UiTimelineV2> = CbartArticleTimelineLoader(service = service, accountKey = accountKey)
@@ -322,23 +315,27 @@ internal fun CbartVideoDetailItem.toGalleryDetail(
 /**
  * 将视频 owner 映射为 UiProfile
  */
-internal fun CbartVideoOwner.toUiProfile(): UiProfile = UiProfile(
-    key = MicroBlogKey(id = uid.toString(), host = CBART_HOST),
-    handle = dev.dimension.flare.ui.model.UiHandle(raw = displayName ?: nickName ?: username ?: uid.toString(), host = CBART_HOST),
-    avatar = avatarUrl?.toUiImage(),
-    nameInternal = (displayName ?: nickName ?: username ?: "").toUiPlainText(),
-    platformType = dev.dimension.flare.model.PlatformType.Cbart,
-    clickEvent = ClickEvent.Noop,
-    banner = null,
-    description = null,
-    matrices = dev.dimension.flare.ui.model.UiProfile.Matrices(
-        fansCount = (followerNum ?: 0).toLong(),
-        followsCount = 0,
-        statusesCount = 0,
-    ),
-    mark = persistentListOf(),
-    bottomContent = null,
-)
+internal fun CbartVideoOwner.toUiProfile(): UiProfile {
+    val name = nickName ?: username ?: uid.toString()
+    val avatarFullUrl = avatar?.let { if (it.startsWith("http")) it else "https://www.tpzf001.com$it" }
+    return UiProfile(
+        key = MicroBlogKey(id = uid.toString(), host = CBART_HOST),
+        handle = dev.dimension.flare.ui.model.UiHandle(raw = name, host = CBART_HOST),
+        avatar = avatarFullUrl?.toUiImage(),
+        nameInternal = name.toUiPlainText(),
+        platformType = dev.dimension.flare.model.PlatformType.Cbart,
+        clickEvent = ClickEvent.Noop,
+        banner = null,
+        description = null,
+        matrices = dev.dimension.flare.ui.model.UiProfile.Matrices(
+            fansCount = (followerNum ?: 0).toLong(),
+            followsCount = 0,
+            statusesCount = 0,
+        ),
+        mark = persistentListOf(),
+        bottomContent = null,
+    )
+}
 
 /**
  * 尝试解析 "2026-07-09 23:19:16" 格式的时间戳

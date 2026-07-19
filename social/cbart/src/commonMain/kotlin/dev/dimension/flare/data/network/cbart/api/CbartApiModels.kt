@@ -511,6 +511,28 @@ internal data class CbartNewContentItem(
 
 // ==================== 内容类型 ====================
 
+// ==================== 收藏/关注响应 ====================
+
+@Serializable
+internal data class CbartVideoFavResponse(
+    val code: Int? = null,
+    val info: String? = null,
+    val data: CbartVideoFavData? = null,
+)
+
+@Serializable
+internal data class CbartVideoFavData(
+    /** "+" 表示收藏成功，"-" 表示取消收藏 */
+    val update: String? = null,
+)
+
+@Serializable
+internal data class CbartFollowResponse(
+    val code: Int? = null,
+    val info: String? = null,
+    val data: JsonElement? = null,
+)
+
 // ==================== 视频详情 ====================
 
 /**
@@ -624,11 +646,8 @@ internal data class CbartVideoOwner(
     val username: String? = null,
     @SerialName("nick_name")
     val nickName: String? = null,
-    @SerialName("display_name")
-    val displayName: String? = null,
+    /** 相对路径，需拼 CDN 前缀 */
     val avatar: String? = null,
-    @SerialName("avatar_url")
-    val avatarUrl: String? = null,
     @SerialName("is_followed")
     val isFollowed: Boolean? = null,
     @SerialName("follower_num")

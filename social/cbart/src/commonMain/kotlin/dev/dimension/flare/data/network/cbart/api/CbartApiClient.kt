@@ -150,24 +150,24 @@ internal class CbartApiClient(
         "/verify_captcha", mapOf("page" to page.toString(), "captcha_aliyun_token" to captchaToken),
     )
 
-    // ==================== 收藏 ====================
+    // ==================== 收藏（toggle） ====================
 
-    suspend fun favouriteContent(contentId: Long, contentType: String = "video"): CbartSimpleResponse? = postForm(
-        "/favourite", mapOf("content_id" to contentId.toString(), "content_type" to contentType),
+    /**
+     * 收藏/取消收藏 toggle，JS 源码实际调用 update_video_fav
+     * 返回 {"data": {"update": "+"}} 表示收藏，"-" 表示取消
+     */
+    suspend fun toggleVideoFav(videoId: Long): CbartVideoFavResponse? = postForm(
+        "/update_video_fav", mapOf("video_id" to videoId.toString()),
     )
 
-    suspend fun unfavouriteContent(contentId: Long, contentType: String = "video"): CbartSimpleResponse? = postForm(
-        "/unfavourite", mapOf("content_id" to contentId.toString(), "content_type" to contentType),
-    )
+    // ==================== 关注（toggle） ====================
 
-    // ==================== 关注工作室 ====================
-
-    suspend fun followStudio(studioId: Long): CbartSimpleResponse? = postForm(
-        "/studio_follow", mapOf("studio_id" to studioId.toString()),
-    )
-
-    suspend fun unfollowStudio(studioId: Long): CbartSimpleResponse? = postForm(
-        "/studio_unfollow", mapOf("studio_id" to studioId.toString()),
+    /**
+     * 关注/取消关注用户，JS 源码实际调用 update_follow
+     * action: "add" 关注, "remove" 取消
+     */
+    suspend fun toggleFollow(fromUid: Long, toUid: Long, action: String): CbartFollowResponse? = postForm(
+        "/update_follow", mapOf("from_uid" to fromUid.toString(), "to_uid" to toUid.toString(), "action" to action),
     )
 
     // ==================== 视频评论 ====================
