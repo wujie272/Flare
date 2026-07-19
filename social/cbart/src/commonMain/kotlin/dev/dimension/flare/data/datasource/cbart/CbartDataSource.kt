@@ -54,6 +54,10 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 internal class CbartDataSource(
     override val accountKey: MicroBlogKey,
@@ -74,6 +78,13 @@ internal class CbartDataSource(
         onCredentialRefreshed = updateCredential,
     )
     private val loader by lazy { CbartLoader(service = service) }
+
+    // 初始化时异步预加载用户昵称
+    init {
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            service.preloadUserNames()
+        }
+    }
 
     override val userHandler by lazy { UserHandler(host = accountKey.host, loader = loader) }
     override val postHandler by lazy { PostHandler(accountType = AccountType.Specific(accountKey), loader = loader) }

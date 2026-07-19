@@ -200,6 +200,27 @@ internal class CbartService(
         userNameCache[uid] = name
     }
 
+    /**
+     * 预加载用户昵称：遍历已购视频列表，提取唯一 uid，逐个抓详情页缓存昵称
+     * 建议在登录完成后或首次加载时调用一次
+     */
+    suspend fun preloadUserNames() {
+        // 取第一页已购视频（通常够用了，除非买了 50+ 个不同作者）
+        val purchased = fetchPurchasedVideos(page = 1)
+        // 每个 uid 只需要查一次，取该 uid 的第一个视频 id
+        val uidToVideoId = linkedMapOf<Long, Long>()
+        for (video in purchased) {
+            val uid = video.uid ?: continue
+            if (uid !in uidToVideoId) {
+                uidToVideoId[uid] = video.id
+            }
+        }
+        // 逐个抓详情页（自动缓存 owner 昵称）
+        for (videoId in uidToVideoId.values) {
+            fetchVideoDetail(videoId)
+        }
+    }
+
     // ==================== 视频详情 ====================
 
     suspend fun fetchVideoDetail(videoId: Long): CbartVideoDetailItem? {
