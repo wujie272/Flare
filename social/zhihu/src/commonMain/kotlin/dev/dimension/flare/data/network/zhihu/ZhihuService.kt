@@ -258,9 +258,7 @@ internal class ZhihuService(
     suspend fun search(query: String): List<ZhihuFeedItem> {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/search_v3") {
-            header("q", query); header("limit", "20")
-        }
+        val response = client.get("$ZHIHU_API/v4/search_v3?q=${query.encodeURLParam()}&limit=20")
         val text = response.bodyAsText()
         client.close()
         return try {
@@ -290,9 +288,7 @@ internal class ZhihuService(
     suspend fun fetchCurrentUser(): ZhihuUserInfo? {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/me") {
-            header("include", "id,name,url_token,avatar_url,user_type")
-        }
+        val response = client.get("$ZHIHU_API/v4/me?include=id,name,url_token,avatar_url,user_type")
         val text = response.bodyAsText()
         client.close()
         return try {
@@ -393,9 +389,7 @@ internal class ZhihuService(
     suspend fun fetchMemberRelation(memberId: String): JsonObject? {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$memberId") {
-            header("include", "is_following,is_followed,follower_count,answer_count,articles_count")
-        }
+        val response = client.get("$ZHIHU_API/v4/members/$memberId?include=is_following,is_followed,follower_count,answer_count,articles_count")
         val text = response.bodyAsText()
         client.close()
         return try {
@@ -406,9 +400,7 @@ internal class ZhihuService(
     suspend fun fetchComments(contentType: String, contentId: String, page: Int = 1): ZhihuPagingResponse<ZhihuComment> {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/$contentType/$contentId/comments") {
-            header("limit", "20"); header("offset", "${(page - 1) * 20}")
-        }
+        val response = client.get("$ZHIHU_API/v4/$contentType/$contentId/comments?limit=20&offset=${(page - 1) * 20}")
         val text = response.bodyAsText()
         client.close()
         return try {
@@ -445,9 +437,7 @@ internal class ZhihuService(
     suspend fun fetchUserAnswers(userId: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuFeedItem> {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$userId/answers") {
-            header("offset", "$offset"); header("limit", "$limit")
-        }
+        val response = client.get("$ZHIHU_API/v4/members/$userId/answers?offset=$offset&limit=$limit")
         val text = response.bodyAsText()
         client.close()
         return try {
@@ -496,9 +486,7 @@ internal class ZhihuService(
     suspend fun fetchUserArticles(userId: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuFeedItem> {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$userId/articles") {
-            header("offset", "$offset"); header("limit", "$limit")
-        }
+        val response = client.get("$ZHIHU_API/v4/members/$userId/articles?offset=$offset&limit=$limit")
         val text = response.bodyAsText()
         client.close()
         return try {
@@ -539,9 +527,7 @@ internal class ZhihuService(
     suspend fun fetchUserPins(userId: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuFeedItem> {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$userId/pins") {
-            header("offset", "$offset"); header("limit", "$limit")
-        }
+        val response = client.get("$ZHIHU_API/v4/members/$userId/pins?offset=$offset&limit=$limit")
         val text = response.bodyAsText()
         client.close()
         return try {
@@ -562,9 +548,7 @@ internal class ZhihuService(
     suspend fun fetchFollowees(userId: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuPerson> {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$userId/followees") {
-            header("offset", "$offset"); header("limit", "$limit")
-        }
+        val response = client.get("$ZHIHU_API/v4/members/$userId/followees?offset=$offset&limit=$limit")
         val text = response.bodyAsText()
         client.close()
         return parsePersonList(text)
@@ -577,9 +561,7 @@ internal class ZhihuService(
     suspend fun fetchFollowers(userId: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuPerson> {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$userId/followers") {
-            header("offset", "$offset"); header("limit", "$limit")
-        }
+        val response = client.get("$ZHIHU_API/v4/members/$userId/followers?offset=$offset&limit=$limit")
         val text = response.bodyAsText()
         client.close()
         return parsePersonList(text)
@@ -626,9 +608,7 @@ internal class ZhihuService(
     suspend fun fetchNotifications(offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuNotificationItem> {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/notifications/v2") {
-            header("limit", "$limit"); header("offset", "$offset")
-        }
+        val response = client.get("$ZHIHU_API/v4/notifications/v2?limit=$limit&offset=$offset")
         val text = response.bodyAsText()
         client.close()
         return try {
@@ -672,9 +652,7 @@ internal class ZhihuService(
     suspend fun fetchNotificationBadgeCount(): Int {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/me") {
-            header("include", "notification_count")
-        }
+        val response = client.get("$ZHIHU_API/v4/me?include=notification_count")
         val text = response.bodyAsText()
         client.close()
         return try {
@@ -692,9 +670,7 @@ internal class ZhihuService(
     suspend fun searchUsers(query: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuPerson> {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/search_v3") {
-            header("t", "people"); header("q", query); header("limit", "$limit"); header("offset", "$offset")
-        }
+        val response = client.get("$ZHIHU_API/v4/search_v3?t=people&q=${query.encodeURLParam()}&limit=$limit&offset=$offset")
         val text = response.bodyAsText()
         client.close()
         return try {
@@ -731,9 +707,7 @@ internal class ZhihuService(
     suspend fun fetchMemberByUrlToken(urlToken: String): ZhihuPerson? {
         ensureSession()
         val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$urlToken") {
-            header("include", "id,name,url_token,avatar_url,headline,gender,follower_count,following_count,answer_count,articles_count,is_following,is_followed,user_type")
-        }
+        val response = client.get("$ZHIHU_API/v4/members/$urlToken?include=id,name,url_token,avatar_url,headline,gender,follower_count,following_count,answer_count,articles_count,is_following,is_followed,user_type")
         val text = response.bodyAsText()
         client.close()
         return try {
@@ -765,8 +739,7 @@ internal class ZhihuService(
     suspend fun fetchVideoPlayInfo(videoId: String, contentId: String, contentType: String = "answer"): ZhihuVideoInfo? {
         ensureSession()
         val client = signedClient()
-        val response = client.post("$ZHIHU_API/v4/video/play_info") {
-            header("r", videoId)
+        val response = client.post("$ZHIHU_API/v4/video/play_info?r=$videoId") {
             contentType(ContentType.Application.Json)
             setBody("""{"content_id":"$contentId","content_type_str":"$contentType","video_id":"$videoId","scene_code":"answer_detail_web","is_only_video":true}""")
         }
@@ -805,13 +778,14 @@ internal class ZhihuService(
     suspend fun fetchRecommendFeedWithCursor(cursor: String? = null, limit: Int = 20): Pair<List<ZhihuFeedItem>, String?> {
         ensureSession()
         val client = signedClient()
-        val url = "$ZHIHU_API/v3/feed/topstory/recommend"
+        val url = buildString {
+            append("$ZHIHU_API/v3/feed/topstory/recommend?limit=$limit")
+            if (cursor != null) {
+                append("&cursor=$cursor")
+            }
+        }
         val response = client.get(url) {
             header("desktop", "true")
-            header("limit", "$limit")
-            if (cursor != null) {
-                header("cursor", cursor)
-            }
         }
         val text = response.bodyAsText()
         client.close()
@@ -1002,6 +976,18 @@ internal class ZhihuService(
             } catch (_: Exception) { null }
         }
     }
+}
+
+
+/**
+ * URL 编码查询参数值
+ */
+private fun String.encodeURLParam(): String {
+    return this.replace(" ", "%20")
+        .replace("&", "%26")
+        .replace("?", "%3F")
+        .replace("=", "%3D")
+        .replace("#", "%23")
 }
 
 // ========== 数据模型 ==========
