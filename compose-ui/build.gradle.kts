@@ -98,4 +98,5 @@ dependencies {
 
 compose.resources {
     packageOfResClass = "dev.dimension.flare.compose.ui"
+    generateResClass = always
 }
