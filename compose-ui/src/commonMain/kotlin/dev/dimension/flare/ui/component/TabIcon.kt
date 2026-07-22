@@ -69,6 +69,7 @@ import dev.dimension.flare.compose.ui.posts_title
 import dev.dimension.flare.compose.ui.posts_with_replies_title
 import dev.dimension.flare.compose.ui.profile_tab_purchased_video_title
 import dev.dimension.flare.compose.ui.profile_tab_articles
+import dev.dimension.flare.compose.ui.profile_tab_highlights
 import dev.dimension.flare.compose.ui.rss_title
 import dev.dimension.flare.compose.ui.service_select_next_button
 import dev.dimension.flare.compose.ui.settings_title
@@ -337,6 +338,8 @@ internal val UiStrings.res: StringResource
             UiStrings.Posts -> Res.string.posts_title
 
             UiStrings.PostsWithReplies -> Res.string.posts_with_replies_title
+
+            UiStrings.Highlights -> Res.string.profile_tab_highlights
 
             UiStrings.Media -> Res.string.media_title
 

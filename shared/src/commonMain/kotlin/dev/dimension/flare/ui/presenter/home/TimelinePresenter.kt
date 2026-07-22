@@ -42,7 +42,9 @@ import dev.dimension.flare.data.model.tab.TimelinePostKind
 import dev.dimension.flare.data.repository.KeywordFilterPattern
 import dev.dimension.flare.data.repository.LocalFilterRepository
 import dev.dimension.flare.data.repository.LoginExpiredException
+import dev.dimension.flare.data.repository.MxgaRepository
 import dev.dimension.flare.data.repository.SettingsRepository
+import dev.dimension.flare.data.repository.isMxgaMatch
 import dev.dimension.flare.data.translation.PreTranslationService
 import dev.dimension.flare.data.translation.TranslationSettingsSupport
 import dev.dimension.flare.di.koinInject
@@ -59,6 +61,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -82,6 +85,7 @@ public open class TimelinePresenter : PresenterBase<TimelineState> {
     private val appDataStore: AppDataStore by koinInject()
     private val preTranslationService: PreTranslationService by koinInject()
     private val settingsRepository: SettingsRepository by koinInject()
+    private val mxgaRepository: MxgaRepository by koinInject()
 
     private val localFilterRepository: LocalFilterRepository by koinInject()
     private val inAppNotification: InAppNotification by koinInject()
@@ -91,12 +95,19 @@ public open class TimelinePresenter : PresenterBase<TimelineState> {
     }
 
     private val timelineTabItemId: String?
+    private val isHomeTimeline: Boolean
 
     private val timelineFilterConfigFlow: Flow<TimelineFilterConfig> by lazy {
         observeTimelineFilterConfig(
             settingsRepository = settingsRepository,
             timelineTabItemId = timelineTabItemId,
         )
+    }
+
+    private val mxgaEnabledFlow: Flow<Boolean> by lazy {
+        settingsRepository.appSettings
+            .map { it.mxgaEnabled }
+            .distinctUntilChanged()
     }
 
     private val translationSettingsFlow: Flow<TranslationDisplayOptions> by lazy {
@@ -107,10 +118,12 @@ public open class TimelinePresenter : PresenterBase<TimelineState> {
         tabId: String? = null,
         loader: Flow<RemoteLoader<UiTimelineV2>> = flowOf(notSupported()),
         options: TimelinePresenterOptions = TimelinePresenterOptions(),
+        isHomeTimeline: Boolean = false,
     ) : super() {
         this.baseLoader = loader
         this.options = options
         this.timelineTabItemId = tabId
+        this.isHomeTimeline = isHomeTimeline
     }
 
     internal open fun allowLongTextTranslationDisplay(loader: RemoteLoader<UiTimelineV2>): Boolean =
@@ -150,10 +163,17 @@ public open class TimelinePresenter : PresenterBase<TimelineState> {
                         ).cachedIn(scope)
                     }
                 }.flatMapLatest { pager ->
-                    combine(filterFlow, timelineFilterConfigFlow) { filterList, timelineFilterConfig ->
+                    combine(
+                        filterFlow,
+                        timelineFilterConfigFlow,
+                        mxgaEnabledFlow,
+                        mxgaRepository.snapshot,
+                    ) { filterList, timelineFilterConfig, mxgaEnabled, mxgaSnapshot ->
                         pager
                             .filter { item ->
-                                item.matchesKeywordFilters(filterList) && item.matchesTimelineFilter(timelineFilterConfig)
+                                item.matchesKeywordFilters(filterList) &&
+                                    item.matchesTimelineFilter(timelineFilterConfig) &&
+                                    (!mxgaEnabled || !item.isMxgaMatch(mxgaSnapshot))
                             }.map {
                                 transform(it)
                             }
@@ -178,6 +198,11 @@ public open class TimelinePresenter : PresenterBase<TimelineState> {
                         notifyError = { e ->
                             if (e is LoginExpiredException) {
                                 inAppNotification.onError(Message.LoginExpired, e)
+                            }
+                        },
+                        refreshOnInitialize = {
+                            shouldRefreshTimelineOnInitialize(isHomeTimeline) {
+                                settingsRepository.appSettings.first().refreshHomeTimelineOnLaunch
                             }
                         },
                     ),
@@ -233,6 +258,11 @@ public open class TimelinePresenter : PresenterBase<TimelineState> {
         }
     }
 }
+
+internal suspend fun shouldRefreshTimelineOnInitialize(
+    isHomeTimeline: Boolean,
+    refreshHomeTimelineOnLaunch: suspend () -> Boolean,
+): Boolean = !isHomeTimeline || refreshHomeTimelineOnLaunch()
 
 @Immutable
 public interface TimelineState {
@@ -305,7 +335,9 @@ internal fun UiTimelineV2.TimelinePostItem.traits(): TimelinePostTraits {
     val contents =
         buildSet {
             val hasVisualMedia = visiblePost.images.any { it is UiMedia.Image || it is UiMedia.Gif || it is UiMedia.Video }
-            if (visiblePost.content.raw.isNotBlank() && !hasVisualMedia) {
+            if (visiblePost.content.original.raw
+                    .isNotBlank() && !hasVisualMedia
+            ) {
                 add(TimelinePostContent.Text)
             }
             if (visiblePost.images.any { it is UiMedia.Image || it is UiMedia.Gif }) {
@@ -325,8 +357,8 @@ internal fun UiTimelineV2.TimelinePostItem.traits(): TimelinePostTraits {
 }
 
 private fun UiTimelineV2.Post.isTimelineFilterEmpty(): Boolean =
-    content.raw.isBlank() &&
-        contentWarning?.raw.isNullOrBlank() &&
+    content.original.raw.isBlank() &&
+        contentWarning?.original?.raw.isNullOrBlank() &&
         images.isEmpty() &&
         poll == null &&
         card == null

@@ -16,6 +16,7 @@ import dev.dimension.flare.createTestFileSystem
 import dev.dimension.flare.createTestRootPath
 import dev.dimension.flare.data.database.cache.CacheDatabase
 import dev.dimension.flare.data.database.cache.mapper.saveToDatabase
+import dev.dimension.flare.data.database.cache.model.DbPagingKey
 import dev.dimension.flare.data.database.cache.model.DbPagingTimelineWithStatus
 import dev.dimension.flare.data.database.cache.model.DbStatusWithReference
 import dev.dimension.flare.data.database.cache.model.TranslationDisplayOptions
@@ -35,10 +36,10 @@ import dev.dimension.flare.data.model.tab.TimelineMergePolicy
 import dev.dimension.flare.data.network.ai.AiCompletionService
 import dev.dimension.flare.data.network.ai.OpenAIService
 import dev.dimension.flare.data.translation.OnlinePreTranslationService
-import dev.dimension.flare.data.translation.PreTranslationContentRules
 import dev.dimension.flare.data.translation.PreTranslationService
 import dev.dimension.flare.data.translation.PreTranslationStoreSupport
 import dev.dimension.flare.data.translation.aiPreTranslateConfig
+import dev.dimension.flare.data.translation.canonicalTranslationLanguage
 import dev.dimension.flare.deleteTestRootPath
 import dev.dimension.flare.memoryDatabaseBuilder
 import dev.dimension.flare.model.AccountType
@@ -50,6 +51,7 @@ import dev.dimension.flare.ui.model.ClickEvent
 import dev.dimension.flare.ui.model.UiHandle
 import dev.dimension.flare.ui.model.UiProfile
 import dev.dimension.flare.ui.model.UiTimelineV2
+import dev.dimension.flare.ui.model.UiTranslatableText
 import dev.dimension.flare.ui.render.TranslationDocument
 import dev.dimension.flare.ui.render.TranslationTokenKind
 import dev.dimension.flare.ui.render.toUi
@@ -79,6 +81,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -266,6 +269,55 @@ class MixedRemoteMediatorTest : RobolectricTest() {
                 androidx.paging.RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH,
                 mediator.initialize(),
             )
+        }
+
+    @OptIn(ExperimentalPagingApi::class)
+    @Test
+    fun timelineMediatorSuppressesLaunchRefreshWhenDisabled() =
+        runTest {
+            val loader =
+                FakeLoader(
+                    pagingKey = "refresh_disabled",
+                    supportPrepend = true,
+                ) {
+                    error("Launch refresh should be suppressed")
+                }
+            val mediator =
+                TimelineRemoteMediator(
+                    loader = loader,
+                    database = db,
+                    allowLongText = false,
+                    refreshOnInitialize = { false },
+                )
+            saveToDatabase(
+                db,
+                listOf(TimelinePagingMapper.toDb(feed("https://example.com/cached", 1000L), pagingKey = loader.pagingKey)),
+            )
+            db.pagingTimelineDao().insertPagingKey(
+                DbPagingKey(
+                    pagingKey = loader.pagingKey,
+                    prevKey = "newer",
+                ),
+            )
+
+            assertEquals(
+                androidx.paging.RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH,
+                mediator.initialize(),
+            )
+            val result =
+                mediator.load(
+                    loadType = LoadType.PREPEND,
+                    state =
+                        PagingState(
+                            pages = emptyList(),
+                            anchorPosition = null,
+                            config = PagingConfig(pageSize = 20),
+                            leadingPlaceholderCount = 0,
+                        ),
+                )
+
+            assertTrue(assertIs<androidx.paging.RemoteMediator.MediatorResult.Success>(result).endOfPaginationReached)
+            assertTrue(loader.requests.isEmpty())
         }
 
     @OptIn(ExperimentalPagingApi::class)
@@ -460,6 +512,104 @@ class MixedRemoteMediatorTest : RobolectricTest() {
 
     @OptIn(ExperimentalPagingApi::class)
     @Test
+    fun timeMergePolicyKeepsOlderBufferedPageBehindNewerNextPage() =
+        runTest {
+            val first =
+                FakeLoader("a") { request ->
+                    when (request) {
+                        PagingRequest.Refresh -> {
+                            PagingResult(
+                                data = listOf(feed("https://example.com/a_4000", 4000L)),
+                                nextKey = "a_next",
+                            )
+                        }
+
+                        is PagingRequest.Append -> {
+                            assertEquals("a_next", request.nextKey)
+                            PagingResult(
+                                data = listOf(feed("https://example.com/a_3000", 3000L)),
+                                nextKey = null,
+                            )
+                        }
+
+                        is PagingRequest.Prepend -> {
+                            error("No prepend expected")
+                        }
+                    }
+                }
+            val second =
+                FakeLoader("b") { request ->
+                    when (request) {
+                        PagingRequest.Refresh -> {
+                            PagingResult(
+                                data = listOf(feed("https://example.com/b_2000", 2000L)),
+                                nextKey = null,
+                            )
+                        }
+
+                        is PagingRequest.Append -> {
+                            error("B should stay buffered without loading another page")
+                        }
+
+                        is PagingRequest.Prepend -> {
+                            error("No prepend expected")
+                        }
+                    }
+                }
+            val state =
+                PagingState<OffsetFromStartPagingKey, DbPagingTimelineWithStatus>(
+                    pages = emptyList(),
+                    anchorPosition = null,
+                    config = PagingConfig(pageSize = 1),
+                    leadingPlaceholderCount = 0,
+                )
+
+            fun mediator() =
+                TimelineRemoteMediator(
+                    loader = MixedRemoteMediator(db, listOf(first, second), TimelineMergePolicy.Time),
+                    database = db,
+                    allowLongText = false,
+                )
+
+            val refreshMediator = mediator()
+            val refreshResult = refreshMediator.load(loadType = LoadType.REFRESH, state = state)
+            assertTrue(refreshResult is androidx.paging.RemoteMediator.MediatorResult.Success)
+
+            val firstAppend =
+                MixedRemoteMediator(db, listOf(first, second), TimelineMergePolicy.Time)
+                    .load(pageSize = 1, request = PagingRequest.Append("mixed_next_key"))
+            val retriedFirstAppend =
+                MixedRemoteMediator(db, listOf(first, second), TimelineMergePolicy.Time)
+                    .load(pageSize = 1, request = PagingRequest.Append("mixed_next_key"))
+            val committedFirstAppend = mediator().load(loadType = LoadType.APPEND, state = state)
+            val committedSecondAppend = mediator().load(loadType = LoadType.APPEND, state = state)
+
+            assertEquals(
+                listOf("https://example.com/a_3000"),
+                firstAppend.data.mapNotNull { (it as? UiTimelineV2.Feed)?.url },
+            )
+            assertEquals(firstAppend.data, retriedFirstAppend.data)
+            assertEquals(firstAppend.nextKey, retriedFirstAppend.nextKey)
+            assertTrue(committedFirstAppend is androidx.paging.RemoteMediator.MediatorResult.Success)
+            assertTrue(committedSecondAppend is androidx.paging.RemoteMediator.MediatorResult.Success)
+            assertEquals(
+                listOf(
+                    "https://example.com/a_4000",
+                    "https://example.com/a_3000",
+                    "https://example.com/b_2000",
+                ),
+                db
+                    .pagingTimelineDao()
+                    .getTimelinePage(refreshMediator.pagingKey, offset = 0, limit = 20)
+                    .mapNotNull { (it.status.status.data.content as? UiTimelineV2.Feed)?.url },
+            )
+            assertEquals(listOf<PagingRequest>(PagingRequest.Refresh, PagingRequest.Append("a_next")), first.requests)
+            assertEquals(listOf<PagingRequest>(PagingRequest.Refresh), second.requests)
+            assertNull(db.pagingTimelineDao().getPagingKey(refreshMediator.pagingKey)?.nextKey)
+        }
+
+    @OptIn(ExperimentalPagingApi::class)
+    @Test
     fun timeMergePolicyPersistsGlobalTimeOrderAcrossAppends() =
         runTest {
             val loader =
@@ -520,6 +670,77 @@ class MixedRemoteMediatorTest : RobolectricTest() {
                     (it.status.status.data.content as? UiTimelineV2.Feed)?.url
                 },
             )
+        }
+
+    @OptIn(ExperimentalPagingApi::class)
+    @Test
+    fun timeMergePolicySkipsOverlappingItemsAfterMediatorRecreation() =
+        runTest {
+            val overlapping = feed("https://example.com/overlapping", 4000L)
+            val loader =
+                FakeLoader("overlap") { request ->
+                    when (request) {
+                        PagingRequest.Refresh -> {
+                            PagingResult(
+                                data = listOf(overlapping),
+                                nextKey = "overlap_next",
+                            )
+                        }
+
+                        is PagingRequest.Append -> {
+                            assertEquals("overlap_next", request.nextKey)
+                            PagingResult(
+                                data = listOf(overlapping, feed("https://example.com/older", 3000L)),
+                                nextKey = null,
+                            )
+                        }
+
+                        is PagingRequest.Prepend -> {
+                            error("No prepend expected")
+                        }
+                    }
+                }
+            val state =
+                PagingState<OffsetFromStartPagingKey, DbPagingTimelineWithStatus>(
+                    pages = emptyList(),
+                    anchorPosition = null,
+                    config = PagingConfig(pageSize = 1),
+                    leadingPlaceholderCount = 0,
+                )
+            val refreshMediator =
+                TimelineRemoteMediator(
+                    loader = MixedRemoteMediator(db, listOf(loader), TimelineMergePolicy.Time),
+                    database = db,
+                    allowLongText = false,
+                )
+
+            val refreshResult = refreshMediator.load(loadType = LoadType.REFRESH, state = state)
+            assertTrue(refreshResult is androidx.paging.RemoteMediator.MediatorResult.Success)
+
+            val appendMediator =
+                TimelineRemoteMediator(
+                    loader = MixedRemoteMediator(db, listOf(loader), TimelineMergePolicy.Time),
+                    database = db,
+                    allowLongText = false,
+                )
+            val appendResult = appendMediator.load(loadType = LoadType.APPEND, state = state)
+            assertTrue(appendResult is androidx.paging.RemoteMediator.MediatorResult.Success)
+
+            val page =
+                db.pagingTimelineDao().getTimelinePage(
+                    pagingKey = appendMediator.pagingKey,
+                    offset = 0,
+                    limit = 20,
+                )
+            assertEquals(
+                listOf("https://example.com/overlapping", "https://example.com/older"),
+                page.mapNotNull { (it.status.status.data.content as? UiTimelineV2.Feed)?.url },
+            )
+            assertEquals(
+                listOf<PagingRequest>(PagingRequest.Refresh, PagingRequest.Append("overlap_next")),
+                loader.requests,
+            )
+            assertNull(db.pagingTimelineDao().getPagingKey(appendMediator.pagingKey)?.nextKey)
         }
 
     @OptIn(ExperimentalPagingApi::class)
@@ -1505,6 +1726,168 @@ class MixedRemoteMediatorTest : RobolectricTest() {
         }
 
     @Test
+    fun platformTranslationSkipsProviderAndPreferenceChangeUsesProviderCache() =
+        runTest {
+            val appDataStore = AppDataStore(fileStorage)
+            appDataStore.appSettingsStore.updateData {
+                it.copy(
+                    language = Locale.language,
+                    translateConfig =
+                        aiPreTranslateConfig().copy(
+                            preferPlatformTranslation = true,
+                        ),
+                )
+            }
+            var providerCalls = 0
+            val scope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
+            val service: PreTranslationService =
+                OnlinePreTranslationService(
+                    database = db,
+                    appDataStore = appDataStore,
+                    aiCompletionService = AiCompletionService(OpenAIService(), TestOnDeviceAI()),
+                    coroutineScope = scope,
+                    batchTranslator = { _, _, _, sourceDocument, targetLanguage, _ ->
+                        providerCalls += 1
+                        completedTranslationJson(sourceDocument, targetLanguage)
+                    },
+                )
+            try {
+                val accountKey = MicroBlogKey("platform-account", "x.com")
+                val post =
+                    createPost(
+                        accountType = AccountType.Specific(accountKey),
+                        user = profile(MicroBlogKey("platform-user", "x.com"), "User"),
+                        statusKey = MicroBlogKey("platform-status", "x.com"),
+                        text = "source content",
+                    ).copy(
+                        platformType = PlatformType.xQt,
+                        content =
+                            UiTranslatableText(
+                                original = "source content".toUiPlainText(),
+                                translation = "platform translation".toUiPlainText(listOf(Locale.language)),
+                            ),
+                    )
+                val status =
+                    TimelinePagingMapper
+                        .toDb(post, pagingKey = "home")
+                        .status.status.data
+
+                service.enqueueStatuses(listOf(status))
+
+                val platformTranslation =
+                    withTimeout(5_000) {
+                        db
+                            .translationDao()
+                            .find(
+                                entityType = TranslationEntityType.Status,
+                                entityKey = status.id,
+                                targetLanguage = Locale.language,
+                            ).filterNotNull()
+                            .first { it.status == TranslationStatus.Completed }
+                    }
+                assertEquals(0, providerCalls)
+                assertEquals("platform translation", platformTranslation.payload?.content?.raw)
+
+                appDataStore.appSettingsStore.updateData {
+                    it.copy(
+                        translateConfig = it.translateConfig.copy(preferPlatformTranslation = false),
+                    )
+                }
+                service.enqueueStatuses(listOf(status))
+
+                val providerTranslation =
+                    withTimeout(5_000) {
+                        db
+                            .translationDao()
+                            .find(
+                                entityType = TranslationEntityType.Status,
+                                entityKey = status.id,
+                                targetLanguage = Locale.language,
+                            ).filterNotNull()
+                            .first {
+                                it.status == TranslationStatus.Completed &&
+                                    it.sourceHash != platformTranslation.sourceHash
+                            }
+                    }
+                assertEquals(1, providerCalls)
+                assertNotEquals(platformTranslation.sourceHash, providerTranslation.sourceHash)
+                assertEquals("source content (${Locale.language})", providerTranslation.payload?.content?.raw)
+            } finally {
+                scope.coroutineContext[Job]?.cancelAndJoin()
+            }
+        }
+
+    @Test
+    fun platformTranslationStillHonorsExcludedSourceLanguages() =
+        runTest {
+            val excludedLanguage = nonTargetLanguageTag()
+            val appDataStore = AppDataStore(fileStorage)
+            appDataStore.appSettingsStore.updateData {
+                it.copy(
+                    language = Locale.language,
+                    translateConfig =
+                        aiPreTranslateConfig().copy(
+                            preferPlatformTranslation = true,
+                            autoTranslateExcludedLanguages = listOf(excludedLanguage),
+                        ),
+                )
+            }
+            var providerCalls = 0
+            val scope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
+            val service: PreTranslationService =
+                OnlinePreTranslationService(
+                    database = db,
+                    appDataStore = appDataStore,
+                    aiCompletionService = AiCompletionService(OpenAIService(), TestOnDeviceAI()),
+                    coroutineScope = scope,
+                    batchTranslator = { _, _, _, sourceDocument, targetLanguage, _ ->
+                        providerCalls += 1
+                        completedTranslationJson(sourceDocument, targetLanguage)
+                    },
+                )
+            try {
+                val accountKey = MicroBlogKey("excluded-platform-account", "x.com")
+                val post =
+                    createPost(
+                        accountType = AccountType.Specific(accountKey),
+                        user = profile(MicroBlogKey("excluded-platform-user", "x.com"), "User"),
+                        statusKey = MicroBlogKey("excluded-platform-status", "x.com"),
+                        text = "source content",
+                    ).copy(
+                        platformType = PlatformType.xQt,
+                        sourceLanguages = persistentListOf(excludedLanguage),
+                        content =
+                            UiTranslatableText(
+                                original = "source content".toUiPlainText(),
+                                translation = "platform translation".toUiPlainText(listOf(Locale.language)),
+                            ),
+                    )
+                val status =
+                    TimelinePagingMapper
+                        .toDb(post, pagingKey = "home")
+                        .status.status.data
+
+                service.enqueueStatuses(listOf(status))
+
+                val translation =
+                    withTimeout(5_000) {
+                        db
+                            .translationDao()
+                            .find(
+                                entityType = TranslationEntityType.Status,
+                                entityKey = status.id,
+                                targetLanguage = Locale.language,
+                            ).filterNotNull()
+                            .first { it.status == TranslationStatus.Skipped }
+                    }
+                assertEquals(0, providerCalls)
+                assertEquals(PreTranslationStoreSupport.SKIPPED_EXCLUDED_LANGUAGE_REASON, translation.statusReason)
+            } finally {
+                scope.coroutineContext[Job]?.cancelAndJoin()
+            }
+        }
+
+    @Test
     fun preTranslationBatchDocumentAllowsMissingTargetLanguageInResponse() {
         val document =
             """{"version":1,"items":[]}""".decodeJson(
@@ -1987,7 +2370,7 @@ class MixedRemoteMediatorTest : RobolectricTest() {
             sensitive = false,
             contentWarning = null,
             user = user,
-            content = text.toUiPlainText(),
+            content = UiTranslatableText(text.toUiPlainText()),
             actions = persistentListOf(),
             poll = null,
             statusKey = statusKey,
@@ -2186,9 +2569,9 @@ private fun TranslationDocument.translated(targetLanguage: String): TranslationD
     )
 
 private fun nonTargetLanguageTag(): String {
-    val target = requireNotNull(PreTranslationContentRules.canonicalTranslationLanguage(Locale.language))
+    val target = requireNotNull(canonicalTranslationLanguage(Locale.language))
     return listOf("fr-FR", "de-DE", "es-ES", "ja-JP", "zh-CN")
         .first { candidate ->
-            PreTranslationContentRules.canonicalTranslationLanguage(candidate) != target
+            canonicalTranslationLanguage(candidate) != target
         }
 }

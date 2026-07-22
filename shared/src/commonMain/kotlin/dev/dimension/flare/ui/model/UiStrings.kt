@@ -64,6 +64,7 @@ public enum class UiStrings {
     LatestResource,
     PurchasedVideo,
     Articles,
+    Highlights,
 }
 
 public fun UiStrings.asText(): UiText = UiText.Localized(this)
