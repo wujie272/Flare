@@ -3,6 +3,7 @@ package dev.dimension.flare.data.network.cbart
 import dev.dimension.flare.data.network.cbart.api.*
 import dev.dimension.flare.data.platform.CBART_HOST
 import dev.dimension.flare.data.platform.CbartCredential
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 
@@ -26,7 +27,7 @@ internal class CbartService(
         if (items.any { it.owner == null && it.uid != null }) {
             return kotlinx.coroutines.coroutineScope {
                 items.map { item ->
-                    kotlinx.coroutines.async {
+                    async {
                         if (item.owner == null && item.uid != null) {
                             val owner = fetchUserByUid(item.uid.toString())
                             if (owner != null) item.copy(owner = owner) else item
