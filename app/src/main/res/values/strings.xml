@@ -543,6 +543,7 @@
     <string name="profile_tab_highlights">Highlights</string>
     <string name="profile_tab_media">Media</string>
     <string name="profile_tab_articles">文章</string>
+    <string name="profile_tab_pins">想法</string>
     <string name="illustrations_title">Illustrations</string>
     <string name="manga_title">Manga</string>
     <string name="pixiv_ranking_week_title">Weekly Ranking</string>

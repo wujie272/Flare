@@ -13,6 +13,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.json.buildJsonObject
@@ -34,6 +35,7 @@ import kotlin.time.Duration.Companion.hours
 private const val ZHIHU_BASE = "https://www.zhihu.com"
 private const val ZHIHU_API = "https://www.zhihu.com/api"
 private const val ZHIHU_DAILY = "https://news-at.zhihu.com/api/4"
+private const val ZHIHU_DAILY_FALLBACK = "https://daily.zhihu.com/api/4"
 private const val ZHIHU_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 private const val ZSE93 = "101_3_3.0"
 private val cookieRefreshInterval = 12.hours
@@ -97,6 +99,64 @@ internal class ZhihuService(
         val path = "/" + fullUrl.substringAfter("//").substringAfter('/')
         val signSource = listOfNotNull(zse93, path, dc0).joinToString("+")
         return ZhihuZseSigner.encryptZseV4(md5Hex(signSource))
+    }
+
+    /**
+     * 发送带签名的 GET 请求，遇 401 自动刷新 Cookie 后重试一次
+     */
+    private suspend fun signedGetText(url: String): String {
+        ensureSession()
+        val client = signedClient()
+        try {
+            val response = client.get(url)
+            if (response.status == HttpStatusCode.Unauthorized) {
+                client.close()
+                refreshSession()
+                val retryClient = signedClient()
+                try {
+                    return retryClient.get(url).bodyAsText()
+                } finally {
+                    retryClient.close()
+                }
+            }
+            return response.bodyAsText()
+        } finally {
+            client.close()
+        }
+    }
+
+    /**
+     * 发送带签名的 POST 请求，遇 401 自动刷新 Cookie 后重试一次
+     */
+    private suspend fun signedPostText(url: String, body: String? = null): String {
+        ensureSession()
+        val client = signedClient()
+        try {
+            val response = client.post(url) {
+                if (body != null) {
+                    contentType(ContentType.Application.Json)
+                    setBody(body)
+                }
+            }
+            if (response.status == HttpStatusCode.Unauthorized) {
+                client.close()
+                refreshSession()
+                val retryClient = signedClient()
+                try {
+                    return retryClient.post(url) {
+                        if (body != null) {
+                            contentType(ContentType.Application.Json)
+                            setBody(body)
+                        }
+                    }.bodyAsText()
+                } finally {
+                    retryClient.close()
+                }
+            }
+            return response.bodyAsText()
+        } finally {
+            client.close()
+        }
     }
 
     // ========== Cookie 自动刷新 ==========
@@ -199,9 +259,13 @@ internal class ZhihuService(
 
     // ========== 热榜 ==========
     
+    /**
+     * 获取热榜
+     * API: /api/v3/feed/topstory/hot-lists/total?limit=50
+     */
     suspend fun fetchHotList(): List<ZhihuHotItem> {
         val cookie = buildCookie()
-        val response = httpClient().get("$ZHIHU_API/v3/feed/topstory/hot-lists") {
+        val response = httpClient().get("$ZHIHU_API/v3/feed/topstory/hot-lists/total?limit=50") {
             header("Cookie", cookie)
         }
         val text = response.bodyAsText()
@@ -218,9 +282,10 @@ internal class ZhihuService(
                         excerpt = target["excerpt"]?.jsonPrimitive?.content,
                         answerCount = target["answer_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                         followerCount = target["follower_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
-                        hotValue = item["hot_value"]?.jsonPrimitive?.content ?: item["heat"]?.jsonPrimitive?.content ?: "0",
+                        hotValue = item["detail_text"]?.jsonPrimitive?.content ?: "0",
                         url = target["url"]?.jsonPrimitive?.content ?: "",
                         type = "question",
+                        thumbnail = item["children"]?.jsonArray?.firstOrNull()?.jsonObject?.get("thumbnail")?.jsonPrimitive?.content,
                     )
                 } catch (_: Exception) { null }
             }
@@ -233,8 +298,23 @@ internal class ZhihuService(
         return try {
             val response = httpClient().get("$ZHIHU_DAILY/stories/latest")
             val text = response.bodyAsText()
+            parseDailyStories(text)
+        } catch (_: Exception) {
+            // 主 API 失败时尝试备用 DNS
+            try {
+                val fallbackResponse = httpClient().get("$ZHIHU_DAILY_FALLBACK/stories/latest")
+                parseDailyStories(fallbackResponse.bodyAsText())
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
+    }
+
+    private fun parseDailyStories(text: String): List<ZhihuDailyStory> {
+        return try {
             val root = json.parseToJsonElement(text).jsonObject
             val stories = root["stories"]?.jsonArray ?: return emptyList()
+            val dateStr = root["date"]?.jsonPrimitive?.content ?: ""
             stories.mapNotNull { element ->
                 val story = element.jsonObject
                 try {
@@ -245,6 +325,7 @@ internal class ZhihuService(
                         imageUrl = story["images"]?.jsonArray?.firstOrNull()?.jsonPrimitive?.content
                             ?: story["image"]?.jsonPrimitive?.content,
                         url = story["url"]?.jsonPrimitive?.content ?: "https://daily.zhihu.com/story/${story["id"]?.jsonPrimitive?.content}",
+                        date = dateStr,
                     )
                 } catch (_: Exception) { null }
             }
@@ -256,11 +337,7 @@ internal class ZhihuService(
     // ========== 搜索（需要签名，需要 ensureSession） ==========
     
     suspend fun search(query: String): List<ZhihuFeedItem> {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/search_v3?q=${query.encodeURLParam()}&limit=20")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/search_v3?q=${query.encodeURLParam()}&limit=20")
         return try {
             val root = json.parseToJsonElement(text).jsonObject
             val data = root["data"]?.jsonArray ?: return emptyList()
@@ -286,11 +363,7 @@ internal class ZhihuService(
     // ========== 用户信息（需要签名，需要 ensureSession） ==========
 
     suspend fun fetchCurrentUser(): ZhihuUserInfo? {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/me?include=id,name,url_token,avatar_url,user_type")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/me?include=id,name,url_token,avatar_url,user_type")
         return try {
             val obj = json.parseToJsonElement(text).jsonObject
             val id = obj["id"]?.jsonPrimitive?.content ?: return null
@@ -387,22 +460,14 @@ internal class ZhihuService(
     }
 
     suspend fun fetchMemberRelation(memberId: String): JsonObject? {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$memberId?include=is_following,is_followed,follower_count,answer_count,articles_count")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/members/$memberId?include=is_following,is_followed,follower_count,answer_count,articles_count")
         return try {
             json.parseToJsonElement(text).jsonObject
         } catch (_: Exception) { null }
     }
 
     suspend fun fetchComments(contentType: String, contentId: String, page: Int = 1): ZhihuPagingResponse<ZhihuComment> {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/$contentType/$contentId/comments?limit=20&offset=${(page - 1) * 20}")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/$contentType/$contentId/comments?limit=20&offset=${(page - 1) * 20}")
         return try {
             val root = json.parseToJsonElement(text).jsonObject
             val data = root["data"]?.jsonArray ?: return ZhihuPagingResponse(emptyList(), isEnd = true)
@@ -435,11 +500,7 @@ internal class ZhihuService(
      * API: /api/v4/members/{id}/answers?offset={offset}&limit={limit}
      */
     suspend fun fetchUserAnswers(userId: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuFeedItem> {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$userId/answers?offset=$offset&limit=$limit")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/members/$userId/answers?offset=$offset&limit=$limit")
         return try {
             val root = json.parseToJsonElement(text).jsonObject
             val data = root["data"]?.jsonArray ?: return ZhihuPagingResponse(emptyList(), isEnd = true)
@@ -484,11 +545,7 @@ internal class ZhihuService(
      * API: /api/v4/members/{id}/articles?offset={offset}&limit={limit}
      */
     suspend fun fetchUserArticles(userId: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuFeedItem> {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$userId/articles?offset=$offset&limit=$limit")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/members/$userId/articles?offset=$offset&limit=$limit")
         return try {
             val root = json.parseToJsonElement(text).jsonObject
             val data = root["data"]?.jsonArray ?: return ZhihuPagingResponse(emptyList(), isEnd = true)
@@ -525,17 +582,45 @@ internal class ZhihuService(
      * API: /api/v4/members/{id}/pins?offset={offset}&limit={limit}
      */
     suspend fun fetchUserPins(userId: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuFeedItem> {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$userId/pins?offset=$offset&limit=$limit")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/members/$userId/pins?offset=$offset&limit=$limit")
         return try {
             val root = json.parseToJsonElement(text).jsonObject
             val data = root["data"]?.jsonArray ?: return ZhihuPagingResponse(emptyList(), isEnd = true)
             val paging = root["paging"]?.jsonObject
             val isEnd = paging?.get("is_end")?.jsonPrimitive?.content?.toBoolean() ?: true
-            ZhihuPagingResponse(data = emptyList(), isEnd = isEnd) // 想法暂不解析，返回空
+            val nextUrl = paging?.get("next")?.jsonPrimitive?.content
+            val nextOffset = nextUrl?.let {
+                it.substringAfter("offset=", "").substringBefore("&").substringBefore("\u0026").toIntOrNull()
+            }
+            ZhihuPagingResponse(
+                data = data.mapNotNull { element ->
+                    val obj = element.jsonObject
+                    try {
+                        val author = obj["author"]?.jsonObject
+                        // 从 content 数组中提取文本作为 excerpt
+                        val contentArray = obj["content"]?.jsonArray
+                        val excerpt = contentArray?.joinToString(" ") { item ->
+                            item.jsonObject["content"]?.jsonPrimitive?.content.orEmpty()
+                        }?.take(200) ?: obj["excerpt_title"]?.jsonPrimitive?.content ?: ""
+                        ZhihuFeedItem(
+                            id = obj["id"]?.jsonPrimitive?.content ?: "",
+                            type = "pin",
+                            title = obj["excerpt_title"]?.jsonPrimitive?.content ?: "想法",
+                            excerpt = excerpt,
+                            url = "https://www.zhihu.com${obj["url"]?.jsonPrimitive?.content ?: "/pins/${obj["id"]?.jsonPrimitive?.content}"}",
+                            authorName = author?.get("name")?.jsonPrimitive?.content,
+                            authorId = author?.get("id")?.jsonPrimitive?.content ?: author?.get("url_token")?.jsonPrimitive?.content,
+                            authorAvatar = author?.get("avatar_url")?.jsonPrimitive?.content,
+                            voteCount = obj["like_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: obj["reaction_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            commentCount = obj["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            createdAt = obj["created"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                            updatedAt = obj["updated"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                        )
+                    } catch (_: Exception) { null }
+                },
+                isEnd = isEnd,
+                nextOffset = nextOffset,
+            )
         } catch (_: Exception) { ZhihuPagingResponse(emptyList(), isEnd = true) }
     }
 
@@ -546,11 +631,7 @@ internal class ZhihuService(
      * API: /api/v4/members/{id}/followees?offset={offset}&limit={limit}
      */
     suspend fun fetchFollowees(userId: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuPerson> {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$userId/followees?offset=$offset&limit=$limit")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/members/$userId/followees?offset=$offset&limit=$limit")
         return parsePersonList(text)
     }
 
@@ -559,11 +640,7 @@ internal class ZhihuService(
      * API: /api/v4/members/{id}/followers?offset={offset}&limit={limit}
      */
     suspend fun fetchFollowers(userId: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuPerson> {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$userId/followers?offset=$offset&limit=$limit")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/members/$userId/followers?offset=$offset&limit=$limit")
         return parsePersonList(text)
     }
 
@@ -603,45 +680,47 @@ internal class ZhihuService(
 
     /**
      * 获取通知列表
-     * API: /api/v4/notifications/v2?limit={limit}&offset={offset}
+     * API: https://api.zhihu.com/notifications/v3/timeline/entry/comment?limit={limit}
      */
     suspend fun fetchNotifications(offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuNotificationItem> {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/notifications/v2?limit=$limit&offset=$offset")
-        val text = response.bodyAsText()
-        client.close()
+        val url = if (offset > 0) {
+            "https://api.zhihu.com/notifications/v3/timeline/entry/comment?limit=$limit&offset=$offset"
+        } else {
+            "https://api.zhihu.com/notifications/v3/timeline/entry/comment?limit=$limit"
+        }
+        val text = signedGetText(url)
         return try {
             val root = json.parseToJsonElement(text).jsonObject
             val data = root["data"]?.jsonArray ?: return ZhihuPagingResponse(emptyList(), isEnd = true)
             val paging = root["paging"]?.jsonObject
             val isEnd = paging?.get("is_end")?.jsonPrimitive?.content?.toBoolean() ?: true
-            ZhihuPagingResponse(
-                data = data.mapNotNull { element ->
-                    val obj = element.jsonObject
-                    try {
-                        val content = obj["content"]?.jsonObject
-                        val actors = content?.get("actors")?.jsonArray
-                        val actor = actors?.firstOrNull()?.jsonObject
-                        val target = content?.get("target")?.jsonObject
-                        val targetLink = target?.get("link")?.jsonPrimitive?.content ?: ""
-                        val targetText = target?.get("text")?.jsonPrimitive?.content ?: ""
-                        ZhihuNotificationItem(
-                            id = obj["id"]?.jsonPrimitive?.content ?: "",
-                            type = obj["type"]?.jsonPrimitive?.content ?: "",
-                            isRead = obj["is_read"]?.jsonPrimitive?.content?.toBoolean() ?: false,
-                            createTime = obj["create_time"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
-                            verb = content?.get("verb")?.jsonPrimitive?.content ?: "",
-                            actorName = actor?.get("name")?.jsonPrimitive?.content,
-                            actorLink = actor?.get("link")?.jsonPrimitive?.content,
-                            targetText = targetText,
-                            targetLink = targetLink,
-                            targetTitle = targetText,
-                        )
-                    } catch (_: Exception) { null }
-                },
-                isEnd = isEnd,
-            )
+            val nextUrl = paging?.get("next")?.jsonPrimitive?.content
+            val nextOffset = nextUrl?.let {
+                val raw = it.substringAfter("offset=", "").substringBefore("&").substringBefore("\u0026")
+                raw.toIntOrNull()
+            }
+            val items = data.mapNotNull { element ->
+                val obj = element.jsonObject
+                try {
+                    if (obj["type"]?.jsonPrimitive?.content == "empty") return@mapNotNull null
+                    val content = obj["content"]?.jsonObject
+                    val head = obj["head"]?.jsonObject
+                    val targetSource = obj["target_source"]?.jsonObject
+                    ZhihuNotificationItem(
+                        id = obj["id"]?.jsonPrimitive?.content ?: obj["unique_id"]?.jsonPrimitive?.content ?: "",
+                        type = obj["card_type"]?.jsonPrimitive?.content ?: "",
+                        isRead = obj["is_read"]?.jsonPrimitive?.content?.toBoolean() ?: false,
+                        createTime = obj["created"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                        verb = content?.get("sub_title")?.jsonPrimitive?.content ?: "",
+                        actorName = content?.get("title")?.jsonPrimitive?.content,
+                        actorLink = head?.get("target_link")?.jsonPrimitive?.content,
+                        targetText = content?.get("text")?.jsonPrimitive?.content,
+                        targetLink = content?.get("target_link")?.jsonPrimitive?.content,
+                        targetTitle = targetSource?.get("text")?.jsonPrimitive?.content ?: content?.get("text")?.jsonPrimitive?.content,
+                    )
+                } catch (_: Exception) { null }
+            }
+            ZhihuPagingResponse(data = items, isEnd = isEnd, nextOffset = nextOffset)
         } catch (_: Exception) { ZhihuPagingResponse(emptyList(), isEnd = true) }
     }
 
@@ -650,11 +729,7 @@ internal class ZhihuService(
      * API: /api/v4/me
      */
     suspend fun fetchNotificationBadgeCount(): Int {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/me?include=notification_count")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/me?include=notification_count")
         return try {
             val obj = json.parseToJsonElement(text).jsonObject
             obj["notification_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0
@@ -668,11 +743,7 @@ internal class ZhihuService(
      * API: /api/v4/search_v3?t=people&q={query}&offset={offset}
      */
     suspend fun searchUsers(query: String, offset: Int = 0, limit: Int = 20): ZhihuPagingResponse<ZhihuPerson> {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/search_v3?t=people&q=${query.encodeURLParam()}&limit=$limit&offset=$offset")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/search_v3?t=people&q=${query.encodeURLParam()}&limit=$limit&offset=$offset")
         return try {
             val root = json.parseToJsonElement(text).jsonObject
             val data = root["data"]?.jsonArray ?: return ZhihuPagingResponse(emptyList(), isEnd = true)
@@ -705,11 +776,7 @@ internal class ZhihuService(
      * API: /api/v4/members/{urlToken}?include=...
      */
     suspend fun fetchMemberByUrlToken(urlToken: String): ZhihuPerson? {
-        ensureSession()
-        val client = signedClient()
-        val response = client.get("$ZHIHU_API/v4/members/$urlToken?include=id,name,url_token,avatar_url,headline,gender,follower_count,following_count,answer_count,articles_count,is_following,is_followed,user_type")
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText("$ZHIHU_API/v4/members/$urlToken?include=id,name,url_token,avatar_url,headline,gender,follower_count,following_count,answer_count,articles_count,is_following,is_followed,user_type")
         return try {
             val obj = json.parseToJsonElement(text).jsonObject
             ZhihuPerson(
@@ -776,19 +843,13 @@ internal class ZhihuService(
      * API: /api/v3/feed/topstory/recommend?cursor={cursor}
      */
     suspend fun fetchRecommendFeedWithCursor(cursor: String? = null, limit: Int = 20): Pair<List<ZhihuFeedItem>, String?> {
-        ensureSession()
-        val client = signedClient()
         val url = buildString {
             append("$ZHIHU_API/v3/feed/topstory/recommend?limit=$limit")
             if (cursor != null) {
                 append("&cursor=$cursor")
             }
         }
-        val response = client.get(url) {
-            header("desktop", "true")
-        }
-        val text = response.bodyAsText()
-        client.close()
+        val text = signedGetText(url)
         return try {
             val root = json.parseToJsonElement(text).jsonObject
             val data = root["data"]?.jsonArray ?: return Pair(emptyList(), null)
@@ -1001,6 +1062,7 @@ internal data class ZhihuHotItem(
     val hotValue: String,
     val url: String,
     val type: String,
+    val thumbnail: String? = null,
 )
 
 internal data class ZhihuDailyStory(
@@ -1009,6 +1071,7 @@ internal data class ZhihuDailyStory(
     val hint: String?,
     val imageUrl: String?,
     val url: String,
+    val date: String = "",
 )
 
 internal data class ZhihuFeedItem(

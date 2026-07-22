@@ -64,6 +64,7 @@ public enum class UiStrings {
     LatestResource,
     PurchasedVideo,
     Articles,
+    Pins,
     Highlights,
 }
 

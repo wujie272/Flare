@@ -177,7 +177,7 @@ internal class ZhihuDataSource(
         ZhihuHotTimelineLoader(service = service, accountKey = accountKey)
     
     override fun searchStatus(query: String): RemoteLoader<UiTimelineV2> = 
-        notSupported()
+        ZhihuSearchLoader(service = service, accountKey = accountKey, query = query)
     
     override fun searchUser(query: String): RemoteLoader<UiProfile> = 
         ZhihuSearchUserLoader(service = service, accountKey = accountKey, query = query)
@@ -201,6 +201,10 @@ internal class ZhihuDataSource(
             ProfileTab(
                 name = UiStrings.Articles,
                 loader = ZhihuUserTimelineLoader(service = service, accountKey = accountKey, userKey = userKey, type = "articles"),
+            ),
+            ProfileTab(
+                name = UiStrings.Pins,
+                loader = ZhihuUserTimelineLoader(service = service, accountKey = accountKey, userKey = userKey, type = "pins"),
             ),
         )
 

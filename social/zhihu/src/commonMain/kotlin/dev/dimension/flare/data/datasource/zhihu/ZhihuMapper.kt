@@ -42,7 +42,16 @@ internal fun ZhihuPerson.toUiProfile(
         },
         nameInternal = name.toUiPlainText(),
         platformType = PlatformType.Zhihu,
-        clickEvent = ClickEvent.Deeplink(url = "https://www.zhihu.com/people/${urlToken ?: id}"),
+        clickEvent = if (accountKey != null) {
+            ClickEvent.Deeplink(
+                dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
+                    accountType = AccountType.Specific(accountKey),
+                    userKey = MicroBlogKey(id = urlToken ?: id, host = ZHIHU_HOST),
+                )
+            )
+        } else {
+            ClickEvent.Deeplink(url = "https://www.zhihu.com/people/${urlToken ?: id}")
+        },
         banner = null,
         description = headline?.toUiPlainText(),
         matrices = UiProfile.Matrices(
@@ -123,10 +132,14 @@ internal fun ZhihuHotItem.toUiTimelineItem(
 ): UiTimelineV2 {
     val webUrl = url.takeIf { it.startsWith("http") } 
         ?: "https://www.zhihu.com/question/$id/"
+    val hotLabel = hotValue.takeIf { it.isNotBlank() && it != "0" } ?: "热榜"
+    val thumbnailMedia = thumbnail?.let {
+        UiMedia.Image(url = it, previewUrl = it, description = title, height = 0f, width = 0f, sensitive = false)
+    }
     val contentText = buildString {
         append("#$rank  $title")
         appendLine()
-        append("🔥 ${formatHotValue(hotValue)}")
+        append("🔥 $hotLabel")
         if (answerCount > 0) append(" · ${answerCount}个回答")
     }
     val post = UiTimelineV2.Post(
@@ -152,9 +165,9 @@ internal fun ZhihuHotItem.toUiTimelineItem(
         poll = null,
         statusKey = MicroBlogKey(id = id, host = ZHIHU_HOST),
         card = UiCard(
-            media = null,
+            media = thumbnailMedia,
             title = title,
-            description = "🔥 ${formatHotValue(hotValue)} · ${answerCount}个回答",
+            description = "🔥 $hotLabel · ${answerCount}个回答",
             url = webUrl,
         ),
         createdAt = Instant.fromEpochMilliseconds(0).toUi(),
@@ -177,6 +190,7 @@ internal fun ZhihuHotItem.toUiTimelineItem(
 internal fun ZhihuDailyStory.toUiTimelineItem(
     accountKey: MicroBlogKey,
 ): UiTimelineV2 {
+    val dailyEpoch = parseDailyDate(date)
     val post = UiTimelineV2.Post(
         platformType = PlatformType.Zhihu,
         images = persistentListOf(),
@@ -207,7 +221,7 @@ internal fun ZhihuDailyStory.toUiTimelineItem(
                 url = url,
             )
         } else null,
-        createdAt = Instant.fromEpochMilliseconds(0).toUi(),
+        createdAt = Instant.fromEpochMilliseconds(dailyEpoch).toUi(),
         emojiReactions = persistentListOf(),
         sourceChannel = null,
         visibility = null,
@@ -333,17 +347,6 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
     return UiTimelineV2.TimelinePostItem(post = post, itemKey = "zhihu_${type}_$id")
 }
 
-private fun formatHotValue(value: String): String {
-    val num = value.toLongOrNull() ?: return value
-    val tenThousand = 10_000L
-    val hundredMillion = 100_000_000L
-    return when {
-        num >= hundredMillion -> "${(num.toDouble() / hundredMillion.toDouble() * 10).toLong() / 10.0}亿"
-        num >= tenThousand -> "${(num.toDouble() / tenThousand.toDouble() * 10).toLong() / 10.0}万"
-        else -> num.toString()
-    }
-}
-
 internal fun ZhihuComment.toUiTimelineItem(
     accountKey: MicroBlogKey,
 ): UiTimelineV2 {
@@ -399,4 +402,25 @@ internal fun ZhihuComment.toUiTimelineItem(
         itemKey = "zhihu_comment_$id",
     )
     return UiTimelineV2.TimelinePostItem(post = post, itemKey = "zhihu_comment_$id")
+}
+
+/**
+ * 解析日报日期字符串（yyyyMMdd）为毫秒时间戳
+ */
+private fun parseDailyDate(date: String): Long {
+    if (date.length != 8) return 0L
+    val year = date.substring(0, 4).toIntOrNull() ?: return 0L
+    val month = date.substring(4, 6).toIntOrNull() ?: return 0L
+    val day = date.substring(6, 8).toIntOrNull() ?: return 0L
+    // 计算从 1970-01-01 到该日期的天数
+    val days = (year - 1970) * 365 + (year - 1969) / 4 +
+        when (month) {
+            1 -> 0; 2 -> 31; 3 -> 59; 4 -> 90; 5 -> 120; 6 -> 151
+            7 -> 181; 8 -> 212; 9 -> 243; 10 -> 273; 11 -> 304; 12 -> 334
+            else -> 0
+        } + (day - 1) +
+        if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
+            if (month > 2) 1 else 0
+        } else 0
+    return days * 86400000L
 }

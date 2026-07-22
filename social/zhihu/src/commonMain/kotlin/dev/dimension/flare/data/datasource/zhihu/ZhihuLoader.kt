@@ -250,6 +250,28 @@ internal class ZhihuRecommendPagingLoader(
         )
     }
 }
+
+/**
+ * 知乎搜索状态 Loader
+ */
+internal class ZhihuSearchLoader(
+    private val service: ZhihuService,
+    private val accountKey: MicroBlogKey,
+    private val query: String,
+) : CacheableRemoteLoader<UiTimelineV2> {
+    override val pagingKey: String = "zhihu_search_${query}_$accountKey"
+    override val supportPrepend: Boolean = false
+
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
+        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
+        val items = service.search(query)
+        return PagingResult(
+            data = items.map { it.toUiTimelineItem(accountKey) },
+            endOfPaginationReached = true,
+        )
+    }
+}
+
 internal class ZhihuHotTimelineLoader(
     private val service: ZhihuService,
     private val accountKey: MicroBlogKey,
