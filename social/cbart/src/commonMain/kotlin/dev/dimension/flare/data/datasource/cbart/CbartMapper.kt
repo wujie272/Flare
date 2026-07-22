@@ -17,6 +17,7 @@ import dev.dimension.flare.ui.model.ClickEvent
 import dev.dimension.flare.ui.model.UiHandle
 import dev.dimension.flare.ui.model.UiMedia
 import dev.dimension.flare.ui.model.UiProfile
+import dev.dimension.flare.ui.model.UiTranslatableText
 import dev.dimension.flare.ui.model.UiTimelineV2
 import dev.dimension.flare.ui.model.toUiImage
 import dev.dimension.flare.ui.model.mapper.cbartFavourite
@@ -55,9 +56,9 @@ internal fun CbartContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
         platformType = PlatformType.Cbart,
         images = images,
         sensitive = true,
-        contentWarning = typeLabel.toUiPlainText(),
+        contentWarning = UiTranslatableText(typeLabel.toUiPlainText()),
         user = null,
-        content = (title ?: "").toUiPlainText(),
+        content = UiTranslatableText((title ?: "").toUiPlainText()),
         actions = persistentListOf<ActionMenu>(
             ActionMenu.cbartFavourite(
                 statusKey = MicroBlogKey(id = id.toString(), host = CBART_HOST),
@@ -96,7 +97,7 @@ internal fun CbartBlogItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimelin
         platformType = PlatformType.Cbart,
         images = images,
         sensitive = true,
-        contentWarning = "📝 Blog".toUiPlainText(),
+        contentWarning = UiTranslatableText("📝 Blog".toUiPlainText()),
         user = UiProfile(
             key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
             handle = UiHandle(raw = uid?.toString() ?: "", host = CBART_HOST),
@@ -110,7 +111,7 @@ internal fun CbartBlogItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimelin
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = (title ?: "").toUiPlainText(),
+        content = UiTranslatableText((title ?: "").toUiPlainText()),
         actions = persistentListOf<ActionMenu>(),
         poll = null,
         statusKey = MicroBlogKey(id = id.toString(), host = CBART_HOST),
@@ -155,7 +156,7 @@ internal fun CbartArticleItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
         platformType = PlatformType.Cbart,
         images = images,
         sensitive = false,
-        contentWarning = "📢 ${cn_name ?: "公告"}".toUiPlainText(),
+        contentWarning = UiTranslatableText("📢 ${cn_name ?: "公告"}".toUiPlainText()),
         user = UiProfile(
             key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
             handle = UiHandle(raw = username ?: "", host = CBART_HOST),
@@ -174,10 +175,10 @@ internal fun CbartArticleItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = buildString {
+        content = UiTranslatableText(buildString {
             if (subtitle.isNotBlank()) append(subtitle).append("\n")
             append(content_short ?: title ?: "")
-        }.toUiPlainText(),
+        }.toUiPlainText()),
         actions = persistentListOf<ActionMenu>(),
         poll = null,
         statusKey = MicroBlogKey(id = id.toString(), host = CBART_HOST),
@@ -223,7 +224,7 @@ internal fun CbartStudioItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
         platformType = PlatformType.Cbart,
         images = images,
         sensitive = true,
-        contentWarning = "🏪 Studio".toUiPlainText(),
+        contentWarning = UiTranslatableText("🏪 Studio".toUiPlainText()),
         user = UiProfile(
             key = MicroBlogKey(id = uid.toString(), host = CBART_HOST),
             handle = UiHandle(raw = ownerName, host = CBART_HOST),
@@ -237,7 +238,7 @@ internal fun CbartStudioItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = (supporterInfo).toUiPlainText(),
+        content = UiTranslatableText((supporterInfo).toUiPlainText()),
         actions = persistentListOf<ActionMenu>(),
         poll = null,
         statusKey = MicroBlogKey(id = id.toString(), host = CBART_HOST),
@@ -274,11 +275,11 @@ internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
         platformType = PlatformType.Cbart,
         images = images,
         sensitive = true,
-        contentWarning = buildString {
+        contentWarning = UiTranslatableText(buildString {
             append("🎬 Video")
             if (priceDiamond != null && priceDiamond > 0) append(" 💎$priceDiamond")
             if (extraText2 != null) append(" 📦$extraText2")
-        }.toUiPlainText(),
+        }.toUiPlainText()),
         user = UiProfile(
             key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
             handle = UiHandle(raw = displayName, host = CBART_HOST),
@@ -292,11 +293,11 @@ internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = buildString {
+        content = UiTranslatableText(buildString {
             append(title ?: "")
             if (favNum != null && favNum > 0) append("\n❤️ $favNum 收藏")
             if (isOriginal == 1) append(" 原创")
-        }.toUiPlainText(),
+        }.toUiPlainText()),
         actions = persistentListOf<ActionMenu>(
             ActionMenu.cbartFavourite(
                 statusKey = MicroBlogKey(id = id.toString(), host = CBART_HOST),
@@ -346,7 +347,7 @@ internal fun CbartMessageItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = ("💬 $senderName: $messageContent").toUiPlainText(),
+        content = UiTranslatableText(("💬 $senderName: $messageContent").toUiPlainText()),
         actions = persistentListOf<ActionMenu>(),
         poll = null,
         statusKey = MicroBlogKey(id = "msg_$uid", host = CBART_HOST),
@@ -390,7 +391,7 @@ internal fun CbartNewContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiT
         platformType = PlatformType.Cbart,
         images = images,
         sensitive = true,
-        contentWarning = typeLabel.toUiPlainText(),
+        contentWarning = UiTranslatableText(typeLabel.toUiPlainText()),
         user = UiProfile(
             key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
             handle = UiHandle(raw = displayName, host = CBART_HOST),
@@ -404,7 +405,7 @@ internal fun CbartNewContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiT
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = (title ?: "").toUiPlainText(),
+        content = UiTranslatableText((title ?: "").toUiPlainText()),
         actions = persistentListOf<ActionMenu>(),
         poll = null,
         statusKey = MicroBlogKey(id = contentId.toString(), host = CBART_HOST),

@@ -17,6 +17,7 @@ import dev.dimension.flare.ui.model.UiHandle
 import dev.dimension.flare.ui.model.UiMedia
 import dev.dimension.flare.ui.model.UiProfile
 import dev.dimension.flare.ui.model.UiTimelineV2
+import dev.dimension.flare.ui.model.UiTranslatableText
 import dev.dimension.flare.ui.model.mapper.zhihuVoteUp
 import dev.dimension.flare.ui.model.mapper.zhihuBookmark
 import dev.dimension.flare.ui.render.toUi
@@ -89,7 +90,7 @@ internal fun ZhihuNotificationItem.toNotificationUiTimelineItem(
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = contentText.toUiPlainText(),
+        content = UiTranslatableText(contentText.toUiPlainText()),
         actions = persistentListOf(),
         poll = null,
         statusKey = MicroBlogKey(id = "notification_$id", host = ZHIHU_HOST),
@@ -146,7 +147,7 @@ internal fun ZhihuHotItem.toUiTimelineItem(
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = contentText.toUiPlainText(),
+        content = UiTranslatableText(contentText.toUiPlainText()),
         actions = persistentListOf(),
         poll = null,
         statusKey = MicroBlogKey(id = id, host = ZHIHU_HOST),
@@ -194,7 +195,7 @@ internal fun ZhihuDailyStory.toUiTimelineItem(
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = title.toUiPlainText(),
+        content = UiTranslatableText(title.toUiPlainText()),
         actions = persistentListOf(),
         poll = null,
         statusKey = MicroBlogKey(id = id, host = ZHIHU_HOST),
@@ -296,7 +297,7 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = contentText.toUiPlainText(),
+        content = UiTranslatableText(contentText.toUiPlainText()),
         actions = persistentListOf(
             ActionMenu.zhihuVoteUp(
                 statusKey = statusKey,
@@ -374,7 +375,7 @@ internal fun ZhihuComment.toUiTimelineItem(
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = content.toUiPlainText(),
+        content = UiTranslatableText(content.toUiPlainText()),
         actions = persistentListOf(
             ActionMenu.zhihuVoteUp(
                 statusKey = statusKey,

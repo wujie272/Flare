@@ -12,6 +12,7 @@ import dev.dimension.flare.ui.model.UiHandle
 import dev.dimension.flare.ui.model.UiMedia
 import dev.dimension.flare.ui.model.UiProfile
 import dev.dimension.flare.ui.model.UiTimelineV2
+import dev.dimension.flare.ui.model.UiTranslatableText
 import dev.dimension.flare.ui.render.toUi
 import dev.dimension.flare.ui.render.toUiPlainText
 import kotlin.time.Instant
@@ -58,7 +59,7 @@ internal fun ToutiaoHotItem.toUiTimelineItem(
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = contentText.toUiPlainText(),
+        content = UiTranslatableText(contentText.toUiPlainText()),
         actions = persistentListOf<ActionMenu>(),
         poll = null,
         statusKey = MicroBlogKey(id = clusterId, host = TOUTIAO_HOST),
