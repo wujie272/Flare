@@ -21,7 +21,21 @@ internal class CbartService(
 
     suspend fun fetchLatestResources(page: Int = 1, limit: Int = 50): List<CbartNewContentItem> {
         val response = api.newContentList(page = page, limit = limit)
-        return response?.data?.newContent ?: emptyList()
+        val items = response?.data?.newContent ?: emptyList()
+        // get_new_content API 不返回 owner 信息，需要并发补全
+        if (items.any { it.owner == null && it.uid != null }) {
+            return kotlinx.coroutines.coroutineScope {
+                items.map { item ->
+                    kotlinx.coroutines.async {
+                        if (item.owner == null && item.uid != null) {
+                            val owner = fetchUserByUid(item.uid.toString())
+                            if (owner != null) item.copy(owner = owner) else item
+                        } else item
+                    }
+                }.map { it.await() }
+            }
+        }
+        return items
     }
 
     suspend fun fetchMyContent(page: Int = 1): List<CbartContentItem> {

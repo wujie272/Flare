@@ -52,7 +52,7 @@ internal class CbartLatestResourceTimelineLoader(
             is PagingRequest.Refresh -> 1
             is PagingRequest.Append -> request.nextKey.toIntOrNull() ?: 1
         }
-        val items = service.fetchLatestResources(page = page)
+        val items = service.fetchLatestResources(page = page, limit = pageSize)
         return PagingResult(
             data = items.map { it.toUiTimelineItem(accountKey) },
             nextKey = if (items.isEmpty()) null else (page + 1).toString(),
@@ -131,10 +131,21 @@ internal class CbartPurchasedVideoLoader(
 internal class CbartGalleryCommentsLoader(
     private val service: CbartService,
     private val accountKey: MicroBlogKey,
+    private val statusKey: MicroBlogKey,
 ) : CacheableRemoteLoader<UiTimelineV2> {
-    override val pagingKey: String = "cbart_comments"
-    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> =
-        notSupported<UiTimelineV2>().load(pageSize, request)
+    override val pagingKey: String = "cbart_comments_${statusKey.id}"
+    override val supportPrepend: Boolean = false
+
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
+        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
+        val videoId = statusKey.id.toLongOrNull() ?: return PagingResult(endOfPaginationReached = true, data = emptyList())
+        val detail = service.fetchVideoDetail(videoId)
+        val comments = detail?.comment?.map { it.toUiTimelineItem(accountKey) } ?: emptyList()
+        return PagingResult(
+            data = comments,
+            endOfPaginationReached = true,
+        )
+    }
 }
 
 internal class CbartSearchUserLoader(

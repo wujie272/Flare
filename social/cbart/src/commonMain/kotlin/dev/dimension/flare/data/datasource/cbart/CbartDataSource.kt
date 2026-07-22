@@ -137,7 +137,7 @@ internal class CbartDataSource(
             }
         },
     )
-    override fun galleryComments(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = CbartGalleryCommentsLoader(service = service, accountKey = accountKey)
+    override fun galleryComments(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = CbartGalleryCommentsLoader(service = service, accountKey = accountKey, statusKey = statusKey)
     override fun galleryRecommendations(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> = CbartHotTimelineLoader(service = service, accountKey = accountKey)
     override fun searchStatus(query: String): RemoteLoader<UiTimelineV2> = 
         CbartStudioSearchLoader(service = service, accountKey = accountKey, query = query)

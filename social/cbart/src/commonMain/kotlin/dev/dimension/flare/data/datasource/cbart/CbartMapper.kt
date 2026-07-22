@@ -9,6 +9,7 @@ import dev.dimension.flare.data.network.cbart.api.CbartStudioItem
 import dev.dimension.flare.data.network.cbart.api.CbartMessageItem
 import dev.dimension.flare.data.network.cbart.api.CbartApiContentType
 import dev.dimension.flare.data.network.cbart.api.CbartNewContentItem
+import dev.dimension.flare.data.network.cbart.api.CbartVideoComment
 import dev.dimension.flare.data.platform.CBART_HOST
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
@@ -369,6 +370,45 @@ internal fun CbartMessageItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
 /**
  * 从 /api/get_new_content 的 CbartNewContentItem 映射到 UiTimelineV2
  */
+internal fun CbartVideoComment.toUiTimelineItem(accountKey: MicroBlogKey): UiTimelineV2 {
+    val senderName = nickName ?: username ?: "User #$uid"
+    val post = UiTimelineV2.Post(
+        platformType = PlatformType.Cbart,
+        images = persistentListOf(),
+        sensitive = false,
+        contentWarning = null,
+        user = UiProfile(
+            key = MicroBlogKey(id = uid?.toString() ?: "", host = CBART_HOST),
+            handle = UiHandle(raw = senderName, host = CBART_HOST),
+            avatar = avatarUrl?.toUiImage(),
+            nameInternal = senderName.toUiPlainText(),
+            platformType = PlatformType.Cbart,
+            clickEvent = ClickEvent.Noop,
+            banner = null,
+            description = null,
+            matrices = UiProfile.Matrices(0, 0, 0),
+            mark = persistentListOf(),
+            bottomContent = null,
+        ),
+        content = UiTranslatableText((content ?: "").toUiPlainText()),
+        actions = persistentListOf<ActionMenu>(),
+        poll = null,
+        statusKey = MicroBlogKey(id = "comment_${id}", host = CBART_HOST),
+        card = null,
+        createdAt = (posttime?.let { tryParseDate(it) } ?: Instant.fromEpochMilliseconds(0)).toUi(),
+        emojiReactions = persistentListOf(),
+        sourceChannel = null,
+        visibility = null,
+        replyToHandle = null,
+        references = persistentListOf(),
+        clickEvent = ClickEvent.Noop,
+        mediaClickPolicy = UiTimelineV2.Post.MediaClickPolicy.OpenStatusMedia,
+        accountType = AccountType.Specific(accountKey),
+        itemKey = "cbart_comment_${id}",
+    )
+    return UiTimelineV2.TimelinePostItem(post = post, itemKey = "cbart_comment_${id}")
+}
+
 internal fun CbartNewContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimelineV2 {
     val images = listOfNotNull(coverPicture).mapNotNull { url ->
         val fullUrl = if (url.startsWith("http")) url else "$CBART_CDN$url"
