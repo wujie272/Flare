@@ -966,6 +966,9 @@ internal class ZhihuService(
                             authorAvatar = target["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
                             voteCount = target["vote_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: target["voteup_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                             commentCount = target["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            createdAt = (target["created_time"]?.jsonPrimitive?.content?.toLongOrNull()
+                                ?: target["created"]?.jsonPrimitive?.content?.toLongOrNull()
+                                ?: item["created_time"]?.jsonPrimitive?.content?.toLongOrNull()) ?: 0,
                             videoCover = target["thumbnail"]?.jsonPrimitive?.content ?: target["excerpt"]?.jsonPrimitive?.content,
                             videoId = id,
                         )
@@ -1055,6 +1058,9 @@ internal class ZhihuService(
                             authorAvatar = objectType["author"]?.jsonObject?.get("avatar_url")?.jsonPrimitive?.content,
                             voteCount = objectType["vote_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                             commentCount = objectType["comment_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+                            createdAt = (objectType["created_time"]?.jsonPrimitive?.content?.toLongOrNull()
+                                ?: objectType["created"]?.jsonPrimitive?.content?.toLongOrNull()
+                                ?: item["created_time"]?.jsonPrimitive?.content?.toLongOrNull()) ?: 0,
                             videoCover = objectType["thumbnail"]?.jsonPrimitive?.content,
                             videoId = id,
                         )
