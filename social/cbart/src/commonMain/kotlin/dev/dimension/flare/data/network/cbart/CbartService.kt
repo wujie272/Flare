@@ -197,7 +197,12 @@ internal class CbartService(
             val uidFromProfile = Regex("""profileJSON\s*=\s*\{[^}]*"uid"\s*:\s*(\d+)""").find(profileHtml)
             if (uidFromProfile != null) uidFromProfile.groupValues[1].toLongOrNull()?.let { if (it > 0) return it }
         }
-        val studios = fetchStudios()
+        // 兜底：从 studio 列表取 owner uid，超时或失败不阻塞登录流程
+        val studios = try {
+            fetchStudios()
+        } catch (_: Exception) {
+            emptyList()
+        }
         if (studios.isNotEmpty()) {
             studios.firstOrNull()?.owner?.uid?.let { if (it > 0) return it }
         }
