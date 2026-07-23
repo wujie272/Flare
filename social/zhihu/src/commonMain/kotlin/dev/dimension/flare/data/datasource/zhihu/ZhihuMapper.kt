@@ -221,7 +221,7 @@ internal fun ZhihuDailyStory.toUiTimelineItem(
                 media = UiMedia.Image(url = imageUrl, previewUrl = imageUrl, description = title, height = 0f, width = 0f, sensitive = false),
                 title = title,
                 description = hint ?: "",
-                url = url,
+                url = originalUrl ?: url,
             )
         } else null,
         createdAt = Instant.fromEpochMilliseconds(dailyEpoch).toUi(),
@@ -230,7 +230,7 @@ internal fun ZhihuDailyStory.toUiTimelineItem(
         visibility = null,
         replyToHandle = null,
         references = persistentListOf(),
-        clickEvent = ClickEvent.Deeplink(url = url),
+        clickEvent = ClickEvent.Deeplink(url = originalUrl ?: url),
         mediaClickPolicy = UiTimelineV2.Post.MediaClickPolicy.OpenStatusMedia,
         accountType = AccountType.Specific(accountKey),
         itemKey = "zhihu_daily_$id",

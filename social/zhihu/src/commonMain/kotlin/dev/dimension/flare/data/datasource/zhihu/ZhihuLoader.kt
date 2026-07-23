@@ -321,8 +321,20 @@ internal class ZhihuDailyTimelineLoader(
         }
 
         lastDate = date
+
+        // 并发获取每条故事的原始内容链接
+        val enriched = kotlinx.coroutines.coroutineScope {
+            stories.map { story ->
+                kotlinx.coroutines.async {
+                    val originalUrl = story.originalUrl
+                        ?: service.fetchDailyStoryOriginalUrl(story.id)
+                    story.copy(originalUrl = originalUrl)
+                }
+            }.map { it.await() }
+        }
+
         return PagingResult(
-            data = stories.map { it.toUiTimelineItem(accountKey) },
+            data = enriched.map { it.toUiTimelineItem(accountKey) },
             endOfPaginationReached = date.isEmpty(),
             nextKey = date.takeIf { it.isNotEmpty() },
         )

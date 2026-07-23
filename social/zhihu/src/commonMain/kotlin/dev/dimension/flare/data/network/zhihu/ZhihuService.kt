@@ -293,6 +293,23 @@ internal class ZhihuService(
     }
 
     // ========== 知乎日报 ==========
+
+    /**
+     * 获取日报故事的原始内容链接
+     * 调 /api/7/story/{id} 解析 HTML 中的 <a class="originUrl">
+     * 如果获取失败或没有原始链接，返回 null（走系统浏览器兜底）
+     */
+    suspend fun fetchDailyStoryOriginalUrl(storyId: String): String? {
+        return try {
+            val response = httpClient().get("https://daily.zhihu.com/api/7/story/$storyId")
+            val html = response.bodyAsText()
+            // 从 HTML 中提取 originUrl
+            val regex = Regex("""<a\\s+class="originUrl"\\s+href="([^"]+)""")
+            regex.find(html)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+        } catch (_: Exception) {
+            null
+        }
+    }
     
     suspend fun fetchDailyStories(): List<ZhihuDailyStory> {
         return try {
@@ -1096,6 +1113,8 @@ internal data class ZhihuDailyStory(
     val imageUrl: String?,
     val url: String,
     val date: String = "",
+    /** 从 /api/7/story/{id} 解析出的原始内容链接，如知乎回答/文章 URL */
+    val originalUrl: String? = null,
 )
 
 internal data class ZhihuFeedItem(
