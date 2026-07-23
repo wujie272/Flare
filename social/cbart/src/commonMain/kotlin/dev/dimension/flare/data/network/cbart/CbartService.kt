@@ -60,7 +60,7 @@ internal class CbartService(
      */
     suspend fun fetchUserByUid(uid: String): CbartVideoOwner? {
         ownerCache[uid]?.let { return it }
-        val response = api.videoList(page = 1, limit = 50, getOwner = 1)
+        val response = api.videoList(page = 1, limit = 50)
         response?.data?.contents?.forEach { content ->
             content.owner?.let { owner ->
                 ownerCache[content.uid.toString()] = owner
