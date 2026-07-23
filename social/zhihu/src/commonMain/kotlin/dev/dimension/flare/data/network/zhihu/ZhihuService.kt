@@ -310,12 +310,35 @@ internal class ZhihuService(
         }
     }
 
+    /**
+     * 获取某天之前的日报
+     * API: /stories/before/{date}
+     * date 格式: yyyyMMdd
+     */
+    suspend fun fetchDailyStoriesBefore(date: String): Pair<String, List<ZhihuDailyStory>> {
+        return try {
+            val response = httpClient().get("$ZHIHU_DAILY/stories/before/$date")
+            parseDailyStoriesWithDate(response.bodyAsText())
+        } catch (_: Exception) {
+            try {
+                val fallbackResponse = httpClient().get("$ZHIHU_DAILY_FALLBACK/stories/before/$date")
+                parseDailyStoriesWithDate(fallbackResponse.bodyAsText())
+            } catch (_: Exception) {
+                Pair(date, emptyList())
+            }
+        }
+    }
+
     private fun parseDailyStories(text: String): List<ZhihuDailyStory> {
+        return parseDailyStoriesWithDate(text).second
+    }
+
+    private fun parseDailyStoriesWithDate(text: String): Pair<String, List<ZhihuDailyStory>> {
         return try {
             val root = json.parseToJsonElement(text).jsonObject
-            val stories = root["stories"]?.jsonArray ?: return emptyList()
+            val stories = root["stories"]?.jsonArray ?: return Pair("", emptyList())
             val dateStr = root["date"]?.jsonPrimitive?.content ?: ""
-            stories.mapNotNull { element ->
+            val items = stories.mapNotNull { element ->
                 val story = element.jsonObject
                 try {
                     ZhihuDailyStory(
@@ -329,7 +352,8 @@ internal class ZhihuService(
                     )
                 } catch (_: Exception) { null }
             }
-        } catch (_: Exception) { emptyList() }
+            Pair(dateStr, items)
+        } catch (_: Exception) { Pair("", emptyList()) }
     }
 
     // ========== 推荐流（需要签名，需要 ensureSession） ==========

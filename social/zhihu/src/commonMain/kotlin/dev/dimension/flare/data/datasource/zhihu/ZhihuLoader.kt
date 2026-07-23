@@ -292,7 +292,10 @@ internal class ZhihuHotTimelineLoader(
 }
 
 /**
- * 知乎日报 Loader
+ * 知乎日报 Loader — 支持按日期往前翻页
+ *
+ * 首次加载: /stories/latest → 取 date 作为下一页游标
+ * 加载更多: /stories/before/{date} → 取返回的 date 作为下一页游标
  */
 internal class ZhihuDailyTimelineLoader(
     private val service: ZhihuService,
@@ -300,13 +303,28 @@ internal class ZhihuDailyTimelineLoader(
 ) : CacheableRemoteLoader<UiTimelineV2> {
     override val pagingKey: String = "zhihu_daily"
     override val supportPrepend: Boolean = false
+    /** 当前最后加载的日期，用于 /stories/before/{date} */
+    private var lastDate: String? = null
 
     override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
         if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
-        val items = service.fetchDailyStories()
+        if (request is PagingRequest.Refresh) lastDate = null
+
+        val (date, stories) = if (lastDate == null) {
+            // 首次加载: 最新日报
+            val items = service.fetchDailyStories()
+            val firstDate = items.firstOrNull()?.date ?: ""
+            Pair(firstDate, items)
+        } else {
+            // 加载更多: 往前翻
+            service.fetchDailyStoriesBefore(lastDate!!)
+        }
+
+        lastDate = date
         return PagingResult(
-            data = items.map { it.toUiTimelineItem(accountKey) },
-            endOfPaginationReached = true,
+            data = stories.map { it.toUiTimelineItem(accountKey) },
+            endOfPaginationReached = date.isEmpty(),
+            nextKey = date.takeIf { it.isNotEmpty() },
         )
     }
 }
