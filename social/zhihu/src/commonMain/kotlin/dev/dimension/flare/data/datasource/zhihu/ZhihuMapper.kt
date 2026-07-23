@@ -23,6 +23,9 @@ import dev.dimension.flare.ui.model.mapper.zhihuBookmark
 import dev.dimension.flare.ui.render.toUi
 import dev.dimension.flare.ui.render.toUiPlainText
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlin.time.Instant
 
 // ========== ZhihuPerson → UiProfile ==========
@@ -405,22 +408,16 @@ internal fun ZhihuComment.toUiTimelineItem(
 }
 
 /**
- * 解析日报日期字符串（yyyyMMdd）为毫秒时间戳
+ * 解析日报日期字符串（yyyyMMdd）为本地时区午夜的时间戳（毫秒）
+ * 使用 kotlinx-datetime 的 LocalDate 确保时区正确处理，
+ * 避免手动计算闰年/世纪年导致的 Bug。
  */
 private fun parseDailyDate(date: String): Long {
     if (date.length != 8) return 0L
     val year = date.substring(0, 4).toIntOrNull() ?: return 0L
     val month = date.substring(4, 6).toIntOrNull() ?: return 0L
     val day = date.substring(6, 8).toIntOrNull() ?: return 0L
-    // 计算从 1970-01-01 到该日期的天数
-    val days = (year - 1970) * 365 + (year - 1969) / 4 +
-        when (month) {
-            1 -> 0; 2 -> 31; 3 -> 59; 4 -> 90; 5 -> 120; 6 -> 151
-            7 -> 181; 8 -> 212; 9 -> 243; 10 -> 273; 11 -> 304; 12 -> 334
-            else -> 0
-        } + (day - 1) +
-        if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
-            if (month > 2) 1 else 0
-        } else 0
-    return days * 86400000L
+    return LocalDate(year, month, day)
+        .atStartOfDayIn(TimeZone.currentSystemDefault())
+        .toEpochMilliseconds()
 }
