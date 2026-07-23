@@ -16,4 +16,6 @@ public data class CbartCredential(
     val nickName: String? = null,
     /** 头像URL */
     val avatarUrl: String? = null,
+    /** 上次 session 刷新时间戳 */
+    val lastSessionRefreshEpochMillis: Long? = null,
 )

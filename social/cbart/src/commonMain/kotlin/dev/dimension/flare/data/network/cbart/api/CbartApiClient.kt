@@ -1,7 +1,11 @@
 package dev.dimension.flare.data.network.cbart.api
 
 import dev.dimension.flare.data.network.ktorClient
+import dev.dimension.flare.data.platform.CBART_HOST
 import dev.dimension.flare.data.platform.CbartCredential
+import dev.dimension.flare.data.repository.LoginExpiredException
+import dev.dimension.flare.model.MicroBlogKey
+import dev.dimension.flare.model.PlatformType
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.defaultRequest
@@ -16,7 +20,13 @@ import io.ktor.http.contentType
 import io.ktor.http.decodeURLPart
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Clock
 
 private const val CBART_API_BASE = "https://www.linzijiang.app/api"
 private const val CBART_BASE = "https://www.linzijiang.app"
@@ -30,6 +40,10 @@ internal class CbartApiClient(
     private val onCredentialRefreshed: suspend (CbartCredential) -> Unit = {},
 ) {
     private var currentCredential: CbartCredential? = null
+
+    // session 刷新相关
+    private val sessionRefreshMutex = Mutex()
+    private val sessionRefreshInterval = 1.days
 
     private suspend fun credential(): CbartCredential? {
         if (currentCredential == null) {
@@ -58,6 +72,54 @@ internal class CbartApiClient(
         onCredentialRefreshed(updated)
     }
 
+    /**
+     * 检查并刷新 Laravel session（每 1 天一次）
+     */
+    private suspend fun refreshSessionIfNeeded() {
+        val cred = currentCredential ?: return
+        val now = Clock.System.now().toEpochMilliseconds()
+        val lastRefresh = cred.lastSessionRefreshEpochMillis
+        if (lastRefresh != null && now - lastRefresh < sessionRefreshInterval.inWholeMilliseconds) {
+            return
+        }
+        refreshSession(now)
+    }
+
+    private suspend fun refreshSession(nowEpochMillis: Long) {
+        sessionRefreshMutex.withLock {
+            // 双重检查：可能另一个协程已经刷新了
+            val currentNow = Clock.System.now().toEpochMilliseconds()
+            val currentCred = currentCredential ?: return@withLock
+            val lastRefresh = currentCred.lastSessionRefreshEpochMillis
+            if (lastRefresh != null && currentNow - lastRefresh < sessionRefreshInterval.inWholeMilliseconds) {
+                return@withLock
+            }
+
+            val response = ktorClient {
+                defaultRequest {
+                    headers {
+                        append("User-Agent", CBART_USER_AGENT)
+                        append("Accept", "application/json, text/javascript, */*; q=0.01")
+                        append("Accept-Language", "zh-CN,en;q=0.9")
+                        append("Origin", CBART_BASE)
+                        append("Referer", "$CBART_BASE/")
+                    }
+                }
+            }.get(CBART_BASE)
+
+            val setCookieHeaders = response.headers.getAll(HttpHeaders.SetCookie).orEmpty()
+            if (setCookieHeaders.isNotEmpty()) {
+                updateCredentialsFromHeaders(setCookieHeaders)
+                // 更新 lastSessionRefreshEpochMillis
+                currentCredential?.let { updated ->
+                    val withRefreshTime = updated.copy(lastSessionRefreshEpochMillis = currentNow)
+                    currentCredential = withRefreshTime
+                    onCredentialRefreshed(withRefreshTime)
+                }
+            }
+        }
+    }
+
     private suspend fun buildCookie(): String? {
         val cred = credential() ?: return null
         val parts = mutableListOf("laravel_session=${cred.laravelSession}")
@@ -66,6 +128,7 @@ internal class CbartApiClient(
     }
 
     private suspend fun httpClient(): HttpClient {
+        refreshSessionIfNeeded()
         val cookie = buildCookie()
         val cred = credential()
         return ktorClient {
@@ -100,6 +163,7 @@ internal class CbartApiClient(
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(body.map { (k, v) -> "$k=$v" }.joinToString("&"))
         }.bodyAsText()
+        checkResponseCode(text)
         return tryParse(text)
     }
 
@@ -217,6 +281,24 @@ internal class CbartApiClient(
     suspend fun addVideoComment(videoId: Long, content: String): CbartVideoCommentAddResponse? = postForm(
         "/update_video_comment", mapOf("id" to videoId.toString(), "content" to content),
     )
+
+    private fun checkResponseCode(text: String) {
+        try {
+            val root = json.decodeFromString<JsonObject>(text)
+            val code = root["code"]?.jsonPrimitive?.intOrNull
+            if (code != null && code != 200) {
+                val userId = currentCredential?.userId
+                if (userId != null) {
+                    throw LoginExpiredException(
+                        accountKey = MicroBlogKey(id = userId, host = CBART_HOST),
+                        platformType = PlatformType.Cbart,
+                    )
+                }
+            }
+        } catch (_: Exception) {
+            // 解析失败就忽略，让 tryParse 处理
+        }
+    }
 
     private inline fun <reified T> tryParse(text: String): T? {
         return try { json.decodeFromString<T>(text) } catch (_: Exception) { null }

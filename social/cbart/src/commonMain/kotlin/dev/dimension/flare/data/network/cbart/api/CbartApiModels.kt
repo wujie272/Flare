@@ -93,6 +93,8 @@ internal data class CbartContentItem(
     val extraText1: String? = null,
     @SerialName("extra_text2")
     val extraText2: String? = null,
+    @SerialName("content_type")
+    val contentType: String? = null,
     @SerialName("is_original")
     val isOriginal: Int? = null,
     @SerialName("is_public")

@@ -41,10 +41,14 @@ internal fun CbartContentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
         fullUrl.toUiImage()
     }.toImmutableList()
 
-    val typeLabel = when {
-        extraText1?.contains(":") == true -> "🎬 Video"
-        images.isNotEmpty() -> "🖼 Gallery"
-        else -> ""
+    val typeLabel = when (contentType) {
+        "video" -> "🎬 Video"
+        "album" -> "🖼 Gallery"
+        "fiction" -> "📖 Fiction"
+        else -> when {
+            images.isNotEmpty() -> "🖼 Gallery"
+            else -> ""
+        }
     }
 
     val subtitle = buildString {
@@ -221,6 +225,18 @@ internal fun CbartStudioItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
     val descriptionText = description ?: ""
     val supporterInfo = if (supporterNum != null && supporterNum > 0) "👥 $supporterNum 订阅" else ""
 
+    // 构建分类计数文本
+    val contentNumText = contentNum?.let { cn ->
+        buildString {
+            cn.video?.let { if (it > 0) { if (isNotEmpty()) append("  "); append("🎬$it") } }
+            cn.album?.let { if (it > 0) { if (isNotEmpty()) append("  "); append("🖼$it") } }
+            cn.fiction?.let { if (it > 0) { if (isNotEmpty()) append("  "); append("📖$it") } }
+            cn.blog?.let { if (it > 0) { if (isNotEmpty()) append("  "); append("📝$it") } }
+        }.takeIf { it.isNotEmpty() }
+    }
+
+    val contentText = listOfNotNull(supporterInfo.takeIf { it.isNotEmpty() }, contentNumText).joinToString("\n")
+
     val post = UiTimelineV2.Post(
         platformType = PlatformType.Cbart,
         images = images,
@@ -232,14 +248,19 @@ internal fun CbartStudioItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
             avatar = owner?.avatarUrl?.toUiImage(),
             nameInternal = ownerName.toUiPlainText(),
             platformType = PlatformType.Cbart,
-            clickEvent = ClickEvent.Noop,
+            clickEvent = ClickEvent.Deeplink(
+                DeeplinkRoute.Profile.User(
+                    accountType = AccountType.Specific(accountKey),
+                    userKey = MicroBlogKey(id = uid.toString(), host = CBART_HOST),
+                )
+            ),
             banner = null,
             description = descriptionText.toUiPlainText(),
             matrices = UiProfile.Matrices(0, 0, 0),
             mark = persistentListOf(),
             bottomContent = null,
         ),
-        content = UiTranslatableText((supporterInfo).toUiPlainText()),
+        content = UiTranslatableText(contentText.toUiPlainText()),
         actions = persistentListOf<ActionMenu>(),
         poll = null,
         statusKey = MicroBlogKey(id = id.toString(), host = CBART_HOST),
@@ -250,7 +271,12 @@ internal fun CbartStudioItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
         visibility = null,
         replyToHandle = null,
         references = persistentListOf(),
-        clickEvent = ClickEvent.Noop,
+        clickEvent = ClickEvent.Deeplink(
+            DeeplinkRoute.Profile.User(
+                accountType = AccountType.Specific(accountKey),
+                userKey = MicroBlogKey(id = uid.toString(), host = CBART_HOST),
+            )
+        ),
         mediaClickPolicy = UiTimelineV2.Post.MediaClickPolicy.OpenStatusMedia,
         accountType = AccountType.Specific(accountKey),
         itemKey = "cbart_studio_${id}",
@@ -271,6 +297,10 @@ internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
     val ownerNickName = owner?.nickName ?: owner?.displayName ?: owner?.username
     val displayName = ownerNickName ?: uid?.toString() ?: "Cbart"
     val avatarUrl = owner?.avatarUrl ?: owner?.avatar?.let { "$CBART_CDN$it" }
+
+    // 工作室信息
+    val studioName = studio?.name
+    val userDescription = studioName?.let { "🏪 $it" }
 
     val post = UiTimelineV2.Post(
         platformType = PlatformType.Cbart,
@@ -296,6 +326,7 @@ internal fun CbartVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
         ),
         content = UiTranslatableText(buildString {
             append(title ?: "")
+            contentShort?.let { if (it.isNotBlank()) append("\n$it") }
             if (favNum != null && favNum > 0) append("\n❤️ $favNum 收藏")
             if (isOriginal == 1) append(" 原创")
         }.toUiPlainText()),
