@@ -91,7 +91,7 @@ internal fun ZhihuNotificationItem.toNotificationUiTimelineItem(
         contentWarning = null,
         user = UiProfile(
             key = MicroBlogKey(id = "zhihu_notification", host = ZHIHU_HOST),
-            handle = UiHandle(raw = "知乎通知", host = ZHIHU_HOST),
+            handle = UiHandle(raw = "notification", host = ZHIHU_HOST),
             avatar = null,
             nameInternal = "知乎通知".toUiPlainText(),
             platformType = PlatformType.Zhihu,
@@ -152,7 +152,7 @@ internal fun ZhihuHotItem.toUiTimelineItem(
         contentWarning = null,
         user = UiProfile(
             key = MicroBlogKey(id = "zhihu_hot", host = ZHIHU_HOST),
-            handle = UiHandle(raw = "知乎热榜", host = ZHIHU_HOST),
+            handle = UiHandle(raw = "hot", host = ZHIHU_HOST),
             avatar = null,
             nameInternal = "知乎热榜".toUiPlainText(),
             platformType = PlatformType.Zhihu,
@@ -201,7 +201,7 @@ internal fun ZhihuDailyStory.toUiTimelineItem(
         contentWarning = null,
         user = UiProfile(
             key = MicroBlogKey(id = "zhihu_daily", host = ZHIHU_HOST),
-            handle = UiHandle(raw = "知乎日报", host = ZHIHU_HOST),
+            handle = UiHandle(raw = "daily", host = ZHIHU_HOST),
             avatar = imageUrl?.let { UiMedia.Image(url = it, previewUrl = it, description = title, height = 0f, width = 0f, sensitive = false) },
             nameInternal = "知乎日报".toUiPlainText(),
             platformType = PlatformType.Zhihu,
