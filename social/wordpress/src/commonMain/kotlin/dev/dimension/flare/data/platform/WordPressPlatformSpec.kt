@@ -64,9 +64,8 @@ internal data object WordPressSubscriptionTimelineSpec : SubscriptionTimelineSpe
         host: String,
         locale: String,
     ): Boolean {
-        val url = if (host.startsWith("http")) host else "https://$host"
         return runCatching {
-            val api = WordPressApi(baseUrl = url)
+            val api = WordPressApi(baseUrl = host)
             val siteInfo = api.detectSite()
             siteInfo?.namespaces?.contains("wp/v2") == true
         }.getOrDefault(false)
@@ -76,8 +75,8 @@ internal data object WordPressSubscriptionTimelineSpec : SubscriptionTimelineSpe
         host: String,
         locale: String,
     ): CacheableRemoteLoader<UiTimelineV2> {
+        val api = WordPressApi(baseUrl = host)
         val url = if (host.startsWith("http")) host else "https://$host"
-        val api = WordPressApi(baseUrl = url)
         return WordPressSubscriptionLoader(api = api, siteUrl = url)
     }
 }

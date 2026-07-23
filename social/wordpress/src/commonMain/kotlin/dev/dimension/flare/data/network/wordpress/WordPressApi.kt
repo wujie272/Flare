@@ -19,11 +19,15 @@ internal class WordPressApi(
     /** 站点基础 URL，如 https://www.gamer520.com */
     private val baseUrl: String,
 ) {
+    /** 确保 baseUrl 始终带 https:// 前缀 */
+    private val normalizedBaseUrl: String
+        get() = if (baseUrl.startsWith("http")) baseUrl else "https://$baseUrl"
+
     private val apiBase: String
-        get() = "$baseUrl/wp-json/wp/v2"
+        get() = "$normalizedBaseUrl/wp-json/wp/v2"
 
     private val jsonApiBase: String
-        get() = "$baseUrl/wp-json"
+        get() = "$normalizedBaseUrl/wp-json"
 
     private fun httpClient(): HttpClient = ktorClient {
         defaultRequest {
