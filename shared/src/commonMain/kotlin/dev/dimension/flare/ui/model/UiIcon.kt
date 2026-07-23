@@ -68,6 +68,7 @@ public enum class UiIcon {
     Cbart,
     Toutiao,
     Zhihu,
+    WordPress,
     Eye,
     Clock,
 }

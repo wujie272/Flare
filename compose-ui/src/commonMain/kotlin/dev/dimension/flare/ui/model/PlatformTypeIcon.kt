@@ -30,5 +30,6 @@ public val PlatformType.brandIcon: ImageVector
         PlatformType.Toutiao -> FontAwesomeIcons.Solid.Newspaper
         PlatformType.Zhihu -> FontAwesomeIcons.Solid.Newspaper
             PlatformType.xQt -> FontAwesomeIcons.Brands.XTwitter
+        PlatformType.WordPress -> FontAwesomeIcons.Solid.Newspaper
             PlatformType.VVo -> FontAwesomeIcons.Brands.Weibo
         }

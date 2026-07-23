@@ -943,6 +943,10 @@ private fun SubscriptionType.aliasKeys(): Set<String> =
         SubscriptionType.MASTODON_LOCAL -> {
             setOf("mastodonlocal", "local", "instance", "本地", "实例")
         }
+
+        SubscriptionType.WORDPRESS -> {
+            setOf("wordpress", "wp", "blog", "站点", "网站")
+        }
     }.map { it.subscriptionKey() }.toSet()
 
 private fun String.subscriptionKey(): String =
@@ -964,6 +968,7 @@ private fun String.toRssDisplayModeOrNull(): RssDisplayMode? =
 private fun SubscriptionType.normalizeSubscriptionUrl(input: String): String =
     when (this) {
         SubscriptionType.RSS -> input.toWebUrlOrOriginal()
+        SubscriptionType.WORDPRESS -> input.toWebUrlOrOriginal()
         else -> input.toSubscriptionHost()
     }
 

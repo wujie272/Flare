@@ -97,6 +97,7 @@ public fun LazyListScope.rssListWithTabs(
                             SubscriptionType.MASTODON_TRENDS -> "${it.url} - ${stringResource(Res.string.mastodon_trending_statuses)}"
                             SubscriptionType.MASTODON_PUBLIC -> "${it.url} - ${stringResource(Res.string.mastodon_federated_timeline)}"
                             SubscriptionType.MASTODON_LOCAL -> "${it.url} - ${stringResource(Res.string.mastodon_local_timeline)}"
+                            SubscriptionType.WORDPRESS -> it.url
                         }
                     PlatformText(displayUrl)
                 },

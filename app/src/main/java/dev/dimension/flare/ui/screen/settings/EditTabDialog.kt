@@ -280,6 +280,10 @@ private val UiStrings.androidStringRes: Int
 
             UiStrings.PixivPrivateFollowing -> R.string.pixiv_private_following_title
 
+            UiStrings.WebsiteUrl,
+            UiStrings.WebsiteUrlHint,
+            -> R.string.tab_settings_default
+
             UiStrings.PixivPrivateBookmarks,
             UiStrings.PixivPrivateFavourites,
             -> R.string.pixiv_private_favourites_title

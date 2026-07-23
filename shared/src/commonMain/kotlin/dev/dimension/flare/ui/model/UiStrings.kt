@@ -66,6 +66,8 @@ public enum class UiStrings {
     Articles,
     Pins,
     Highlights,
+    WebsiteUrl,
+    WebsiteUrlHint,
 }
 
 public fun UiStrings.asText(): UiText = UiText.Localized(this)

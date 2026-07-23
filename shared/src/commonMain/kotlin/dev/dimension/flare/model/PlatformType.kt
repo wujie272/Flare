@@ -23,6 +23,7 @@ public enum class PlatformType {
     Cbart,
     Toutiao,
     Zhihu,
+    WordPress,
 }
 
 @Immutable

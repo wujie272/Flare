@@ -403,4 +403,8 @@ internal val UiStrings.res: StringResource
             -> Res.string.pixiv_private_favourites_title
 
             UiStrings.BlueskyFixDelegationScopes -> Res.string.bluesky_login_fix_delegation_scopes_button
+
+            UiStrings.WebsiteUrl,
+            UiStrings.WebsiteUrlHint,
+            -> Res.string.login_button
         }

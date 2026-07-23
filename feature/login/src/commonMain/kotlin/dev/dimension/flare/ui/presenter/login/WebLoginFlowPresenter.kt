@@ -161,5 +161,7 @@ private fun UiStrings.webLabel(): String =
         UiStrings.ExternalSigner -> "External signer"
         UiStrings.WebCookieLogin -> "Cookie login"
         UiStrings.BlueskyFixDelegationScopes -> "Fix Tranquil permissions"
+        UiStrings.WebsiteUrl -> "Website URL"
+        UiStrings.WebsiteUrlHint -> "https://example.com"
         else -> name
     }

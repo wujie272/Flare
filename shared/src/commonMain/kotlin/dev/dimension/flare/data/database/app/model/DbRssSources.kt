@@ -11,6 +11,7 @@ public enum class SubscriptionType {
     MASTODON_TRENDS,
     MASTODON_PUBLIC,
     MASTODON_LOCAL,
+    WORDPRESS,
 }
 
 @Serializable
