@@ -138,10 +138,30 @@ internal class CbartService(
 
     suspend fun fetchUsernameFromHomePage(): Pair<String, String>? {
         val html = api.fetchHomePage() ?: return null
-        val regex = Regex("""navi_user_panel[^>]*>\s*([^<]+?)\s*<span""", RegexOption.DOT_MATCHES_ALL)
-        val match = regex.find(html)
-        if (match != null) {
-            val username = match.groupValues[1].trim()
+        // 方案1：navi_user_panel 中的用户名
+        val regex1 = Regex("""navi_user_panel[^>]*>\s*([^<]+?)\s*<span""", RegexOption.DOT_MATCHES_ALL)
+        val match1 = regex1.find(html)
+        if (match1 != null) {
+            val username = match1.groupValues[1].trim()
+            if (username.isNotBlank()) {
+                return Pair(username, username)
+            }
+        }
+        // 方案2：meJSON 中的 username
+        val regex2 = Regex("""username\s*[=:]\s*['"]([^'"]+)['"]""")
+        val match2 = regex2.find(html)
+        if (match2 != null) {
+            val username = match2.groupValues[1].trim()
+            if (username.isNotBlank()) {
+                return Pair(username, username)
+            }
+        }
+        // 方案3：从页面中找 @username 格式的用户名
+        val regex3 = Regex("""@([a-zA-Z0-9_]+)""")
+        val matches3 = regex3.findAll(html).toList()
+        if (matches3.isNotEmpty()) {
+            // 取第一个非空匹配
+            val username = matches3.first().groupValues[1].trim()
             if (username.isNotBlank()) {
                 return Pair(username, username)
             }
@@ -151,10 +171,20 @@ internal class CbartService(
 
     suspend fun fetchProfileInfo(): Pair<String?, String?>? {
         val html = api.fetchProfilePage() ?: return null
-        val avatarRegex = Regex("""avatar_url"\s*:\s*"([^"]+)"""")
-        val avatarUrl = avatarRegex.find(html)?.groupValues?.get(1)?.trim()?.replace("\\/", "/")
-        val nickRegex = Regex("""nick_name"\s*:\s*"([^"]+)"""")
-        val nickName = nickRegex.find(html)?.groupValues?.get(1)?.trim()
+        // 方案1：JSON 格式 avatar_url 和 nick_name
+        val avatarRegex1 = Regex("""avatar_url"\s*:\s*"([^"]+)"""")
+        val avatarUrl1 = avatarRegex1.find(html)?.groupValues?.get(1)?.trim()?.replace("\\/", "/")
+        val nickRegex1 = Regex("""nick_name"\s*:\s*"([^"]+)"""")
+        val nickName1 = nickRegex1.find(html)?.groupValues?.get(1)?.trim()
+        // 方案2：avatar 相对路径（需拼 CDN）+ display_name
+        val avatarRegex2 = Regex("""avatar"\s*:\s*"([^"]+)"""")
+        val avatarUrl2 = avatarRegex2.find(html)?.groupValues?.get(1)?.trim()
+            ?.let { "https://www.tpzf001.com$it" }
+        val nickRegex2 = Regex("""display_name"\s*:\s*"([^"]+)"""")
+        val nickName2 = nickRegex2.find(html)?.groupValues?.get(1)?.trim()
+        // 取第一个非空值
+        val avatarUrl = avatarUrl1 ?: avatarUrl2
+        val nickName = nickName1 ?: nickName2
         if (avatarUrl != null || nickName != null) {
             return Pair(avatarUrl, nickName)
         }
@@ -187,17 +217,39 @@ internal class CbartService(
 
     suspend fun fetchNumericUid(): Long? {
         val html = api.fetchHomePage() ?: return null
+        // 方案1：从首页 meJSON 中取 uid
         val meUid = Regex("""meJSON\.uid\s*=\s*(\d+)""").find(html)
         if (meUid != null) {
             val uid = meUid.groupValues[1].toLongOrNull()
             if (uid != null && uid > 0) return uid
         }
+        // 方案2：从 profile 页面 JSON 中取 uid
         val profileHtml = api.fetchProfilePage()
         if (profileHtml != null) {
             val uidFromProfile = Regex("""profileJSON\s*=\s*\{[^}]*"uid"\s*:\s*(\d+)""").find(profileHtml)
             if (uidFromProfile != null) uidFromProfile.groupValues[1].toLongOrNull()?.let { if (it > 0) return it }
         }
-        // 兜底：从 studio 列表取 owner uid，超时或失败不阻塞登录流程
+        // 方案3：从 article_list 响应中取当前用户的 uid
+        // article_list 已由 validateSession() 调用过，这里直接复用
+        val articles = try {
+            fetchArticles(page = 1, limit = 5)
+        } catch (_: Exception) {
+            emptyList()
+        }
+        if (articles.isNotEmpty()) {
+            // 文章列表中的 uid 是作者 id，取第一个非零 uid
+            articles.firstOrNull()?.uid?.let { if (it > 0) return it }
+        }
+        // 方案4：从 video_list 响应中取 owner uid
+        val videos = try {
+            fetchVideos(page = 1, limit = 5)
+        } catch (_: Exception) {
+            emptyList()
+        }
+        if (videos.isNotEmpty()) {
+            videos.firstOrNull()?.owner?.uid?.let { if (it > 0) return it }
+        }
+        // 方案5：从 studio 列表取 owner uid（超时已包 try-catch）
         val studios = try {
             fetchStudios()
         } catch (_: Exception) {
