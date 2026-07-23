@@ -19,6 +19,7 @@ import dev.dimension.flare.ui.model.UiProfile
 import dev.dimension.flare.ui.model.UiTimelineV2
 import dev.dimension.flare.ui.model.UiTranslatableText
 import dev.dimension.flare.ui.model.mapper.zhihuVoteUp
+import dev.dimension.flare.ui.model.mapper.zhihuReply
 import dev.dimension.flare.ui.model.mapper.zhihuBookmark
 import dev.dimension.flare.ui.render.toUi
 import dev.dimension.flare.ui.render.toUiPlainText
@@ -316,6 +317,11 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
         ),
         content = UiTranslatableText(contentText.toUiPlainText()),
         actions = persistentListOf(
+            ActionMenu.zhihuReply(
+                statusKey = statusKey,
+                count = commentCount.toLong(),
+                accountKey = accountKey,
+            ),
             ActionMenu.zhihuVoteUp(
                 statusKey = statusKey,
                 voted = false,

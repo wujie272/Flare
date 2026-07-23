@@ -36,6 +36,29 @@ public fun ActionMenu.Companion.zhihuVoteUp(
         actionFamily = PostActionFamily.Like,
     )
 
+public fun ActionMenu.Companion.zhihuReply(
+    statusKey: MicroBlogKey,
+    count: Long,
+    accountKey: MicroBlogKey,
+): ActionMenu.Item =
+    ActionMenu.Item(
+        updateKey = "zhihu_reply_$statusKey",
+        icon = UiIcon.Reply,
+        text =
+            ActionMenu.Item.Text.Localized(
+                ActionMenu.Item.Text.Localized.Type.Reply,
+            ),
+        count = UiNumber(count),
+        clickEvent =
+            ClickEvent.Deeplink(
+                dev.dimension.flare.ui.route.DeeplinkRoute.Compose.Reply(
+                    accountKey = accountKey,
+                    statusKey = statusKey,
+                ),
+            ),
+        actionFamily = dev.dimension.flare.data.datasource.microblog.PostActionFamily.Reply,
+    )
+
 public fun ActionMenu.Companion.zhihuBookmark(
     statusKey: MicroBlogKey,
     bookmarked: Boolean,
