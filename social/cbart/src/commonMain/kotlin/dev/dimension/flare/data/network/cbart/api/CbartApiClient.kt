@@ -285,7 +285,7 @@ internal class CbartApiClient(
     private fun checkResponseCode(text: String) {
         try {
             val root = json.decodeFromString<JsonObject>(text)
-            val code = root["code"]?.jsonPrimitive?.contentOrNull?.toIntOrNull()
+            val code = root["code"]?.jsonPrimitive?.content?.toIntOrNull()
             if (code != null && code != 200) {
                 val userId = currentCredential?.userId
                 if (userId != null) {
