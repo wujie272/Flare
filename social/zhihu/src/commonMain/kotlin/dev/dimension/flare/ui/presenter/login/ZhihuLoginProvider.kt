@@ -116,11 +116,12 @@ private class ZhihuWebCookieLoginHandler(
             )
 
             context.requireReloginAccount(accountKey)
-            accountService.addAccount(
+            val addJob = accountService.addAccount(
                 account = UiAccount(accountKey = accountKey, platformType = PlatformType.Zhihu),
                 credential = verifiedCredential,
                 serializer = ZhihuCredential.serializer(),
             )
+            addJob.join()
             context.onSuccess()
         }.onFailure {
             _state.value = state(error = it.message)
