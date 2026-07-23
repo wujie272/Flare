@@ -16,16 +16,11 @@ import dev.dimension.flare.ui.model.UiAccount
 import dev.dimension.flare.ui.model.UiInstance
 import dev.dimension.flare.ui.model.UiInstanceMetadata
 import dev.dimension.flare.ui.model.UiStrings
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
 
 private const val LOGIN_ACTION = "login"
 private const val CBART_LOGIN_URL = "https://www.linzijiang.app/login"
@@ -62,11 +57,8 @@ private class CbartWebCookieLoginHandler(
     private val context: LoginContext,
 ) : LoginMethodHandler {
     private val accountService: AccountService by koinInject()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _state = MutableStateFlow(state())
     private val _effects = MutableSharedFlow<LoginEffect>(extraBufferCapacity = 1)
-    private val validatedSession = MutableStateFlow<String?>(null)
-    private val validatingSession = MutableStateFlow<String?>(null)
 
     override val state: StateFlow<LoginFlowState> = _state
     override val effects: Flow<LoginEffect> = _effects
@@ -133,38 +125,18 @@ private class CbartWebCookieLoginHandler(
         }
     }
 
+    /**
+     * 只检查 laravel_session cookie 是否存在，不做异步验证。
+     * 真正的 session 验证和用户信息提取在 resume() 里完成。
+     * 跟知乎的 z_c0 检查是同样的思路——cookie 在就说明浏览器登录成功了。
+     */
     override fun canResume(value: String): Boolean {
-        val laravelSession = value.extractCookieValue("laravel_session") ?: return false
-        if (validatedSession.value == laravelSession) {
-            return true
-        }
-        if (validatingSession.value != laravelSession) {
-            validatingSession.value = laravelSession
-            scope.launch {
-                val isLoggedIn = runCatching {
-                    val xsrfToken = value.extractCookieValue("XSRF-TOKEN")
-                    val cred = CbartCredential(laravelSession = laravelSession, xsrfToken = xsrfToken)
-                    val service = CbartService(flowOf(cred))
-                    // 能提取到用户名 = 真的登录了
-                    val userInfo = service.fetchUsernameFromHomePage()
-                    userInfo != null && userInfo.first.isNotBlank()
-                }.getOrDefault(false)
-                if (isLoggedIn) {
-                    validatedSession.value = laravelSession
-                }
-                if (validatingSession.value == laravelSession) {
-                    validatingSession.value = null
-                }
-            }
-        }
-        return false
+        return value.extractCookieValue("laravel_session") != null
     }
 
     override fun clear() { _state.value = state() }
 
-    override fun close() {
-        scope.cancel()
-    }
+    override fun close() = Unit
 
     private fun state(loading: Boolean = false, error: String? = null): LoginFlowState = LoginFlowState(
         actions = listOf(LoginAction(id = LOGIN_ACTION, label = UiStrings.Login, enabled = !loading)),
