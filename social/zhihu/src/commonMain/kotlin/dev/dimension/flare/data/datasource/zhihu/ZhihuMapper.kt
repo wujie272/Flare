@@ -37,7 +37,7 @@ import kotlin.time.Instant
 internal fun ZhihuPerson.toUiProfile(
     accountKey: MicroBlogKey?,
 ): UiProfile {
-    val userKey = MicroBlogKey(id = id, host = ZHIHU_HOST)
+    val userKey = MicroBlogKey(id = urlToken ?: id, host = ZHIHU_HOST)
     return UiProfile(
         key = userKey,
         handle = UiHandle(raw = name, host = ZHIHU_HOST),
@@ -154,7 +154,7 @@ internal fun ZhihuHotItem.toUiTimelineItem(
         user = UiProfile(
             key = MicroBlogKey(id = "zhihu_hot", host = ZHIHU_HOST),
             handle = UiHandle(raw = "hot", host = ZHIHU_HOST),
-            avatar = null,
+            avatar = thumbnailMedia,
             nameInternal = "知乎热榜".toUiPlainText(),
             platformType = PlatformType.Zhihu,
             clickEvent = ClickEvent.Noop,
@@ -174,7 +174,7 @@ internal fun ZhihuHotItem.toUiTimelineItem(
             description = "🔥 $hotLabel · ${answerCount}个回答",
             url = webUrl,
         ),
-        createdAt = Instant.fromEpochMilliseconds(0).toUi(),
+        createdAt = if (createdAt > 0) Instant.fromEpochMilliseconds(createdAt * 1000).toUi() else Instant.fromEpochMilliseconds(0).toUi(),
         emojiReactions = persistentListOf(),
         sourceChannel = null,
         visibility = null,
@@ -195,6 +195,8 @@ internal fun ZhihuDailyStory.toUiTimelineItem(
     accountKey: MicroBlogKey,
 ): UiTimelineV2 {
     val dailyEpoch = parseDailyDate(date)
+    // 从 hint 中提取作者名，格式如 "野狸子 · 9 分钟阅读"
+    val authorName = hint?.substringBefore(" · ")?.takeIf { it.isNotBlank() } ?: "知乎日报"
     val post = UiTimelineV2.Post(
         platformType = PlatformType.Zhihu,
         images = persistentListOf(),
@@ -204,7 +206,7 @@ internal fun ZhihuDailyStory.toUiTimelineItem(
             key = MicroBlogKey(id = "zhihu_daily", host = ZHIHU_HOST),
             handle = UiHandle(raw = "daily", host = ZHIHU_HOST),
             avatar = imageUrl?.let { UiMedia.Image(url = it, previewUrl = it, description = title, height = 0f, width = 0f, sensitive = false) },
-            nameInternal = "知乎日报".toUiPlainText(),
+            nameInternal = authorName.toUiPlainText(),
             platformType = PlatformType.Zhihu,
             clickEvent = ClickEvent.Noop,
             banner = null,

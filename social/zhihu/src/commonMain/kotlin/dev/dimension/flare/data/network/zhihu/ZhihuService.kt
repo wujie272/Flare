@@ -283,9 +283,10 @@ internal class ZhihuService(
                         answerCount = target["answer_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                         followerCount = target["follower_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                         hotValue = item["detail_text"]?.jsonPrimitive?.content ?: "0",
-                        url = target["url"]?.jsonPrimitive?.content ?: "",
+                        url = "https://www.zhihu.com/question/${target["id"]?.jsonPrimitive?.content ?: ""}",
                         type = "question",
                         thumbnail = item["children"]?.jsonArray?.firstOrNull()?.jsonObject?.get("thumbnail")?.jsonPrimitive?.content,
+                        createdAt = target["created"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                     )
                 } catch (_: Exception) { null }
             }
@@ -796,10 +797,10 @@ internal class ZhihuService(
                     val person = obj["object"]?.jsonObject ?: obj
                     ZhihuPerson(
                         id = person["id"]?.jsonPrimitive?.content ?: "",
-                        name = person["name"]?.jsonPrimitive?.content ?: "",
+                        name = (person["name"]?.jsonPrimitive?.content ?: "").stripHighlight(),
                         urlToken = person["url_token"]?.jsonPrimitive?.content,
                         avatarUrl = person["avatar_url"]?.jsonPrimitive?.content,
-                        headline = person["headline"]?.jsonPrimitive?.content,
+                        headline = (person["headline"]?.jsonPrimitive?.content ?: "").stripHighlight(),
                         followerCount = person["follower_count"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                         isFollowing = person["is_following"]?.jsonPrimitive?.content?.toBoolean() ?: false,
                         userType = person["user_type"]?.jsonPrimitive?.content,
@@ -1008,6 +1009,9 @@ internal class ZhihuService(
         }
     }
 
+    /** 清理搜索 API 返回的 <em> 高亮标签 */
+    private fun String.stripHighlight(): String = replace("<em>", "").replace("</em>", "")
+
     private fun parseSearchItems(data: JsonArray): List<ZhihuFeedItem> {
         return data.mapNotNull { element ->
             val item = element.jsonObject
@@ -1020,8 +1024,8 @@ internal class ZhihuService(
                         val question = objectType["question"]?.jsonObject
                         ZhihuFeedItem(
                             id = id, type = "answer",
-                            title = question?.get("title")?.jsonPrimitive?.content ?: "",
-                            excerpt = objectType["excerpt"]?.jsonPrimitive?.content ?: "",
+                            title = (question?.get("name")?.jsonPrimitive?.content ?: "").stripHighlight(),
+                            excerpt = (objectType["excerpt"]?.jsonPrimitive?.content ?: "").stripHighlight(),
                             url = "https://www.zhihu.com/question/${question?.get("id")?.jsonPrimitive?.content}/answer/$id",
                             authorName = objectType["author"]?.jsonObject?.get("name")?.jsonPrimitive?.content,
                             authorId = objectType["author"]?.jsonObject?.get("id")?.jsonPrimitive?.content ?: objectType["author"]?.jsonObject?.get("url_token")?.jsonPrimitive?.content,
@@ -1035,8 +1039,8 @@ internal class ZhihuService(
                     type == "article" -> {
                         ZhihuFeedItem(
                             id = id, type = "article",
-                            title = objectType["title"]?.jsonPrimitive?.content ?: "",
-                            excerpt = objectType["excerpt"]?.jsonPrimitive?.content ?: "",
+                            title = (objectType["title"]?.jsonPrimitive?.content ?: "").stripHighlight(),
+                            excerpt = (objectType["excerpt"]?.jsonPrimitive?.content ?: "").stripHighlight(),
                             url = "https://zhuanlan.zhihu.com/p/$id",
                             authorName = objectType["author"]?.jsonObject?.get("name")?.jsonPrimitive?.content,
                             authorId = objectType["author"]?.jsonObject?.get("id")?.jsonPrimitive?.content ?: objectType["author"]?.jsonObject?.get("url_token")?.jsonPrimitive?.content,
@@ -1050,8 +1054,8 @@ internal class ZhihuService(
                     type == "zvideo" -> {
                         ZhihuFeedItem(
                             id = id, type = "video",
-                            title = objectType["title"]?.jsonPrimitive?.content ?: "",
-                            excerpt = objectType["description"]?.jsonPrimitive?.content ?: objectType["excerpt"]?.jsonPrimitive?.content ?: "",
+                            title = (objectType["title"]?.jsonPrimitive?.content ?: "").stripHighlight(),
+                            excerpt = (objectType["description"]?.jsonPrimitive?.content ?: objectType["excerpt"]?.jsonPrimitive?.content ?: "").stripHighlight(),
                             url = objectType["url"]?.jsonPrimitive?.content ?: "",
                             authorName = objectType["author"]?.jsonObject?.get("name")?.jsonPrimitive?.content,
                             authorId = objectType["author"]?.jsonObject?.get("id")?.jsonPrimitive?.content ?: objectType["author"]?.jsonObject?.get("url_token")?.jsonPrimitive?.content,
@@ -1068,8 +1072,8 @@ internal class ZhihuService(
                     type == "pin" || type == "moments" -> {
                         ZhihuFeedItem(
                             id = id, type = "pin",
-                            title = objectType["excerpt_title"]?.jsonPrimitive?.content ?: "想法",
-                            excerpt = objectType["excerpt_title"]?.jsonPrimitive?.content ?: "",
+                            title = (objectType["excerpt_title"]?.jsonPrimitive?.content ?: "想法").stripHighlight(),
+                            excerpt = (objectType["excerpt_title"]?.jsonPrimitive?.content ?: "").stripHighlight(),
                             url = objectType["url"]?.jsonPrimitive?.content ?: "https://www.zhihu.com/pin/$id",
                             authorName = objectType["author"]?.jsonObject?.get("name")?.jsonPrimitive?.content,
                             authorId = objectType["author"]?.jsonObject?.get("id")?.jsonPrimitive?.content ?: objectType["author"]?.jsonObject?.get("url_token")?.jsonPrimitive?.content,
@@ -1079,6 +1083,7 @@ internal class ZhihuService(
                             createdAt = objectType["created"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                         )
                     }
+                    type == "ai_zhida" -> null // 跳过 AI 搜索摘要
                     else -> null
                 }
             } catch (_: Exception) { null }
@@ -1110,6 +1115,7 @@ internal data class ZhihuHotItem(
     val url: String,
     val type: String,
     val thumbnail: String? = null,
+    val createdAt: Long = 0,
 )
 
 internal data class ZhihuDailyStory(
