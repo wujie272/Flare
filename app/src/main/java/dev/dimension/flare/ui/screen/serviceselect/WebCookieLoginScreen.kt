@@ -29,25 +29,17 @@ internal fun WebCookieLoginScreen(
     onBack: () -> Unit,
 ) {
     val webViewState = rememberWebViewState(url)
-    // 清除目标域名的旧 Cookie，防止旧 session 导致 canResume 误判为已登录
-    val cleanUrl = remember(url) {
-        android.webkit.CookieManager.getInstance().apply {
-            // 清除该域名下所有已知的登录 Cookie
-            val knownCookies = listOf(
-                "laravel_session", "XSRF-TOKEN",      // Cbart
-                "z_c0", "d_c0", "xsrf",               // 知乎
-                "auth_token", "connect.sid",           // 其他平台
-            )
-            knownCookies.forEach { name ->
-                setCookie(url, "$name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/")
-            }
-            flush()
-        }
-        url
-    }
-    LaunchedEffect(cleanUrl) {
+    // 只当 URL 从登录页跳走后才认为可能已登录，防止 Laravel 的 session cookie 误判
+    LaunchedEffect(url) {
+        // 先等一段时间让页面加载
+        delay(3.seconds)
         while (true) {
             webViewState.lastLoadedUrl?.let { loadedUrl ->
+                // URL 没变（还在登录页上）→ 跳过，等用户登录后跳转
+                if (loadedUrl == url) {
+                    delay(2.seconds)
+                    return@let
+                }
                 val cookies =
                     CookieManager
                         .getInstance()
@@ -99,6 +91,11 @@ internal fun WebCookieLoginScreen(
                 }
                 CookieManager.getInstance().setAcceptCookie(true)
                 CookieManager.getInstance().setAcceptThirdPartyCookies(it, true)
+                // 清除该域名所有旧 Cookie，防止旧 session 导致 canResume 误判为已登录
+                CookieManager.getInstance().apply {
+                    removeAllCookies(null)
+                    flush()
+                }
             },
         )
     }
