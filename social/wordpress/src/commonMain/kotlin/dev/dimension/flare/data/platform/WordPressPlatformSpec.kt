@@ -76,7 +76,7 @@ internal data object WordPressSubscriptionTimelineSpec : SubscriptionTimelineSpe
         locale: String,
     ): CacheableRemoteLoader<UiTimelineV2> {
         val api = WordPressApi(baseUrl = host)
-        val url = if (host.startsWith("http")) host else "https://$host"
+        val url = "https://${host.removePrefix("http://").removePrefix("https://")}"
         return WordPressSubscriptionLoader(api = api, siteUrl = url)
     }
 }

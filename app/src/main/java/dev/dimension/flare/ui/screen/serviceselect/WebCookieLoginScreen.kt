@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import com.kevinnzou.web.WebView
@@ -28,7 +29,23 @@ internal fun WebCookieLoginScreen(
     onBack: () -> Unit,
 ) {
     val webViewState = rememberWebViewState(url)
-    LaunchedEffect(url) {
+    // 清除目标域名的旧 Cookie，防止旧 session 导致 canResume 误判为已登录
+    val cleanUrl = remember(url) {
+        android.webkit.CookieManager.getInstance().apply {
+            // 清除该域名下所有已知的登录 Cookie
+            val knownCookies = listOf(
+                "laravel_session", "XSRF-TOKEN",      // Cbart
+                "z_c0", "d_c0", "xsrf",               // 知乎
+                "auth_token", "connect.sid",           // 其他平台
+            )
+            knownCookies.forEach { name ->
+                setCookie(url, "$name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/")
+            }
+            flush()
+        }
+        url
+    }
+    LaunchedEffect(cleanUrl) {
         while (true) {
             webViewState.lastLoadedUrl?.let { loadedUrl ->
                 val cookies =

@@ -40,19 +40,37 @@ internal class ZhihuLoader(
         throw Exception("User not found: ${uiHandle.normalizedRaw}")
     }
 
-    override suspend fun userById(id: String): UiProfile {
+    override suspend fun userById(id: String): UiProfile = runCatching {
         // 尝试从 API 获取真实用户信息（先当 urlToken 查，不行再当数字 ID）
         val member = runCatching {
             service.fetchMemberByUrlToken(id)
         }.getOrNull()
         if (member != null) {
-            return member.toUiProfile(accountKey = null)
+            return@runCatching member.toUiProfile(accountKey = null)
         }
         // 兜底：从 credential 构建基本信息
         val cred = service.currentCredential()
         val userName = cred?.userName ?: id
         val avatarUrl = cred?.avatarUrl
-        return UiProfile(
+        UiProfile(
+            key = MicroBlogKey(id = id, host = "www.zhihu.com"),
+            handle = UiHandle(raw = "$userName@www.zhihu.com", host = "www.zhihu.com"),
+            avatar = avatarUrl?.let { dev.dimension.flare.ui.model.UiMedia.Image(url = it, previewUrl = it, description = userName, height = 0f, width = 0f, sensitive = false) },
+            nameInternal = userName.toUiPlainText(),
+            platformType = PlatformType.Zhihu,
+            clickEvent = ClickEvent.Noop,
+            banner = null,
+            description = null,
+            matrices = UiProfile.Matrices(0, 0, 0),
+            mark = persistentListOf(),
+            bottomContent = null,
+        )
+    }.getOrElse { error ->
+        // 兜底兜底：任何异常都不抛，用 credential 构造一个最简 profile
+        val cred = runCatching { service.currentCredential() }.getOrNull()
+        val userName = cred?.userName ?: id
+        val avatarUrl = cred?.avatarUrl
+        UiProfile(
             key = MicroBlogKey(id = id, host = "www.zhihu.com"),
             handle = UiHandle(raw = "$userName@www.zhihu.com", host = "www.zhihu.com"),
             avatar = avatarUrl?.let { dev.dimension.flare.ui.model.UiMedia.Image(url = it, previewUrl = it, description = userName, height = 0f, width = 0f, sensitive = false) },

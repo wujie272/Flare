@@ -19,9 +19,9 @@ internal class WordPressApi(
     /** 站点基础 URL，如 https://www.gamer520.com */
     private val baseUrl: String,
 ) {
-    /** 确保 baseUrl 始终带 https:// 前缀 */
+    /** 强制使用 HTTPS（Android 9+ 默认禁止明文通信） */
     private val normalizedBaseUrl: String
-        get() = if (baseUrl.startsWith("http")) baseUrl else "https://$baseUrl"
+        get() = "https://${baseUrl.removePrefix("http://").removePrefix("https://")}"
 
     private val apiBase: String
         get() = "$normalizedBaseUrl/wp-json/wp/v2"
