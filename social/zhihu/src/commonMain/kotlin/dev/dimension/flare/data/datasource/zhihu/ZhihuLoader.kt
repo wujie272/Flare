@@ -20,6 +20,8 @@ import dev.dimension.flare.ui.model.UiProfile
 import dev.dimension.flare.ui.model.UiRelation
 import dev.dimension.flare.ui.model.UiTimelineV2
 import dev.dimension.flare.ui.render.toUiPlainText
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.collections.immutable.persistentListOf
 
 internal class ZhihuLoader(
@@ -323,9 +325,9 @@ internal class ZhihuDailyTimelineLoader(
         lastDate = date
 
         // 并发获取每条故事的原始内容链接
-        val enriched = kotlinx.coroutines.coroutineScope {
+        val enriched = coroutineScope {
             stories.map { story ->
-                kotlinx.coroutines.async {
+                async {
                     val originalUrl = story.originalUrl
                         ?: service.fetchDailyStoryOriginalUrl(story.id)
                     story.copy(originalUrl = originalUrl)
