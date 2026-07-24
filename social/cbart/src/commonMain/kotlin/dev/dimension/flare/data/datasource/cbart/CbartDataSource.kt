@@ -181,7 +181,9 @@ internal class CbartDataSource(
     }
 
     private suspend fun handleFollow(event: PostEvent.Cbart.Follow) {
-        val fromUid = accountKey.id.toLongOrNull() ?: return
+        val fromUid = runCatching { service.fetchNumericUid() }.getOrNull()
+            ?: accountKey.id.toLongOrNull()
+            ?: return
         val toUid = event.postKey.id.toLongOrNull() ?: return
         service.toggleFollow(fromUid, toUid, follow = event.following)
     }

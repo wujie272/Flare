@@ -32,12 +32,14 @@ internal class CbartLoader(
 
     override suspend fun follow(userKey: MicroBlogKey) {
         val studioId = userKey.id.toLongOrNull() ?: throw UnsupportedOperationException("Cbart follow requires numeric studio ID")
-        service.toggleFollow(0, studioId, follow = true)
+        val fromUid = runCatching { service.fetchNumericUid() }.getOrNull() ?: 0L
+        service.toggleFollow(fromUid, studioId, follow = true)
     }
 
     override suspend fun unfollow(userKey: MicroBlogKey) {
         val studioId = userKey.id.toLongOrNull() ?: throw UnsupportedOperationException("Cbart unfollow requires numeric studio ID")
-        service.toggleFollow(0, studioId, follow = false)
+        val fromUid = runCatching { service.fetchNumericUid() }.getOrNull() ?: 0L
+        service.toggleFollow(fromUid, studioId, follow = false)
     }
 
     override suspend fun relation(userKey: MicroBlogKey): UiRelation {
@@ -53,8 +55,10 @@ internal class CbartLoader(
         throw UnsupportedOperationException("Cbart user lookup by handle is not supported")
 
     override suspend fun userById(id: String): UiProfile {
-        // 用 fetchUserByUid 获取目标用户的昵称和头像
-        val owner = runCatching { service.fetchUserByUid(id) }.getOrNull()
+        // 双层 runCatching 兜底：外层捕获所有异常，内层捕获 fetchUserByUid 异常
+        val owner = runCatching {
+            runCatching { service.fetchUserByUid(id) }.getOrNull()
+        }.getOrNull()
         if (owner != null) {
             val name = owner.nickName ?: owner.displayName ?: owner.username ?: id
             val avatarUrl = owner.avatarUrl ?: owner.avatar?.let { "https://www.tpzf001.com$it" }
@@ -78,8 +82,8 @@ internal class CbartLoader(
         }
 
         // 兜底：从 credential 构建用户信息
-        val cred = service.currentCredential()
-        val userInfo = service.fetchCurrentUser()
+        val cred = try { service.currentCredential() } catch (_: Exception) { null }
+        val userInfo = try { service.fetchCurrentUser() } catch (_: Exception) { null }
         val username = userInfo?.username ?: cred?.userName ?: id.removePrefix("cb_").substringBefore("_")
         val nickName = userInfo?.nickName ?: cred?.nickName ?: username
 
@@ -146,7 +150,19 @@ internal class CbartUserContentLoader(
             is PagingRequest.Refresh -> 1
             is PagingRequest.Append -> request.nextKey.toIntOrNull() ?: 1
         }
-        val items = service.fetchUserContent(uid = userKey.id, page = page)
+        // 如果 userKey.id 是非数字的 fallback 格式，尝试解析为数字 uid
+        val uid = userKey.id
+        val resolvedUid = if (uid.toLongOrNull() != null) {
+            uid
+        } else {
+            // 非数字 uid → 尝试从 profile 获取真实数字 uid
+            try {
+                service.fetchNumericUid()?.toString() ?: uid
+            } catch (_: Exception) {
+                uid
+            }
+        }
+        val items = service.fetchUserContent(uid = resolvedUid, page = page)
         return PagingResult(
             data = items.map { it.toUiTimelineItem(accountKey) },
             nextKey = if (items.isEmpty()) null else (page + 1).toString(),

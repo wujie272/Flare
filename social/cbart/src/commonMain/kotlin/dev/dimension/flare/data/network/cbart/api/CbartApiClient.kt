@@ -20,6 +20,7 @@ import io.ktor.http.contentType
 import io.ktor.http.decodeURLPart
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
@@ -50,6 +51,19 @@ internal class CbartApiClient(
             currentCredential = credentialFlow.firstOrNull()
         }
         return currentCredential
+    }
+
+    // 请求频率限制（避免 Cloudflare 429）
+    private var lastRequestTimeMs = 0L
+    private val minRequestIntervalMs = 1500L // 至少间隔 1.5 秒
+
+    private suspend fun rateLimitThrottle() {
+        val now = Clock.System.now().toEpochMilliseconds()
+        val elapsed = now - lastRequestTimeMs
+        if (elapsed < minRequestIntervalMs) {
+            delay(minRequestIntervalMs - elapsed)
+        }
+        lastRequestTimeMs = Clock.System.now().toEpochMilliseconds()
     }
 
     private val sessionRegex = Regex("""laravel_session=([^;]+)""")
@@ -128,6 +142,7 @@ internal class CbartApiClient(
     }
 
     private suspend fun httpClient(): HttpClient {
+        rateLimitThrottle()
         refreshSessionIfNeeded()
         val cookie = buildCookie()
         val cred = credential()
@@ -236,11 +251,46 @@ internal class CbartApiClient(
     // ==================== 页面抓取 ====================
 
     suspend fun fetchHomePage(): String? {
-        return try { httpClient().get(CBART_BASE).bodyAsText() } catch (_: Exception) { null }
+        return try {
+            val text = httpClient().get(CBART_BASE).bodyAsText()
+            // 检查是否被重定向到登录页
+            if (text.contains("""<meta http-equiv="refresh"""" ) && text.contains("/login")) {
+                val userId = currentCredential?.userId
+                if (userId != null) {
+                    throw LoginExpiredException(
+                        accountKey = MicroBlogKey(id = userId, host = CBART_HOST),
+                        platformType = PlatformType.Cbart,
+                    )
+                }
+                null
+            } else {
+                text
+            }
+        } catch (e: LoginExpiredException) {
+            throw e
+        } catch (_: Exception) { null }
     }
 
     suspend fun fetchProfilePage(): String? {
-        return try { httpClient().get("$CBART_BASE/profile").bodyAsText() } catch (_: Exception) { null }
+        return try {
+            val text = httpClient().get("$CBART_BASE/profile").bodyAsText()
+            // 检查是否被重定向到登录页（session 过期）
+            if (text.contains("""<meta http-equiv="refresh"""" ) && text.contains("/login")) {
+                // session 过期，触发刷新或抛出异常
+                val userId = currentCredential?.userId
+                if (userId != null) {
+                    throw LoginExpiredException(
+                        accountKey = MicroBlogKey(id = userId, host = CBART_HOST),
+                        platformType = PlatformType.Cbart,
+                    )
+                }
+                null
+            } else {
+                text
+            }
+        } catch (e: LoginExpiredException) {
+            throw e
+        } catch (_: Exception) { null }
     }
 
     suspend fun fetchStudioListPage(): String? {

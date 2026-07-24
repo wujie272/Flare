@@ -40,18 +40,33 @@ internal class CbartService(
     }
 
     suspend fun fetchMyContent(page: Int = 1): List<CbartContentItem> {
-        val uid = currentUid() ?: return emptyList()
+        val uid = fetchNumericUid()?.toString() ?: currentUid() ?: return emptyList()
         val response = api.contentList(uid = uid, page = page)
         return response?.data?.contents ?: emptyList()
     }
 
     suspend fun fetchUserContent(uid: String, page: Int = 1): List<CbartContentItem> {
-        val response = api.contentList(uid = uid, page = page, getOwner = 1)
+        val numericUid = resolveNumericUid(uid) ?: uid
+        val response = api.contentList(uid = numericUid, page = page, getOwner = 1)
         return response?.data?.contents ?: emptyList()
     }
 
     /** uid -> owner 缓存 */
     private val ownerCache = mutableMapOf<String, CbartVideoOwner>()
+
+    /**
+     * 解析 uid 为数字字符串。如果传入的是非数字（如 fallback 格式），
+     * 尝试从 /profile 页面获取真实的数字 uid。
+     */
+    private suspend fun resolveNumericUid(uid: String): String? {
+        if (uid.toLongOrNull() != null) return uid // 已经是数字
+        // 非数字 → 尝试从 profile 获取真实 uid
+        val profile = fetchCurrentUserProfile()
+        val numericUid = profile?.uid?.takeIf { it.toLongOrNull() != null }
+        if (numericUid != null) return numericUid
+        // 最后尝试从首页 HTML 解析
+        return fetchNumericUid()?.toString()
+    }
 
     /**
      * 根据 uid 获取用户信息（昵称+头像）
@@ -60,13 +75,16 @@ internal class CbartService(
      */
     suspend fun fetchUserByUid(uid: String): CbartVideoOwner? {
         ownerCache[uid]?.let { return it }
+        // 先解析 uid 为数字
+        val numericUid = resolveNumericUid(uid) ?: uid
         // 方案1：精准查该用户的内容，取 owner
         val contentResult = runCatching {
-            api.contentList(uid = uid, page = 1, limit = 1, getOwner = 1)
+            api.contentList(uid = numericUid, page = 1, limit = 1, getOwner = 1)
                 ?.data?.contents?.firstOrNull()?.owner
         }.getOrNull()
         if (contentResult != null) {
             ownerCache[uid] = contentResult
+            ownerCache[numericUid] = contentResult
             return contentResult
         }
         // 方案2：video_list 兜底，只拉少量数据
@@ -78,11 +96,11 @@ internal class CbartService(
                 ownerCache[content.uid.toString()] = owner
             }
         }
-        return ownerCache[uid]
+        return ownerCache[uid] ?: ownerCache[numericUid]
     }
 
     suspend fun fetchMyBlogs(page: Int = 1): List<CbartBlogItem> {
-        val uid = currentUid() ?: return emptyList()
+        val uid = fetchNumericUid()?.toString() ?: currentUid() ?: return emptyList()
         val response = api.blogList(uid = uid, page = page)
         return response?.data?.contents ?: emptyList()
     }

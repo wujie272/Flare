@@ -113,6 +113,8 @@ private class CbartWebCookieLoginHandler(
                 avatarUrl = avatarUrl,
             )
 
+            // 如果之前已存在同 host 的旧账户（旧 fallback 格式 accountKey），
+            // requireReloginAccount 会处理旧账户的替换
             context.requireReloginAccount(accountKey)
             val addJob = accountService.addAccount(
                 account = UiAccount(accountKey = accountKey, platformType = PlatformType.Cbart),

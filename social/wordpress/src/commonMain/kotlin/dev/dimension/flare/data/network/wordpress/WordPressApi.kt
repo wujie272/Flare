@@ -2,11 +2,9 @@ package dev.dimension.flare.data.network.wordpress
 
 import dev.dimension.flare.data.network.ktorClient
 import io.ktor.client.HttpClient
-import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.URLProtocol
 import kotlinx.serialization.json.Json
 
 private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -29,13 +27,7 @@ internal class WordPressApi(
     private val jsonApiBase: String
         get() = "$normalizedBaseUrl/wp-json"
 
-    private fun httpClient(): HttpClient = ktorClient {
-        defaultRequest {
-            url {
-                protocol = URLProtocol.HTTPS
-            }
-        }
-    }
+    private fun httpClient(): HttpClient = ktorClient()
 
     /**
      * 探测站点是否为 WordPress，返回站点信息
