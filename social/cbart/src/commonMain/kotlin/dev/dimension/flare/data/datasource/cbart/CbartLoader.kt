@@ -3,56 +3,28 @@ package dev.dimension.flare.data.datasource.cbart
 import dev.dimension.flare.data.datasource.microblog.paging.CacheableRemoteLoader
 import dev.dimension.flare.data.datasource.microblog.paging.PagingRequest
 import dev.dimension.flare.data.datasource.microblog.paging.PagingResult
-import dev.dimension.flare.data.datasource.microblog.paging.notSupported
 import dev.dimension.flare.data.network.cbart.CbartService
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.ui.model.*
+import dev.dimension.flare.ui.model.UiProfile
+import dev.dimension.flare.ui.model.UiTimelineV2
 
 /**
  * 公告时间线 Loader
- * 调 /api/article_list?news=1
- * 分页用页码，翻页时 page+1
+ * 调 /api/articles.php
  */
 internal class CbartArticleTimelineLoader(
     private val service: CbartService,
     private val accountKey: MicroBlogKey,
 ) : CacheableRemoteLoader<UiTimelineV2> {
-    override val pagingKey: String = "cbart_article"
+    override val pagingKey: String = "lzj_article"
     override val supportPrepend: Boolean = false
-
     override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
         if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
         val page = when (request) {
             is PagingRequest.Refresh -> 1
             is PagingRequest.Append -> request.nextKey.toIntOrNull() ?: 1
         }
-        val items = service.fetchArticles(page = page)
-        return PagingResult(
-            data = items.map { it.toUiTimelineItem(accountKey) },
-            nextKey = if (items.isEmpty()) null else (page + 1).toString(),
-        )
-    }
-}
-
-
-/**
- * 最新资源 Loader
- * 调 /api/article_list?news=0 返回最新文章/资源列表
- */
-internal class CbartLatestResourceTimelineLoader(
-    private val service: CbartService,
-    private val accountKey: MicroBlogKey,
-) : CacheableRemoteLoader<UiTimelineV2> {
-    override val pagingKey: String = "cbart_latest_resource"
-    override val supportPrepend: Boolean = false
-
-    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
-        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
-        val page = when (request) {
-            is PagingRequest.Refresh -> 1
-            is PagingRequest.Append -> request.nextKey.toIntOrNull() ?: 1
-        }
-        val items = service.fetchLatestResources(page = page, limit = pageSize)
+        val items = service.fetchArticles(page = page, limit = pageSize)
         return PagingResult(
             data = items.map { it.toUiTimelineItem(accountKey) },
             nextKey = if (items.isEmpty()) null else (page + 1).toString(),
@@ -61,14 +33,14 @@ internal class CbartLatestResourceTimelineLoader(
 }
 
 /**
- * 发现/推荐 Loader
- * 调 /api/studio_list 返回工作室列表
+ * 视频时间线 Loader
+ * 调 /api/video_list.php
  */
-internal class CbartDiscoverTimelineLoader(
+internal class CbartVideoTimelineLoader(
     private val service: CbartService,
     private val accountKey: MicroBlogKey,
 ) : CacheableRemoteLoader<UiTimelineV2> {
-    override val pagingKey: String = "cbart_discover"
+    override val pagingKey: String = "lzj_video"
     override val supportPrepend: Boolean = false
     override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
         if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
@@ -76,7 +48,7 @@ internal class CbartDiscoverTimelineLoader(
             is PagingRequest.Refresh -> 1
             is PagingRequest.Append -> request.nextKey.toIntOrNull() ?: 1
         }
-        val items = service.fetchStudios(page = page)
+        val items = service.fetchVideos(page = page, limit = pageSize)
         return PagingResult(
             data = items.map { it.toUiTimelineItem(accountKey) },
             nextKey = if (items.isEmpty()) null else (page + 1).toString(),
@@ -85,13 +57,14 @@ internal class CbartDiscoverTimelineLoader(
 }
 
 /**
- * 热门排行榜 Loader
+ * 图片时间线 Loader
+ * 调 /api/group_pics.php
  */
-internal class CbartHotTimelineLoader(
+internal class CbartPictureTimelineLoader(
     private val service: CbartService,
     private val accountKey: MicroBlogKey,
 ) : CacheableRemoteLoader<UiTimelineV2> {
-    override val pagingKey: String = "cbart_hot"
+    override val pagingKey: String = "lzj_pictures"
     override val supportPrepend: Boolean = false
     override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
         if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
@@ -99,7 +72,7 @@ internal class CbartHotTimelineLoader(
             is PagingRequest.Refresh -> 1
             is PagingRequest.Append -> request.nextKey.toIntOrNull() ?: 1
         }
-        val items = service.fetchVideos(page = page)
+        val items = service.fetchPictureGroups(page = page, limit = pageSize)
         return PagingResult(
             data = items.map { it.toUiTimelineItem(accountKey) },
             nextKey = if (items.isEmpty()) null else (page + 1).toString(),
@@ -107,20 +80,23 @@ internal class CbartHotTimelineLoader(
     }
 }
 
-internal class CbartPurchasedVideoLoader(
+/**
+ * 作者/工作室时间线 Loader
+ * 调 /api/producer.php
+ */
+internal class CbartProducerTimelineLoader(
     private val service: CbartService,
     private val accountKey: MicroBlogKey,
 ) : CacheableRemoteLoader<UiTimelineV2> {
-    override val pagingKey: String = "cbart_purchased_video"
+    override val pagingKey: String = "lzj_producers"
     override val supportPrepend: Boolean = false
-
     override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
         if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
         val page = when (request) {
             is PagingRequest.Refresh -> 1
             is PagingRequest.Append -> request.nextKey.toIntOrNull() ?: 1
         }
-        val items = service.fetchPurchasedVideos(page = page)
+        val items = service.fetchProducers(page = page, limit = pageSize)
         return PagingResult(
             data = items.map { it.toUiTimelineItem(accountKey) },
             nextKey = if (items.isEmpty()) null else (page + 1).toString(),
@@ -128,56 +104,116 @@ internal class CbartPurchasedVideoLoader(
     }
 }
 
-internal class CbartGalleryCommentsLoader(
+/**
+ * 通知/消息时间线 Loader
+ * 调 /api/get_message.php
+ */
+internal class CbartNotificationTimelineLoader(
     private val service: CbartService,
     private val accountKey: MicroBlogKey,
-    private val statusKey: MicroBlogKey,
 ) : CacheableRemoteLoader<UiTimelineV2> {
-    override val pagingKey: String = "cbart_comments_${statusKey.id}"
+    override val pagingKey: String = "lzj_notification"
     override val supportPrepend: Boolean = false
-
     override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
         if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
-        val videoId = statusKey.id.toLongOrNull() ?: return PagingResult(endOfPaginationReached = true, data = emptyList())
-        val detail = service.fetchVideoDetail(videoId)
-        val comments = detail?.comment?.map { it.toUiTimelineItem(accountKey) } ?: emptyList()
+        val page = when (request) {
+            is PagingRequest.Refresh -> 1
+            is PagingRequest.Append -> request.nextKey.toIntOrNull() ?: 1
+        }
+        val items = service.fetchMessages(page = page)
         return PagingResult(
-            data = comments,
+            data = items.map { it.toUiTimelineItem(accountKey) },
+            nextKey = if (items.isEmpty()) null else (page + 1).toString(),
+        )
+    }
+}
+
+/**
+ * 评论 Loader
+ */
+internal class CbartCommentsLoader(
+    private val service: CbartService,
+    private val accountKey: MicroBlogKey,
+    private val videoId: Long,
+) : CacheableRemoteLoader<UiTimelineV2> {
+    override val pagingKey: String = "lzj_comments_$videoId"
+    override val supportPrepend: Boolean = false
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
+        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
+        val items = service.fetchComments(videoId = videoId, page = 1)
+        return PagingResult(
+            data = items.map { it.toUiTimelineItem(accountKey) },
             endOfPaginationReached = true,
         )
     }
 }
 
-internal class CbartSearchUserLoader(
+/**
+ * 用户内容 Loader（作者的视频/图片）
+ */
+internal class CbartUserContentLoader(
     private val service: CbartService,
     private val accountKey: MicroBlogKey,
-) : CacheableRemoteLoader<UiProfile> {
-    override val pagingKey: String = "cbart_search_user"
-    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiProfile> =
-        notSupported<UiProfile>().load(pageSize, request)
-}
-
-/**
- * 正在关注 Loader
- * 调 /api/studio_list?filter_query=xxx 返回当前用户关注的工作室列表
- */
-internal class CbartFollowingLoader(
-    private val service: CbartService,
-) : CacheableRemoteLoader<UiProfile> {
-    override val pagingKey: String = "cbart_following"
+    private val userKey: MicroBlogKey,
+) : CacheableRemoteLoader<UiTimelineV2> {
+    override val pagingKey: String = "lzj_user_content_${userKey.id}"
     override val supportPrepend: Boolean = false
-
-    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiProfile> {
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
         if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
         val page = when (request) {
             is PagingRequest.Refresh -> 1
             is PagingRequest.Append -> request.nextKey.toIntOrNull() ?: 1
         }
-        val (items, total) = service.fetchFollowedStudios(page = page)
-        val totalPages = (total + 19) / 20 // 向上取整
+        // 妖狐吧没有直接按 uid 查内容的 API，用视频列表代替
+        val items = service.fetchVideos(page = page, limit = pageSize)
         return PagingResult(
-            data = items.map { it.toUiProfile() },
-            nextKey = if (page >= totalPages || items.isEmpty()) null else (page + 1).toString(),
+            data = items.map { it.toUiTimelineItem(accountKey) },
+            nextKey = if (items.isEmpty()) null else (page + 1).toString(),
         )
+    }
+}
+
+/**
+ * 搜索用户/工作室 Loader
+ */
+internal class CbartSearchUserLoader(
+    private val service: CbartService,
+    private val accountKey: MicroBlogKey,
+) : CacheableRemoteLoader<UiProfile> {
+    override val pagingKey: String = "lzj_search_user"
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiProfile> =
+        PagingResult(endOfPaginationReached = true, data = emptyList())
+}
+
+/**
+ * 关注列表 Loader
+ */
+internal class CbartFuliLoader(
+    private val service: CbartService,
+    private val accountKey: MicroBlogKey,
+) : CacheableRemoteLoader<UiTimelineV2> {
+    override val pagingKey: String = "lzj_fuli"
+    override val supportPrepend: Boolean = false
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
+        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
+        val fuliData = service.fetchDailyFuli()
+        val item = if (fuliData != null) {
+            listOf(fuliData.toUiTimelineItem(accountKey))
+        } else {
+            emptyList()
+        }
+        return PagingResult(data = item, endOfPaginationReached = true)
+    }
+}
+
+internal class CbartFollowingLoader(
+    private val service: CbartService,
+    private val accountKey: MicroBlogKey,
+) : CacheableRemoteLoader<UiProfile> {
+    override val pagingKey: String = "lzj_following"
+    override val supportPrepend: Boolean = false
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiProfile> {
+        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
+        return PagingResult(endOfPaginationReached = true, data = emptyList())
     }
 }

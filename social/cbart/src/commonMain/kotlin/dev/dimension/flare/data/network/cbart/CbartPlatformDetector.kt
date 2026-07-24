@@ -8,7 +8,12 @@ import dev.dimension.flare.model.PlatformType
 internal data object CbartPlatformDetector : PlatformDetector {
     override val priority: Int = 90
     override suspend fun detect(host: String): NodeData? {
-        if (!CBART_HOST.equals(host, ignoreCase = true) && !"www.$CBART_HOST".equals(host, ignoreCase = true)) return null
-        return NodeData(host = CBART_HOST, platformType = PlatformType.Cbart, software = PlatformType.Cbart.name, compatibleMode = false)
+        // 妖狐吧域名：shenmatk.com, smlinzi.com, ngsbyc.com, hjtsdhao.com, yaohuba.com
+        val yaohubaHosts = listOf("shenmatk.com", "smlinzi.com", "ngsbyc.com", "hjtsdhao.com", "yaohuba.com")
+        val cleanHost = host.removePrefix("www.")
+        if (cleanHost in yaohubaHosts || cleanHost == CBART_HOST) {
+            return NodeData(host = CBART_HOST, platformType = PlatformType.Cbart, software = PlatformType.Cbart.name, compatibleMode = false)
+        }
+        return null
     }
 }

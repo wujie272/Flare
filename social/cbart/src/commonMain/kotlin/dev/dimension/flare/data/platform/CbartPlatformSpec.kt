@@ -13,14 +13,13 @@ import dev.dimension.flare.model.PlatformSpec
 import dev.dimension.flare.model.PlatformType
 import dev.dimension.flare.model.PlatformTypeMetadata
 import dev.dimension.flare.ui.model.UiIcon
+
 import dev.dimension.flare.ui.model.UiStrings
 import dev.dimension.flare.ui.model.asType
 import dev.dimension.flare.ui.presenter.login.CbartLoginProvider
 import dev.dimension.flare.ui.presenter.login.LoginPlatformProvider
-import dev.dimension.flare.ui.route.DeeplinkRoute
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.serialization.Serializable
 import kotlin.native.HiddenFromObjC
 
 @HiddenFromObjC
@@ -33,39 +32,13 @@ public data object CbartPlatformSpec :
     override val type: PlatformType = PlatformType.Cbart
     override val metadata: PlatformTypeMetadata =
         PlatformTypeMetadata(
-            displayName = "Cbart",
+            displayName = "妖狐吧",
             icon = UiIcon.Cbart,
-        )
-
-    internal val discoverTimelineSpec =
-        TimelineSpec(
-            id = "cbart.studios",
-            title = UiStrings.Discover,
-            icon = UiIcon.List.asType(),
-            serializer = TimelineSpec.AccountBasedData.serializer(),
-            targetId = { it.accountKey.toString() },
-            loaderFactory =
-                accountLoader<CbartDataSource, TimelineSpec.AccountBasedData> {
-                    discoverTimelineLoader()
-                },
-        )
-
-    internal val hotTimelineSpec =
-        TimelineSpec(
-            id = "cbart.hot",
-            title = UiStrings.Featured,
-            icon = UiIcon.Featured.asType(),
-            serializer = TimelineSpec.AccountBasedData.serializer(),
-            targetId = { it.accountKey.toString() },
-            loaderFactory =
-                accountLoader<CbartDataSource, TimelineSpec.AccountBasedData> {
-                    hotTimelineLoader()
-                },
         )
 
     internal val announcementTimelineSpec =
         TimelineSpec(
-            id = "cbart.announcement",
+            id = "lzj.announcement",
             title = UiStrings.Announcement,
             icon = UiIcon.Info.asType(),
             serializer = TimelineSpec.AccountBasedData.serializer(),
@@ -76,22 +49,61 @@ public data object CbartPlatformSpec :
                 },
         )
 
-    internal val latestResourceTimelineSpec =
+    internal val videoTimelineSpec =
         TimelineSpec(
-            id = "cbart.latest_resource",
-            title = UiStrings.LatestResource,
+            id = "lzj.video",
+            title = UiStrings.Featured,
+            icon = UiIcon.Featured.asType(),
+            serializer = TimelineSpec.AccountBasedData.serializer(),
+            targetId = { it.accountKey.toString() },
+            loaderFactory =
+                accountLoader<CbartDataSource, TimelineSpec.AccountBasedData> {
+                    videoTimelineLoader()
+                },
+        )
+
+    internal val pictureTimelineSpec =
+        TimelineSpec(
+            id = "lzj.pictures",
+            title = UiStrings.Media,
             icon = UiIcon.Eye.asType(),
             serializer = TimelineSpec.AccountBasedData.serializer(),
             targetId = { it.accountKey.toString() },
             loaderFactory =
                 accountLoader<CbartDataSource, TimelineSpec.AccountBasedData> {
-                    latestResourceTimelineLoader()
+                    pictureTimelineLoader()
+                },
+        )
+
+    internal val producerTimelineSpec =
+        TimelineSpec(
+            id = "lzj.producers",
+            title = UiStrings.Discover,
+            icon = UiIcon.List.asType(),
+            serializer = TimelineSpec.AccountBasedData.serializer(),
+            targetId = { it.accountKey.toString() },
+            loaderFactory =
+                accountLoader<CbartDataSource, TimelineSpec.AccountBasedData> {
+                    producerTimelineLoader()
+                },
+        )
+
+    internal val fuliTimelineSpec =
+        TimelineSpec(
+            id = "lzj.fuli",
+            title = UiStrings.Default,
+            icon = UiIcon.Favourite.asType(),
+            serializer = TimelineSpec.AccountBasedData.serializer(),
+            targetId = { it.accountKey.toString() },
+            loaderFactory =
+                accountLoader<CbartDataSource, TimelineSpec.AccountBasedData> {
+                    fuliTimelineLoader()
                 },
         )
 
     internal val notificationTimelineSpec =
         TimelineSpec(
-            id = "cbart.notification",
+            id = "lzj.notification",
             title = UiStrings.Notifications,
             icon = UiIcon.Notification.asType(),
             serializer = TimelineSpec.AccountBasedData.serializer(),
@@ -104,26 +116,16 @@ public data object CbartPlatformSpec :
 
     override val timelineSpecs: ImmutableList<TimelineSpec<out TimelineSpec.Data>> =
         persistentListOf(
-            discoverTimelineSpec,
-            hotTimelineSpec,
             announcementTimelineSpec,
-            latestResourceTimelineSpec,
+            videoTimelineSpec,
+            pictureTimelineSpec,
+            producerTimelineSpec,
+            fuliTimelineSpec,
             notificationTimelineSpec,
         )
 
     override fun deepLinks(accountKey: MicroBlogKey): ImmutableList<PlatformDeepLink<*>> =
-        persistentListOf(
-            PlatformDeepLink(
-                uriPattern = "https://www.linzijiang.app/video/detail?id={id}",
-                serializer = CbartPicDeepLink.serializer(),
-                callback = { data ->
-                    DeeplinkRoute.Gallery.Detail(
-                        accountType = AccountType.Specific(accountKey),
-                        statusKey = MicroBlogKey(data.id, CBART_HOST),
-                    )
-                },
-            ),
-        )
+        persistentListOf()
 
     override fun createDataSource(context: PlatformDataSourceContext): MicroblogDataSource =
         CbartDataSource(
@@ -141,7 +143,7 @@ public data object CbartPlatformSpec :
         throw UnsupportedOperationException("Cbart guest data source is not supported")
 }
 
-@Serializable
-private data class CbartPicDeepLink(
-    val id: String,
-)
+
+
+
+

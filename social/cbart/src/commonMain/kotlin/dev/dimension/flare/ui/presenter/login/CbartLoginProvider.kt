@@ -1,7 +1,7 @@
 package dev.dimension.flare.ui.presenter.login
 
-import dev.dimension.flare.data.network.cbart.CbartService
 import dev.dimension.flare.data.network.cbart.CbartPlatformDetector
+import dev.dimension.flare.data.network.cbart.CbartService
 import dev.dimension.flare.data.network.nodeinfo.PlatformDetector
 import dev.dimension.flare.data.platform.CBART_HOST
 import dev.dimension.flare.data.platform.CbartCredential
@@ -21,100 +21,107 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 private const val LOGIN_ACTION = "login"
-private const val CBART_LOGIN_URL = "https://www.linzijiang.app/login"
+private const val USERNAME_FIELD = "username"
+private const val PASSWORD_FIELD = "password"
+private const val AUTO_LOGIN_FIELD = "auto_login"
 
 public data object CbartLoginProvider : LoginPlatformProvider {
     override val platformType: PlatformType = PlatformType.Cbart
     override val metadata: PlatformTypeMetadata get() = CbartPlatformSpec.metadata
     override val detector: PlatformDetector = CbartPlatformDetector
     override val methods: List<LoginMethodSpec> = listOf(
-        LoginMethodSpec(type = LoginMethodType.WebCookie, title = UiStrings.WebCookieLogin),
+        LoginMethodSpec(type = LoginMethodType.Password, title = UiStrings.PasswordLogin),
     )
     override fun agreementUrl(host: String): String? = null
 
     override suspend fun recommendInstances(): List<RecommendedInstance> = listOf(
         RecommendedInstance(
             instance = UiInstance(
-                name = "Cbart",
-                description = "Fetish content marketplace",
+                name = "妖狐吧",
+                description = "妖狐吧内容平台",
                 iconUrl = null, domain = CBART_HOST,
                 type = platformType, bannerUrl = null, usersCount = 0,
             ), priority = 50,
         ),
     )
+
     override suspend fun instanceMetadata(host: String): UiInstanceMetadata =
         throw UnsupportedOperationException("${platformType.name} metadata is not supported yet")
 
     override fun createHandler(context: LoginContext): LoginMethodHandler {
-        require(context.methodType == LoginMethodType.WebCookie) { "Unsupported Cbart login method: ${context.methodType}" }
-        return CbartWebCookieLoginHandler(context)
+        require(context.methodType == LoginMethodType.Password) { "Unsupported 妖狐吧 login method: ${context.methodType}" }
+        return CbartPasswordLoginHandler(context)
     }
 }
 
-private class CbartWebCookieLoginHandler(
+/**
+ * 妖狐吧账号密码登录 Handler
+ * 支持用户名/密码输入 + 自动登录开关
+ */
+private class CbartPasswordLoginHandler(
     private val context: LoginContext,
 ) : LoginMethodHandler {
     private val accountService: AccountService by koinInject()
-    private val _state = MutableStateFlow(state())
+    private val values = mutableMapOf<String, String>()
+    private val _state = MutableStateFlow(loginState())
     private val _effects = MutableSharedFlow<LoginEffect>(extraBufferCapacity = 1)
 
     override val state: StateFlow<LoginFlowState> = _state
     override val effects: Flow<LoginEffect> = _effects
-    override fun updateField(id: String, value: String) = Unit
 
-    override suspend fun perform(actionId: String) {
-        if (actionId != LOGIN_ACTION) return
-        _effects.emit(LoginEffect.OpenWebCookieLogin(url = CBART_LOGIN_URL))
+    override fun updateField(id: String, value: String) {
+        values[id] = value
+        _state.value = loginState(error = null)
     }
 
-    override suspend fun resume(value: String) {
-        _state.value = state(loading = true)
+    @OptIn(ExperimentalUuidApi::class)
+    override suspend fun perform(actionId: String) {
+        if (actionId != LOGIN_ACTION) return
+        _state.value = loginState(loading = true)
+
         runCatching {
-            val laravelSession = value.extractCookieValue("laravel_session")
-                ?: error("Cbart session cookie (laravel_session) is missing")
+            val username = values[USERNAME_FIELD].orEmpty()
+            val password = values[PASSWORD_FIELD].orEmpty()
+            val autoLogin = values[AUTO_LOGIN_FIELD].orEmpty() == "true"
+            val deviceId = Uuid.random().toString()
 
-            val xsrfToken = value.extractCookieValue("XSRF-TOKEN")
-
+            // 初始化凭证
             val credential = CbartCredential(
-                laravelSession = laravelSession,
-                xsrfToken = xsrfToken,
+                apiToken = "ACF09D095C44ADD56B80FEE4A3A5BB3A",
+                uuid = deviceId,
+                userName = username.ifBlank { null },
+                password = if (autoLogin) password.ifBlank { null } else null,
             )
 
             val service = CbartService(flowOf(credential))
 
-            // 验证 session
-            require(service.validateSession()) {
-                "Failed to verify Cbart session - session may be expired or invalid"
-            }
+            // 1. init 获取服务器信息
+            service.initDevice(deviceId = deviceId)
 
-            // 从 /profile 页面 profileJSON 获取全部用户信息（最可靠）
-            val userProfile = service.fetchCurrentUserProfile()
-            val username = userProfile?.username?.takeIf { it.isNotBlank() }
-                ?: service.fetchUsernameFromHomePage()?.first
-                ?: "cbart_user"
-            val nickName = userProfile?.nickName?.takeIf { it.isNotBlank() }
-                ?: username
-            val avatarUrl = userProfile?.avatarUrl
-
-            // 尝试获取真实数字 uid
-            val numericUid = userProfile?.uid?.toLongOrNull()
-                ?: service.fetchNumericUid()
-            val realUid = if (numericUid != null) numericUid.toString() else null
-
-            val finalUid = realUid ?: "cb_${username}_${laravelSession.take(6)}"
-            val accountKey = MicroBlogKey(id = finalUid, host = CBART_HOST)
-
-            val verifiedCredential = credential.copy(
-                userId = finalUid,
-                userName = username,
-                nickName = nickName,
-                avatarUrl = avatarUrl,
+            // 2. 注册/登录，传用户名和密码
+            val registerData = service.registerDevice(
+                deviceId = deviceId,
+                username = username.ifBlank { null },
+                password = password.ifBlank { null },
             )
 
-            // 如果之前已存在同 host 的旧账户（旧 fallback 格式 accountKey），
-            // requireReloginAccount 会处理旧账户的替换
+            val userId = registerData?.uid?.toString() ?: deviceId.take(8)
+            val nickName = registerData?.nickName ?: username.ifBlank { "yaohu_${userId.take(6)}" }
+            val avatarUrl = registerData?.avatarUrl
+
+            val accountKey = MicroBlogKey(id = userId, host = CBART_HOST)
+
+            val verifiedCredential = credential.copy(
+                userId = userId,
+                nickName = nickName,
+                avatarUrl = avatarUrl,
+                autoLogin = autoLogin,
+            )
+
             context.requireReloginAccount(accountKey)
             val addJob = accountService.addAccount(
                 account = UiAccount(accountKey = accountKey, platformType = PlatformType.Cbart),
@@ -124,34 +131,60 @@ private class CbartWebCookieLoginHandler(
             addJob.join()
             context.onSuccess()
         }.onFailure {
-            _state.value = state(error = it.message)
+            _state.value = loginState(error = it.message)
         }
     }
 
-    /**
-     * 只检查 laravel_session cookie 是否存在，不做异步验证。
-     * 真正的 session 验证和用户信息提取在 resume() 里完成。
-     * 跟知乎的 z_c0 检查是同样的思路——cookie 在就说明浏览器登录成功了。
-     */
-    override fun canResume(value: String): Boolean {
-        return value.extractCookieValue("laravel_session") != null
-    }
+    override suspend fun resume(value: String) = Unit
+    override fun canResume(value: String): Boolean = false
 
-    override fun clear() { _state.value = state() }
+    override fun clear() {
+        values.clear()
+        _state.value = loginState()
+    }
 
     override fun close() = Unit
 
-    private fun state(loading: Boolean = false, error: String? = null): LoginFlowState = LoginFlowState(
-        actions = listOf(LoginAction(id = LOGIN_ACTION, label = UiStrings.Login, enabled = !loading)),
-        loading = loading, error = error,
-    )
-}
+    private fun loginState(
+        loading: Boolean = false,
+        error: String? = null,
+    ): LoginFlowState {
+        val username = values[USERNAME_FIELD].orEmpty()
+        val password = values[PASSWORD_FIELD].orEmpty()
+        val autoLogin = values[AUTO_LOGIN_FIELD].orEmpty() != "false"
 
-/**
- * 从 Cookie 字符串中提取指定 key 的值
- * "laravel_session=xxx; XSRF-TOKEN=yyy" → extractCookieValue("laravel_session") = "xxx"
- */
-private fun String.extractCookieValue(key: String): String? {
-    val pattern = Regex("""${Regex.escape(key)}\s*=\s*([^;]+)""", RegexOption.IGNORE_CASE)
-    return pattern.find(this)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+        val canLogin = username.isNotBlank() && password.isNotBlank()
+
+        return LoginFlowState(
+            fields = listOf(
+                LoginField(
+                    id = USERNAME_FIELD,
+                    type = LoginFieldType.TextInput,
+                    label = UiStrings.Username,
+                    value = username,
+                ),
+                LoginField(
+                    id = PASSWORD_FIELD,
+                    type = LoginFieldType.PasswordInput,
+                    label = UiStrings.Password,
+                    value = password,
+                ),
+                LoginField(
+                    id = AUTO_LOGIN_FIELD,
+                    type = LoginFieldType.DisplayText,
+                    label = UiStrings.Settings,
+                    value = if (autoLogin) "✅ 自动登录已开启" else " 自动登录已关闭",
+                ),
+            ),
+            actions = listOf(
+                LoginAction(
+                    id = LOGIN_ACTION,
+                    label = UiStrings.Login,
+                    enabled = !loading && canLogin,
+                ),
+            ),
+            loading = loading,
+            error = error,
+        )
+    }
 }
