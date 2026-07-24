@@ -159,8 +159,8 @@ internal class CbartService(
                 return Pair(username, username)
             }
         }
-        // 方案2：meJSON 中的 username
-        val regex2 = Regex("""username\s*[=:]\s*['"]([^'"]+)['"]""")
+        // 方案2：meJSON 中的 username（注意实际格式是 meJSON = {... username:'xxx' ...}）
+        val regex2 = Regex("""meJSON\s*=\s*\{[^}]*?username\s*:\s*['"]([^'"]+)['"]""")
         val match2 = regex2.find(html)
         if (match2 != null) {
             val username = match2.groupValues[1].trim()
@@ -168,11 +168,10 @@ internal class CbartService(
                 return Pair(username, username)
             }
         }
-        // 方案3：从页面中找 @username 格式的用户名
+        // 方案3：从页面中找 @username 格式的用户名（仅作为最后兜底）
         val regex3 = Regex("""@([a-zA-Z0-9_]+)""")
         val matches3 = regex3.findAll(html).toList()
         if (matches3.isNotEmpty()) {
-            // 取第一个非空匹配
             val username = matches3.first().groupValues[1].trim()
             if (username.isNotBlank()) {
                 return Pair(username, username)
@@ -183,12 +182,12 @@ internal class CbartService(
 
     suspend fun fetchProfileInfo(): Pair<String?, String?>? {
         val html = api.fetchProfilePage() ?: return null
-        // 方案1：JSON 格式 avatar_url 和 nick_name
+        // 方案1：meJSON 中的 avatar_url 和 nick_name
         val avatarRegex1 = Regex("""avatar_url"\s*:\s*"([^"]+)"""")
         val avatarUrl1 = avatarRegex1.find(html)?.groupValues?.get(1)?.trim()?.replace("\\/", "/")
         val nickRegex1 = Regex("""nick_name"\s*:\s*"([^"]+)"""")
         val nickName1 = nickRegex1.find(html)?.groupValues?.get(1)?.trim()
-        // 方案2：avatar 相对路径（需拼 CDN）+ display_name
+        // 方案2：meJSON 中的 avatar 相对路径 + display_name
         val avatarRegex2 = Regex("""avatar"\s*:\s*"([^"]+)"""")
         val avatarUrl2 = avatarRegex2.find(html)?.groupValues?.get(1)?.trim()
             ?.let { "https://www.tpzf001.com$it" }
@@ -229,8 +228,8 @@ internal class CbartService(
 
     suspend fun fetchNumericUid(): Long? {
         val html = api.fetchHomePage() ?: return null
-        // 方案1：从首页 meJSON 中取 uid
-        val meUid = Regex("""meJSON\.uid\s*=\s*(\d+)""").find(html)
+        // 方案1：从首页 meJSON 中取 uid（注意实际格式是 meJSON = {... uid:xxx ...}）
+        val meUid = Regex("""meJSON\s*=\s*\{[^}]*?uid\s*:\s*(\d+)""").find(html)
         if (meUid != null) {
             val uid = meUid.groupValues[1].toLongOrNull()
             if (uid != null && uid > 0) return uid
