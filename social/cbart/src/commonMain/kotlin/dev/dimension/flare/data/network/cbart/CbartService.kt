@@ -50,18 +50,30 @@ internal class CbartService(
         return response?.data?.contents ?: emptyList()
     }
 
-    /** uid -> owner 缓存，由 video_list 填充 */
+    /** uid -> owner 缓存 */
     private val ownerCache = mutableMapOf<String, CbartVideoOwner>()
 
     /**
      * 根据 uid 获取用户信息（昵称+头像）
-     * video_list 有 owner 但没法按 uid 过滤，所以先查缓存，
-     * 未命中时调一次 video_list 把返回的所有 owner 都塞进缓存。
+     * 优先调 content_list?uid=xxx&get_owner=1 精准获取，
+     * 不行再调 video_list 取少量 owner 数据填充缓存。
      */
     suspend fun fetchUserByUid(uid: String): CbartVideoOwner? {
         ownerCache[uid]?.let { return it }
-        val response = api.videoList(page = 1, limit = 50)
-        response?.data?.contents?.forEach { content ->
+        // 方案1：精准查该用户的内容，取 owner
+        val contentResult = runCatching {
+            api.contentList(uid = uid, page = 1, limit = 1, getOwner = 1)
+                ?.data?.contents?.firstOrNull()?.owner
+        }.getOrNull()
+        if (contentResult != null) {
+            ownerCache[uid] = contentResult
+            return contentResult
+        }
+        // 方案2：video_list 兜底，只拉少量数据
+        val videoResult = runCatching {
+            api.videoList(page = 1, limit = 5)
+        }.getOrNull()
+        videoResult?.data?.contents?.forEach { content ->
             content.owner?.let { owner ->
                 ownerCache[content.uid.toString()] = owner
             }
