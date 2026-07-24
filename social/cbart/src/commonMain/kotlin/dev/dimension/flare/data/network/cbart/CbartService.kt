@@ -159,20 +159,11 @@ internal class CbartService(
                 return Pair(username, username)
             }
         }
-        // 方案2：meJSON 中的 username（注意实际格式是 meJSON = {... username:'xxx' ...}）
-        val regex2 = Regex("""meJSON\s*=\s*\{[^}]*?username\s*:\s*['"]([^'"]+)['"]""")
+        // 方案2：meJSON 中的 username
+        val regex2 = Regex("""meJSON\s*=\s*\{[^}]*?username\s*:\s*['"]([^'"]+)['"].*?\}""")
         val match2 = regex2.find(html)
         if (match2 != null) {
             val username = match2.groupValues[1].trim()
-            if (username.isNotBlank()) {
-                return Pair(username, username)
-            }
-        }
-        // 方案3：从页面中找 @username 格式的用户名（仅作为最后兜底）
-        val regex3 = Regex("""@([a-zA-Z0-9_]+)""")
-        val matches3 = regex3.findAll(html).toList()
-        if (matches3.isNotEmpty()) {
-            val username = matches3.first().groupValues[1].trim()
             if (username.isNotBlank()) {
                 return Pair(username, username)
             }
@@ -228,10 +219,16 @@ internal class CbartService(
 
     suspend fun fetchNumericUid(): Long? {
         val html = api.fetchHomePage() ?: return null
-        // 方案1：从首页 meJSON 中取 uid（注意实际格式是 meJSON = {... uid:xxx ...}）
-        val meUid = Regex("""meJSON\s*=\s*\{[^}]*?uid\s*:\s*(\d+)""").find(html)
-        if (meUid != null) {
-            val uid = meUid.groupValues[1].toLongOrNull()
+        // 方案1：meJSON.uid = xxx（页面可能直接赋值）
+        val meUid1 = Regex("""meJSON\.uid\s*=\s*(\d+)""").find(html)
+        if (meUid1 != null) {
+            val uid = meUid1.groupValues[1].toLongOrNull()
+            if (uid != null && uid > 0) return uid
+        }
+        // 方案2：meJSON = {... uid:xxx ...}（对象格式）
+        val meUid2 = Regex("""meJSON\s*=\s*\{[^}]*?uid\s*:\s*(\d+)""").find(html)
+        if (meUid2 != null) {
+            val uid = meUid2.groupValues[1].toLongOrNull()
             if (uid != null && uid > 0) return uid
         }
         // 方案2：从 profile 页面 JSON 中取 uid
