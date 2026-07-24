@@ -225,11 +225,22 @@ internal class CbartService(
             val uid = meUid1.groupValues[1].toLongOrNull()
             if (uid != null && uid > 0) return uid
         }
-        // 方案2：meJSON = {... uid:xxx ...}（对象格式）
+        // 方案2：meJSON = {... uid:xxx ...}（对象格式，但实际 uid 永远为 0）
         val meUid2 = Regex("""meJSON\s*=\s*\{[^}]*?uid\s*:\s*(\d+)""").find(html)
         if (meUid2 != null) {
             val uid = meUid2.groupValues[1].toLongOrNull()
             if (uid != null && uid > 0) return uid
+        }
+        // 方案3：从导航链接中取 uid（如 /video/list?uid=2186426）
+        // 统计页面中所有 uid=xxx 的出现次数，取出现最多的那个
+        val uidMatches = Regex("""uid=(\d+)""").findAll(html).toList()
+        if (uidMatches.isNotEmpty()) {
+            val uidCounts = uidMatches.groupBy { it.groupValues[1] }.mapValues { it.value.size }
+            val mostFrequent = uidCounts.maxByOrNull { it.value }
+            if (mostFrequent != null) {
+                val uid = mostFrequent.key.toLongOrNull()
+                if (uid != null && uid > 0) return uid
+            }
         }
         // 方案2：从 profile 页面 JSON 中取 uid
         val profileHtml = api.fetchProfilePage()
