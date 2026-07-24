@@ -89,18 +89,18 @@ private class CbartWebCookieLoginHandler(
                 "Failed to verify Cbart session - session may be expired or invalid"
             }
 
-            // 从首页 HTML 提取用户名
-            val userInfo = service.fetchUsernameFromHomePage()
-            val username = userInfo?.first ?: "cbart_user"
-            val displayName = userInfo?.second ?: username
-
-            // 从 /profile 页面提取头像 URL 和昵称
-            val profileInfo = service.fetchProfileInfo()
-            val avatarUrl = profileInfo?.first
-            val nickName = profileInfo?.second ?: displayName
+            // 从 /profile 页面 profileJSON 获取全部用户信息（最可靠）
+            val userProfile = service.fetchCurrentUserProfile()
+            val username = userProfile?.username?.takeIf { it.isNotBlank() }
+                ?: service.fetchUsernameFromHomePage()?.first
+                ?: "cbart_user"
+            val nickName = userProfile?.nickName?.takeIf { it.isNotBlank() }
+                ?: username
+            val avatarUrl = userProfile?.avatarUrl
 
             // 尝试获取真实数字 uid
-            val numericUid = service.fetchNumericUid()
+            val numericUid = userProfile?.uid?.toLongOrNull()
+                ?: service.fetchNumericUid()
             val realUid = if (numericUid != null) numericUid.toString() else null
 
             val finalUid = realUid ?: "cb_${username}_${laravelSession.take(6)}"
