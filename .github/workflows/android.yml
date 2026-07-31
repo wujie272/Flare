@@ -63,9 +63,9 @@ jobs:
           BUILD_VERSION: ${{ github.event.inputs.bump_version == 'true' && github.ref_name || '' }}
         run: |
           if [ "${{ github.event.inputs.build_type }}" = "release" ]; then
-            ./gradlew :app:assembleRelease --stacktrace --parallel --build-cache --configuration-cache
+            ./gradlew :app:assembleRelease --stacktrace --parallel --build-cache
           else
-            ./gradlew :app:assembleDebug --stacktrace --parallel --build-cache --configuration-cache
+            ./gradlew :app:assembleDebug --stacktrace --parallel --build-cache
           fi
 
       - name: Upload APK

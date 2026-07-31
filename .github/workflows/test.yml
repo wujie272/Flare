@@ -48,4 +48,4 @@ jobs:
 
       - name: Run Tests (Android only)
         run: |
-          ./gradlew :app:testDebugUnitTest --stacktrace --parallel --build-cache --configuration-cache
+          ./gradlew :app:testDebugUnitTest --stacktrace --parallel --build-cache
