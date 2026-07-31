@@ -1,7 +1,3 @@
-// START Non-FOSS component
-import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPlugin
-// END Non-FOSS component
-import com.google.gms.googleservices.GoogleServicesPlugin
 import dev.dimension.flare.buildlogic.flare
 import java.util.Properties
 
@@ -11,10 +7,6 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ktorfit)
     alias(libs.plugins.koin.compiler)
-    alias(libs.plugins.google.services) apply false
-    // START Non-FOSS component
-    alias(libs.plugins.firebase.crashlytics) apply false
-    // END Non-FOSS component
     alias(libs.plugins.compose.compiler)
     id("kotlin-parcelize")
 }
@@ -23,13 +15,6 @@ flare {
     namespace = "dev.dimension.flare"
     applicationId = "dev.dimension.flare"
 }
-
-// START Non-FOSS component
-if (project.file("google-services.json").exists()) {
-    apply<GoogleServicesPlugin>()
-    apply<CrashlyticsPlugin>()
-}
-// END Non-FOSS component
 
 kotlin {
     compilerOptions {
@@ -85,15 +70,6 @@ android {
                 signingConfig = signingConfigs.getByName("debug")
             }
         }
-    }
-
-    // START Non-FOSS component
-    if (project.file("google-services.json").exists()) {
-        sourceSets.getByName("main").kotlin.directories.add("src/play/java")
-    }
-    // END Non-FOSS component
-    if (!project.file("google-services.json").exists()){
-        sourceSets.getByName("main").kotlin.directories.add("src/foss/java")
     }
 
     packaging {
@@ -166,17 +142,6 @@ dependencies {
     implementation(libs.androidx.browser)
     implementation("net.java.dev.jna:jna:${libs.versions.jna.get()}@aar")
 
-    // START Non-FOSS component
-    if (project.file("google-services.json").exists()) {
-        implementation(platform(libs.firebase.bom))
-        implementation(libs.firebase.crashlytics.ktx)
-        implementation(libs.firebase.analytics.ktx)
-        implementation(libs.kotlinx.coroutines.play.services)
-        implementation("com.google.mlkit:genai-prompt:1.0.0-beta4")
-        implementation("com.google.mlkit:genai-summarization:1.0.0-beta1")
-    }
-    // END Non-FOSS component
-
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -185,16 +150,6 @@ dependencies {
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
 }
-
-// START Non-FOSS component
-if (project.file("google-services.json").exists()) {
-    afterEvaluate {
-        val uploadCrashlyticsMappingFileRelease by tasks
-        val processDebugGoogleServices by tasks
-        uploadCrashlyticsMappingFileRelease.dependsOn(processDebugGoogleServices)
-    }
-}
-// END Non-FOSS component
 
 abstract class GenerateDeepLinkManifestTask : DefaultTask() {
     @get:InputFile
