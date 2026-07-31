@@ -45,14 +45,21 @@ internal class CbartApiClient(
     private fun httpClient(): HttpClient = ktorClient {}
 
     /**
-     * 三步握手获取 linzijun.app 的 Laravel session
-     * GET / → POST /api/video_list → GET /（绑定 CSRF）
-     * 如果 credential 有 email+password，尝试登录
+     * 刷新/获取 Laravel session
+     * - 如果已有 session，直接 GET / 绑定 CSRF token（保留认证状态）
+     * - 如果没有 session，三步握手获取新 session
+     * - 如果 credential 有 email+password，尝试登录
      */
     suspend fun refreshLaravelSession(): CbartCredential? {
         val cred = credential() ?: return null
         val ua = "Mozilla/5.0 (Linux; Android 16; Redmi K80 Pro)"
 
+        // 已有 session → 只做 GET / 绑定 CSRF，保留认证状态
+        if (cred.laravelSession != null) {
+            return bindCsrfToExistingSession(cred, ua)
+        }
+
+        // 无 session → 三步握手获取新 session
         val response1 = httpClient().get(LINZIJUN_HOST) {
             headers { append("User-Agent", ua) }
         }
@@ -103,6 +110,30 @@ internal class CbartApiClient(
             csrfToken = csrfToken3 ?: cred.csrfToken,
             sessionCreatedAt = Clock.System.now().toEpochMilliseconds(),
         )
+    }
+
+    /**
+     * 已有 session 时，只做 GET / 绑定 CSRF token，不创建新 session
+     */
+    private suspend fun bindCsrfToExistingSession(cred: CbartCredential, ua: String): CbartCredential? {
+        val cookie = buildString {
+            append("laravel_session=${cred.laravelSession}")
+            if (cred.xsrfToken != null) append("; XSRF-TOKEN=${cred.xsrfToken}")
+        }
+        return try {
+            val html = httpClient().get(LINZIJUN_HOST) {
+                headers {
+                    append("Cookie", cookie)
+                    append("User-Agent", ua)
+                }
+            }.bodyAsText()
+            val csrf = Regex("""<meta name="csrf-token" content="([^"]+)""")
+                .find(html)?.groupValues?.getOrNull(1)
+            cred.copy(
+                csrfToken = csrf ?: cred.csrfToken,
+                sessionCreatedAt = Clock.System.now().toEpochMilliseconds(),
+            )
+        } catch (_: Exception) { null }
     }
 
     private suspend fun loginLaravelSession(
@@ -229,4 +260,21 @@ internal class CbartApiClient(
     }
 
     suspend fun videoDetail(videoId: String): LzjVideoDetailResponse? = linzijunApi("video_detail", mapOf("id" to videoId))
+
+    /**
+     * 收藏/取消收藏
+     * POST /api/update_video_fav
+     * 返回 {code: 200, data: {update: "+"}} 或 {update: "-"}
+     */
+    suspend fun toggleVideoFav(videoId: String): Boolean {
+        val headerMap = linzijunHeaders(ensureSession())
+        return try {
+            val text = httpClient().post("$LINZIJUN_HOST/api/update_video_fav") {
+                headers { headerMap.forEach { (k, v) -> append(k, v) } }
+                contentType(ContentType.Application.FormUrlEncoded)
+                setBody("video_id=$videoId")
+            }.bodyAsText()
+            text.contains("\"update\":\"+\"") || text.contains("\"update\":\"-\"")
+        } catch (_: Exception) { false }
+    }
 }

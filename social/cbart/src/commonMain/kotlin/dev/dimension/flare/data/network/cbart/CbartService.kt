@@ -34,6 +34,6 @@ internal class CbartService(
     suspend fun fetchVideoDetail(videoId: String): LzjVideoDetailItem? =
         api.videoDetail(videoId = videoId)?.data?.contents?.firstOrNull()
 
-    /** 收藏/取消收藏（Laravel 站暂无对应 API，占位） */
-    suspend fun toggleVideoFav(videoId: String): Boolean = false
+    /** 收藏/取消收藏 */
+    suspend fun toggleVideoFav(videoId: String): Boolean = api.toggleVideoFav(videoId = videoId)
 }

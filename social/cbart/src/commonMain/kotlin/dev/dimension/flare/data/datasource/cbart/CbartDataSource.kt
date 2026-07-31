@@ -166,8 +166,10 @@ internal class CbartDataSource(
     override fun galleryRecommendations(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> =
         CbartVideoTimelineLoader(service = service, accountKey = accountKey)
 
-    override fun searchStatus(query: String): RemoteLoader<UiTimelineV2> = notSupported()
-    override fun searchUser(query: String): RemoteLoader<UiProfile> = notSupported()
+    override fun searchStatus(query: String): RemoteLoader<UiTimelineV2> =
+        CbartSearchLoader(service = service, accountKey = accountKey, query = query)
+    override fun searchUser(query: String): RemoteLoader<UiProfile> =
+        CbartSearchUserLoader(service = service, accountKey = accountKey)
     override fun discoverUsers(): RemoteLoader<UiProfile> = notSupported()
     override fun discoverStatuses(): RemoteLoader<UiTimelineV2> = CbartProducerTimelineLoader(service = service, accountKey = accountKey)
     override fun discoverHashtags(): RemoteLoader<UiHashtag> = notSupported()
