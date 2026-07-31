@@ -393,12 +393,7 @@ internal fun SettingsScreen(
                     onClick = {
                         toAbout.invoke()
                     },
-                    shapes =
-                        if (BuildConfig.DEBUG) {
-                            ListItemDefaults.last()
-                        } else {
-                            ListItemDefaults.single()
-                        },
+                    shapes = ListItemDefaults.single(),
                     content = {
                         Text(text = stringResource(id = R.string.settings_about_title))
                     },

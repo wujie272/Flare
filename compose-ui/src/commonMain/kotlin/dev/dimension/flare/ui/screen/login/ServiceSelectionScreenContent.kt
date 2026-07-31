@@ -603,6 +603,7 @@ private fun LoginFieldInput(
     val label: @Composable () -> Unit = {
         PlatformText(text = stringResource(field.label.res))
     }
+    val imageUrl = field.imageUrl
     val placeholder: (@Composable () -> Unit)? =
         field.placeholder?.let { placeholder ->
             {
@@ -619,6 +620,8 @@ private fun LoginFieldInput(
 
                     LoginFieldType.TextInput,
                     LoginFieldType.DisplayText,
+                    LoginFieldType.ImageUrl,
+                    LoginFieldType.Toggle,
                     -> KeyboardType.Text
                 },
             imeAction = ImeAction.Done,
@@ -661,6 +664,27 @@ private fun LoginFieldInput(
                 text = field.value,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.width(300.dp),
+            )
+        }
+
+        LoginFieldType.ImageUrl -> {
+            if (imageUrl != null && imageUrl.isNotBlank()) {
+                NetworkImage(
+                    model = imageUrl,
+                    contentDescription = "验证码",
+                    modifier = Modifier.width(215.dp).height(80.dp),
+                )
+            }
+        }
+
+        LoginFieldType.Toggle -> {
+            PlatformText(
+                text = field.value,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.width(300.dp).clickable {
+                    val newValue = if (field.value.contains("开启")) "关闭" else "开启"
+                    onUpdate(field.id, newValue)
+                },
             )
         }
     }

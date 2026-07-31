@@ -1,0 +1,20 @@
+#!/bin/bash
+# Pre-commit hook: 运行 ktlint 检查暂存的 Kotlin 文件
+set -e
+
+echo "🔍 Running ktlint..."
+STAGED_KTS=$(git diff --cached --name-only --diff-filter=ACM | grep '\.kt$' || true)
+if [ -z "$STAGED_KTS" ]; then
+    echo "✅ 没有需要检查的 Kotlin 文件"
+    exit 0
+fi
+
+echo "$STAGED_KTS" | xargs ktlint --relative=. 2>&1 | head -20
+KTLINT_EXIT=$?
+if [ $KTLINT_EXIT -ne 0 ]; then
+    echo ""
+    echo "❌ ktlint 检查失败！请修复后重新提交。"
+    echo "   提示: ktlint --format <文件路径> 可自动修复"
+    exit 1
+fi
+echo "✅ ktlint 检查通过"

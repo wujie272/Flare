@@ -30,6 +30,8 @@ public enum class LoginFieldType {
     PasswordInput,
     OtpInput,
     DisplayText,
+    ImageUrl,
+    Toggle,
 }
 
 public data class LoginMethodSpec(
@@ -46,6 +48,7 @@ public data class LoginField(
     val value: String = "",
     val readOnly: Boolean = false,
     val error: String? = null,
+    val imageUrl: String? = null,
 )
 
 public data class LoginAction(

@@ -1,5 +1,7 @@
 package dev.dimension.flare.apple.shared
 
+import dev.dimension.flare.data.platform.CbartPlatformSpec
+import dev.dimension.flare.data.platform.ToutiaoPlatformSpec
 import dev.dimension.flare.data.platform.BlueskyPlatformSpec
 import dev.dimension.flare.data.platform.FanboxPlatformSpec
 import dev.dimension.flare.data.platform.MastodonPlatformSpec
@@ -17,6 +19,8 @@ internal actual fun platformSpecs(): List<PlatformSpec> =
         MisskeyPlatformSpec,
         BlueskyPlatformSpec,
         FanboxPlatformSpec,
+        CbartPlatformSpec,
+        ToutiaoPlatformSpec,
         PixivPlatformSpec,
         XqtPlatformSpec,
         VvoPlatformSpec,

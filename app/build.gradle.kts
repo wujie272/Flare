@@ -95,6 +95,14 @@ android {
     if (!project.file("google-services.json").exists()){
         sourceSets.getByName("main").kotlin.directories.add("src/foss/java")
     }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/INDEX.LIST"
+            excludes += "/META-INF/DEPENDENCIES"
+            excludes += "/META-INF/io.netty.versions.properties"
+        }
+    }
 }
 
 dependencies {
@@ -133,6 +141,11 @@ dependencies {
     implementation(projects.social.misskey)
     implementation(projects.social.nostr)
     implementation(projects.social.pixiv)
+    implementation(projects.social.cbart)
+    implementation(projects.social.toutiao)
+    implementation(projects.social.deviantart)
+    implementation(projects.social.bilibili)
+    implementation(projects.social.zhihu)
     implementation(projects.social.vvo)
     implementation(projects.social.xqt)
     implementation(projects.feature.login)

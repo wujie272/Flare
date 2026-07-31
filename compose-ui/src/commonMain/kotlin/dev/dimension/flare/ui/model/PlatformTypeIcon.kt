@@ -9,8 +9,11 @@ import compose.icons.fontawesomeicons.brands.Mastodon
 import compose.icons.fontawesomeicons.brands.Pix
 import compose.icons.fontawesomeicons.brands.Pixiv
 import compose.icons.fontawesomeicons.brands.Weibo
-import compose.icons.fontawesomeicons.brands.XTwitter
+import compose.icons.fontawesomeicons.brands.Twitter
+import compose.icons.fontawesomeicons.solid.Palette
 import compose.icons.fontawesomeicons.solid.Image
+import compose.icons.fontawesomeicons.solid.Eye
+import compose.icons.fontawesomeicons.solid.Newspaper
 import dev.dimension.flare.model.PlatformType
 import dev.dimension.flare.ui.icons.Misskey
 import dev.dimension.flare.ui.icons.Nostr
@@ -24,6 +27,11 @@ public val PlatformType.brandIcon: ImageVector
             PlatformType.Bluesky -> FontAwesomeIcons.Brands.Bluesky
             PlatformType.Pixiv -> FontAwesomeIcons.Brands.Pixiv
             PlatformType.Fanbox -> FontAwesomeIcons.Brands.Pixiv
-            PlatformType.xQt -> FontAwesomeIcons.Brands.XTwitter
-            PlatformType.VVo -> FontAwesomeIcons.Brands.Weibo
+        PlatformType.Cbart -> FontAwesomeIcons.Solid.Eye
+        PlatformType.Toutiao -> FontAwesomeIcons.Solid.Newspaper
+        PlatformType.Zhihu -> FontAwesomeIcons.Solid.Newspaper
+        PlatformType.Deviantart -> FontAwesomeIcons.Solid.Palette
+        PlatformType.Bilibili -> FontAwesomeIcons.Solid.Eye
+        PlatformType.xQt -> FontAwesomeIcons.Brands.Twitter
+        PlatformType.VVo -> FontAwesomeIcons.Brands.Weibo
         }

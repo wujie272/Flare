@@ -34,12 +34,14 @@ import dev.dimension.flare.compose.ui.fanbox_recommended_creators_title
 import dev.dimension.flare.compose.ui.fanbox_supported_title
 import dev.dimension.flare.compose.ui.home_tab_bookmarks_title
 import dev.dimension.flare.compose.ui.home_tab_discover_title
+import dev.dimension.flare.compose.ui.home_tab_announcement_title
 import dev.dimension.flare.compose.ui.home_tab_favorite_title
 import dev.dimension.flare.compose.ui.home_tab_featured_title
 import dev.dimension.flare.compose.ui.home_tab_feeds_title
 import dev.dimension.flare.compose.ui.home_tab_following_title
 import dev.dimension.flare.compose.ui.home_tab_for_you_title
 import dev.dimension.flare.compose.ui.home_tab_home_title
+import dev.dimension.flare.compose.ui.home_tab_latest_resource_title
 import dev.dimension.flare.compose.ui.home_tab_list_title
 import dev.dimension.flare.compose.ui.home_tab_me_title
 import dev.dimension.flare.compose.ui.home_tab_notifications_title
@@ -68,6 +70,8 @@ import dev.dimension.flare.compose.ui.pixiv_ranking_week_title
 import dev.dimension.flare.compose.ui.posts_title
 import dev.dimension.flare.compose.ui.posts_with_replies_title
 import dev.dimension.flare.compose.ui.profile_tab_highlights
+import dev.dimension.flare.compose.ui.profile_tab_purchased_video_title
+import dev.dimension.flare.compose.ui.profile_tab_articles
 import dev.dimension.flare.compose.ui.rss_title
 import dev.dimension.flare.compose.ui.service_select_next_button
 import dev.dimension.flare.compose.ui.settings_title
@@ -293,6 +297,11 @@ internal val UiStrings.res: StringResource
 
             UiStrings.Notifications -> Res.string.home_tab_notifications_title
 
+            UiStrings.Announcement -> Res.string.home_tab_announcement_title
+            UiStrings.LatestResource -> Res.string.home_tab_latest_resource_title
+            UiStrings.PurchasedVideo -> Res.string.profile_tab_purchased_video_title
+            UiStrings.Articles -> Res.string.profile_tab_articles
+            UiStrings.Pins -> Res.string.profile_tab_articles
             UiStrings.Discover -> Res.string.home_tab_discover_title
 
             UiStrings.Me -> Res.string.home_tab_me_title

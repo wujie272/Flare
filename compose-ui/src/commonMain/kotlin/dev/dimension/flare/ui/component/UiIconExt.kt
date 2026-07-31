@@ -10,7 +10,6 @@ import compose.icons.fontawesomeicons.brands.Mastodon
 import compose.icons.fontawesomeicons.brands.Pixiv
 import compose.icons.fontawesomeicons.brands.Twitter
 import compose.icons.fontawesomeicons.brands.Weibo
-import compose.icons.fontawesomeicons.brands.XTwitter
 import compose.icons.fontawesomeicons.regular.Bookmark
 import compose.icons.fontawesomeicons.regular.CommentDots
 import compose.icons.fontawesomeicons.regular.Heart
@@ -32,7 +31,9 @@ import compose.icons.fontawesomeicons.solid.Language
 import compose.icons.fontawesomeicons.solid.List
 import compose.icons.fontawesomeicons.solid.MagnifyingGlass
 import compose.icons.fontawesomeicons.solid.Message
+import compose.icons.fontawesomeicons.solid.Newspaper
 import compose.icons.fontawesomeicons.solid.Minus
+import compose.icons.fontawesomeicons.solid.Palette
 import compose.icons.fontawesomeicons.solid.Pen
 import compose.icons.fontawesomeicons.solid.Plus
 import compose.icons.fontawesomeicons.solid.RectangleList
@@ -105,9 +106,14 @@ public fun UiIcon.toImageVector(): ImageVector =
         UiIcon.Bluesky -> FontAwesomeIcons.Brands.Bluesky
         UiIcon.Pixiv -> FontAwesomeIcons.Brands.Pixiv
         UiIcon.Fanbox -> FontAwesomeIcons.Brands.Pixiv
+        UiIcon.Cbart -> FontAwesomeIcons.Solid.Eye
+        UiIcon.Toutiao -> FontAwesomeIcons.Solid.Newspaper
+        UiIcon.Zhihu -> FontAwesomeIcons.Solid.Newspaper
         UiIcon.Nostr -> FontAwesomeIcons.Brands.Nostr
         UiIcon.Twitter -> FontAwesomeIcons.Brands.Twitter
-        UiIcon.X -> FontAwesomeIcons.Brands.XTwitter
+        UiIcon.X -> FontAwesomeIcons.Brands.Twitter
         UiIcon.Weibo -> FontAwesomeIcons.Brands.Weibo
         UiIcon.Translate -> FontAwesomeIcons.Solid.Language
+        UiIcon.Clock -> FontAwesomeIcons.Solid.CircleInfo
+        UiIcon.Art -> FontAwesomeIcons.Solid.Palette
     }

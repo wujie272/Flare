@@ -7,6 +7,10 @@
     <string name="home_tab_home_title">Home</string>
     <string name="home_tab_notifications_title">Notifications</string>
     <string name="home_tab_me_title">Me</string>
+    <string name="home_tab_announcement_title">公告</string>
+    <string name="home_tab_latest_resource_title">最新资源</string>
+    <string name="home_tab_studio_title">工作室</string>
+    <string name="profile_tab_purchased_video_title">已购视频</string>
     <string name="home_tab_discover_title">Discover</string>
 
     <plurals name="home_timeline_new_toots">
@@ -540,6 +544,8 @@
     <string name="profile_tab_likes">Likes</string>
     <string name="profile_tab_highlights">Highlights</string>
     <string name="profile_tab_media">Media</string>
+    <string name="profile_tab_articles">文章</string>
+    <string name="profile_tab_pins">想法</string>
     <string name="illustrations_title">Illustrations</string>
     <string name="manga_title">Manga</string>
     <string name="pixiv_ranking_week_title">Weekly Ranking</string>

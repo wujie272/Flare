@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -32,8 +33,14 @@ import dev.dimension.flare.ui.component.LocalTimelineAppearance
 import dev.dimension.flare.ui.component.RefreshContainer
 import dev.dimension.flare.ui.component.platform.isBigScreen
 import dev.dimension.flare.ui.component.platform.isCompatScreen
+import dev.dimension.flare.ui.component.status.AdaptiveCard
 import dev.dimension.flare.ui.component.status.LazyStatusVerticalStaggeredGrid
+import dev.dimension.flare.ui.component.status.StatusItem
 import dev.dimension.flare.ui.component.status.status
+import dev.dimension.flare.ui.model.UiState
+import dev.dimension.flare.ui.model.onError
+import dev.dimension.flare.ui.model.onLoading
+import dev.dimension.flare.ui.model.onSuccess
 import dev.dimension.flare.ui.presenter.invoke
 import dev.dimension.flare.ui.presenter.status.StatusContextPresenter
 import dev.dimension.flare.ui.theme.isLightTheme
@@ -111,6 +118,23 @@ internal fun StatusScreen(
                             },
                     contentPadding = it,
                 ) {
+                    item {
+                        AdaptiveCard {
+                            state.state.current
+                                .onSuccess { status ->
+                                    key(status.itemKey) {
+                                        StatusItem(
+                                            item = status,
+                                            detailStatusKey = statusKey,
+                                        )
+                                    }
+                                }.onLoading {
+                                    StatusItem(item = null)
+                                }.onError {
+                                    // 错误时 silent fallback，让评论列表正常显示
+                                }
+                        }
+                    }
                     status(
                         state.state.listState,
                         detailStatusKey = statusKey,

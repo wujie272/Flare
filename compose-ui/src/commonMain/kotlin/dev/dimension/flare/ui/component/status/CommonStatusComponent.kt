@@ -143,6 +143,8 @@ import dev.dimension.flare.ui.model.onError
 import dev.dimension.flare.ui.model.onLoading
 import dev.dimension.flare.ui.model.onSuccess
 import dev.dimension.flare.ui.render.UiRichText
+import dev.dimension.flare.ui.render.parseHtml
+import dev.dimension.flare.ui.render.toUi
 import dev.dimension.flare.ui.route.DeeplinkRoute
 import dev.dimension.flare.ui.route.toUri
 import dev.dimension.flare.ui.theme.PlatformContentColor
@@ -152,6 +154,28 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import moe.tlaster.precompose.molecule.producePresenter
 import org.jetbrains.compose.resources.stringResource
+
+/**
+ * HTML 内容渲染器
+ * 使用 shared 模块的 parseHtml + toUi 管道（Mastodon 同款方案）
+ */
+@Composable
+private fun HtmlRichTextContent(
+    html: String,
+    modifier: Modifier = Modifier,
+) {
+    val richText = remember(html) {
+        runCatching {
+            parseHtml(html).toUi()
+        }.getOrNull()
+    }
+    if (richText != null) {
+        RichText(
+            text = richText,
+            modifier = modifier,
+        )
+    }
+}
 
 @Composable
 public fun CommonStatusComponent(
@@ -1197,26 +1221,25 @@ private fun StatusContentComponent(
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 visibleContent.forEach { visibleText ->
                     if (!visibleText.isEmpty) {
-                        RichText(
-                            text = visibleText,
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines =
-                                if (expanded || effectiveMaxLines == Int.MAX_VALUE) {
-                                    Int.MAX_VALUE
-                                } else {
-                                    effectiveMaxLines
+                        val rawText = visibleText.innerText
+                        if (rawText.startsWith("<")) {
+                            // HTML 内容：使用 shared 模块的 parseHtml + toUi 管道
+                            HtmlRichTextContent(
+                                html = rawText,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        } else {
+                            RichText(
+                                text = visibleText,
+                                modifier = Modifier.fillMaxWidth(),
+                                maxLines = if (expanded || effectiveMaxLines == Int.MAX_VALUE) Int.MAX_VALUE else effectiveMaxLines,
+                                onTextLayout = {
+                                    if (it.hasVisualOverflow && !expanded && effectiveMaxLines != Int.MAX_VALUE && showExpandButton) {
+                                        showSoftExpand = true
+                                    }
                                 },
-                            onTextLayout = {
-                                if (
-                                    it.hasVisualOverflow &&
-                                    !expanded &&
-                                    effectiveMaxLines != Int.MAX_VALUE &&
-                                    showExpandButton
-                                ) {
-                                    showSoftExpand = true
-                                }
-                            },
-                        )
+                            )
+                        }
                     }
                 }
                 if (visibleContent.any { !it.isEmpty }) {

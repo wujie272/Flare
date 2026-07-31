@@ -29,6 +29,8 @@ shared/shared.podspec
 appleApp/K_D/
 *.sh
 !.github/scripts/*.sh
+!scripts/*.sh
+!scripts/hooks/*
 .env
 
 GoogleService-Info.plist

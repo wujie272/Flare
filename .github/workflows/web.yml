@@ -1,20 +1,7 @@
 name: Web CI
 
 on:
-  push:
-    branches:
-      - master
-      - release
-      - develop
-    tags:
-      - "**"
-    paths-ignore:
-      - "**.md"
-  pull_request:
-    branches:
-      - master
-      - release
-      - develop
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

@@ -32,6 +32,7 @@ internal actual fun PlatformVideoPlayer(
         uri = uri,
         previewUri = previewUri,
         contentDescription = contentDescription,
+        customHeaders = customHeaders,
         modifier = modifier,
         muted = muted,
         showControls = showControls,
