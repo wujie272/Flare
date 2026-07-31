@@ -1,0 +1,132 @@
+pick 4f40eaf69 ci: optimize workflows and add release signing support
+pick 75035dfbd feat(social): add Cbart (FetiSale) and 今日头条 (Toutiao) platform support
+pick 37a9c87c7 feat: Cbart和知乎模块全面完善 + 最新资源/已购视频Tab
+fixup 33f80076c fix(zhihu): 修复4个Bug
+fixup de1bddfce fix(zhihu): 用户资料页显示真实数据 + 帖子头像可点击跳转
+fixup a8876c0f3 fix(zhihu): 用户资料页 Matrices 字段映射错位
+fixup 43d2aa008 fix(zhihu): 推荐流/搜索解析补全7种内容类型
+fixup 7c863888c fix(zhihu): 推荐流只显示6条 - 缺limit参数
+pick e4adc5b11 feat(zhihu): 接上评论列表到 galleryComments
+pick c51361d35 feat(zhihu): 视频条目显示封面图 + 类型标签补全
+fixup 1e13e7ffb chore(zhihu): 清理死代码
+fixup 9d9299cd8 fix(zhihu): userByHandleAndHost + context() 接入
+pick 0fe79867c feat(zhihu): 视频播放接入 - 异步获取播放地址渲染 UiMedia.Video
+pick bbf45f267 feat(zhihu): ComposeDataSource + discover + 清理多余接口
+fixup 96da5f143 fix(zhihu): 删除死代码残留 - 推荐流 Loader 孤魂野鬼导致编译失败
+fixup 1ead12047 fix(zhihu): 修复搜索时间线Loader引用 + 视频地址获取改try-catch
+pick 0ea4785b8 feat(cbart): 实现视频详情页（从HTML解析videoDetailJSON）和评论功能
+fixup 7a58578a4 fix(cbart): 最新资源改用 /api/get_new_content 替代已废弃的 article_list?news=0
+fixup 04b91f642 fix(cbart): 视频列表显示数字ID而非标题的问题
+pick 5fc74fd22 feat(cbart): 视频列表显示上传者真实昵称（从视频详情页缓存）
+pick e7abee767 feat(cbart): 首次登录时批量预加载用户昵称
+fixup 6a69b773b fix(cbart): 修复收藏/关注 API 调错、owner 字段映射错误、预加载并发
+pick 82a71ba71 feat(cbart): 发现页改为工作室列表
+fixup d96d7f339 fix(cbart): 每次 API 响应后自动刷新 laravel_session 解决频繁登出
+fixup ff68e57e8 Revert "fix(cbart): 每次 API 响应后自动刷新 laravel_session 解决频繁登出"
+fixup 3d03d6786 fix(cbart): 捕获 Set-Cookie 自动刷新 session，避免 24h 后 419
+fixup 82159f465 chore: 添加 Session 自动刷新拦截器的注释说明
+fixup 9b05c3744 fix(cbart): 修复 UiMedia.Image 构造函数参数类型不匹配导致的编译失败
+fixup 7b0653b42 fix(ci): 修复6个编译错误
+fixup fc5817e2e fix(settings): 移除设置页多余的应用日志入口（存储页已有）
+fixup 3b753567b fix(ci): Clock 图标不存在，改用 Info 替代
+fixup 612a1e3b8 fix(ci): 修复 Clock 图标和资源引用问题
+fixup f412d941a fix(ci): 工作室标题通过 candidate override 传参而非 UiStrings
+fixup c01c6575c fix(cbart): video_list API 传 get_owner=1 直接获取用户昵称，删除爬详情页偷昵称的 hack
+fixup 5e5a5c590 fix(cbart): 最新资源接口加 get_owner=1 参数，显示昵称和头像
+fixup e587d9c96 fix(cbart): 已购视频列表刷不出来的根因——CbartVideoListResponse 的 data 字段没用 JsonElement 保护
+fixup 04e78e65f fix(cbart): 工作室详情页显示用户昵称+头像，帖子列表全宽去用户信息
+fixup ac8d4c5bb fix(cbart): is_fav API 返回 0/1 整数而非布尔值，修复反序列化崩溃
+fixup 6f2e9f084 fix(cbart): 最新资源 username 为空字符串导致显示 @@cbart.net
+fixup 1eaf2fdc4 fix(zhihu): 所有API参数从header改为URL查询参数 - 修复帖子/粉丝/关注数显示0
+fixup 7d53c0d12 fix: wrap content/contentWarning with UiTranslatableText to match upstream API change
+pick 2853cae1f feat(zhihu): 修复知乎模块 12 项问题 - 热榜/通知/搜索/想法/日报/401重试
+fixup 899711807 fix(ci): 补全 TabIcon.kt 和 compose-ui 中 Pins 枚举的 when 分支
+fixup 354b57f93 fix(cbart): 修复 CoroutineScope 中 async 调用方式
+fixup a97fdd56e fix(ci): 移除 compose.resources generateResClass=always 选项
+fixup 78d68ad9c fix(ci): 将 profile_tab_pins 移到单独 pins.xml 文件
+fixup 4770e085c fix(ci): 临时使用 profile_tab_articles 替代 profile_tab_pins
+fixup 49a11f285 fix(ci): 重命名 profile_tab_pins 为 profile_tab_pins_title 避免 composeResources 插件问题
+fixup bf1be4a23 fix(ci): 回退 composeResources 改动，暂时复用 profile_tab_articles
+fixup e4d2bd6af fix(cbart): 简化 canResume 逻辑，登录后不再卡住
+fixup 80327e40d fix(zhihu): 日报时间显示上午8:00的问题
+fixup 840394fa2 fix(zhihu): 修改系统账号 handle 避免名称冗余
+pick 3235c56af feat(zhihu): 日报支持加载更多（按日期往前翻页）
+pick 7d5ce8de5 feat(zhihu): 日报故事点击跳转到原始内容
+fixup f059efd55 fix(zhihu): 视频类型 feed 条目缺少 createdAt 导致显示 1970
+pick 4b46d56e7 feat(zhihu): 添加回复按钮，支持打开评论/回复界面
+fixup 3caa468e4 fix(ci): 修复 kotlinx.coroutines.async 全限定名导致的编译错误
+fixup 539122385 fix(zhihu): 修复搜索标题字段、热榜时间/头像/URL、日报作者名、关注列表404等问题
+fixup 64e70e1cc fix(cbart): fetchUserByUid 改用 video_list + uid-owner 缓存获取真实昵称/头像
+fixup c7709fd07 fix(cbart): 修复 videoList 调用传了不存在的 getOwner 参数
+pick 452d8b62a feat(cbart): 修复API数据映射、加session自动刷新+登录过期通知
+fixup 156bd4a1c fix(cbart): 修复 intOrNull 编译错误，改用 contentOrNull?.toIntOrNull()
+fixup a6c8e2671 fix(cbart): contentOrNull -> content 兼容旧版 kotlinx.serialization
+fixup 044aee1b3 fix: WebCookieLogin 旧 Cookie 误判登录 & ZhihuLoader 永不抛异常
+fixup 7bb1f01c9 fix: WebCookieLogin 等 URL 跳转后再检查 Cookie，防止 Laravel session 误判
+fixup c082bf856 fix: Cbart fetchNumericUid 中 fetchStudios 超时不阻塞登录
+fixup 14d5bc3fe fix: Cbart/知乎 addAccount 后等数据库写入完成再跳转
+fixup 7e544acef fix: Cbart 登录用户信息提取增加 API 兜底和多备选正则
+fixup a2bd8fdf4 fix: fetchUserByUid 改回 content_list 优先 + video_list 少量兜底
+fixup c8668a548 fix: Cbart meJSON 正则修正为对象内字段匹配
+fixup 74073e6cb fix: 移除 @username 泛匹配正则，恢复 meJSON.uid 原正则
+fixup b3f365648 fix: fetchNumericUid 新增 uid=xxx 导航链接兜底
+pick d63c4f39c refactor: 精简 Cbart 用户信息获取逻辑
+fixup ff014412a fix(cbart): 修复 uid 非数字导致 422 + session 过期检测 + 请求限流
+pick d70d50d89 refactor(cbart): 将 Cbart 后端完全替换为妖狐吧 API
+fixup 9a86bbf42 fix(cbart): 重写妖狐吧 API 适配层，对接实际可用的 shenmatk.com 端点
+fixup 5122e3e07 fix(cbart): 修复编译错误 - CbartPlatformDetector 导入和 LoginField 标签类型
+fixup cc73458a1 fix(cbart): 移除不必要的 safe call，修复 -Werror 编译错误
+fixup df6f609af fix(cbart): 登录自动降级 - 用户名已存在时自动转为无用户名登录
+fixup 7d9910a7d fix(cbart): 改用 login.php 登录（与 lzj.apk 一致），register.php 仅用于注册
+fixup 1e0ee0bad fix(cbart): 简化登录逻辑，仅保留 register.php 注册流程（与 lzj.apk 注册表单一致）
+fixup 76d31c14d fix(cbart): login.php 用 username 字段（已验证），不是 email
+fixup 9edd43f53 fix(zhihu): move zse-96 signing from defaultRequest to per-request level
+pick f19b59610 feat: add DeviantArt platform
+pick 01b4c8046 feat(zhihu): 补齐6个缺失功能+模型拆分+关注动态Tab
+pick 1144e969c feat(deviantart): 补齐6个缺失功能+修复token刷新+CI编译错误
+pick 7b828b2ac feat(deviantart): 补齐7个缺失功能+_puppy API支持+搜索/关注/发现
+fixup 4e2145ae7 fix(deviantart): 补上遗漏的_puppy API方法+修复编译错误
+fixup d282b6647 fix(deviantart): 修复编译错误 - headers.getAll + jsonPrimitive导入
+fixup d7f8b698d fix(deviantart): 修复UiHashtag构造参数错误
+pick d18789792 feat(bilibili): 新增B站平台模块（骨架+WBI签名+WebView登录+首页推荐+热门）
+fixup 52469121e fix(bilibili): 添加app/desktopApp模块依赖
+fixup 7d903a3da fix(bilibili): 修复编译错误 - UiTimelineV2 sealed class + PagingRequest exhaustive + 类型修正
+fixup ae2dc0b56 fix(bilibili): 修复更多编译错误 - UiDateTime导入路径+Post构造参数+GalleryDataSource移除
+fixup 7c6254bf8 fix(bilibili): 修复编译错误 - UiDateTime构造+NotificationLoader+Auth显式可见性+MD5类型
+fixup 81083a9b3 fix(bilibili): 修复编译错误 - submitForm+MD5类型+导入+guest返回类型
+fixup 2872f95cb fix(bilibili): 修复编译错误 - char编码+显式类型
+fixup 6150db46c fix(bilibili): 修复Instant弃用 - kotlinx.datetime→kotlin.time
+fixup 35cff5446 fix(bilibili): 修复登录URL - www.bilibili.com/login已404，改为passport.bilibili.com/login
+fixup b50df74c9 fix(bilibili): code是整数不是字符串，jsonPrimitive.content永远返回null
+fixup 78f6bbb99 fix(bilibili): JsonPrimitive没有int属性，改用content.toIntOrNull()
+fixup d36a64aac fix(bilibili): httpClient不初始化cachedCredential导致Cookie没传出去
+fixup b03782a6d revert: code比较改回原始的content=="0"，没必要toIntOrNull
+pick c057f952f feat(bilibili): 添加视频播放支持 - getPlayUrl + UiMedia.Video
+fixup 91ff6b2f5 fix(bilibili): pic/face URL 强制转 https，避免混合内容被拦截
+fixup 9d37fd3f7 fix(bilibili): 视频播放加 Referer header，否则 CDN 返回 403
+pick 078ee7775 feat(bilibili): 详情页评论 - getComments + BilibiliCommentsLoader
+pick 9878df9ad feat(bilibili): 通知未读数 - getFeedUnread + notificationBadgeCount
+pick 4df664655 feat(bilibili): 搜索 - BilibiliSearchLoader + BilibiliSearchUserLoader
+pick 055cf3aff feat(bilibili): 关注动态流 Tab - BilibiliDynamicRemoteLoader
+pick c393ac5d4 feat(bilibili): 用户主页投稿 Tab - BilibiliUserVideosLoader + profileTabs
+pick 8c0a28a01 feat(bilibili): 最新 Tab - BilibiliRankingRemoteLoader + ranking/v2 API
+fixup e42f113fc fix: BilibiliUser.sign 多了一个引号导致编译失败
+fixup cb2c272ba fix: Triple 只能传3个参数，改成 var 变量
+fixup a80b01bea fix: 补全 missing dynamicTimelineSpec/rankingTimelineSpec 定义，修复 Icon/UiStrings/ClickEvent 问题
+fixup ec9093cb9 fix: 剩下三个编译错误 - People→Rss, Trending→List, UiText→UiStrings
+fixup c18539cf7 fix: Unnecessary safe call - data 提前 return 确保非空
+fixup 588c73677 fix: 改用旧版 playurl API (platform=html5)，返回的URL不需要Referer头
+fixup 1d854189f fix: httpClient 加 HttpTimeout 超时设置，避免 API 超时导致视频播不了
+fixup ed60781a6 fix: getPlayUrl 加 try-catch 防崩溃，status 双 API 兜底
+fixup 316dab33a debug: status() 加 println 看 playUrl 拿到没有
+fixup 0262a3b85 Revert "fix: getPlayUrl 加 try-catch 防崩溃，status 双 API 兜底"
+fixup f7997d90b fix: playurl 默认 qn=80 返回 DASH 桌面端不支持，改 qn=64 拿 MP4 直链
+fixup 2ea7e42db fix: getComments 返回 HTML 时 try-catch 防崩溃
+pick 57e5ec95d refactor(cbart): 移除 shenmatk.com 旧站依赖，改用 Laravel API + WebView 登录
+fixup b0e3a8103 fix(cbart): 修复 CI 编译错误
+fixup f11c431ad fix(cbart): 修复 suspend 函数在非协程 lambda 中调用的问题
+fixup 0d32becf5 fix(cbart): 移除冗余的 Elvis 运算符（smart-cast 后已非空）
+fixup 21c9d4168 fix(deviantart,zhihu): 替换手写工具函数为标准库 & 修复NewestLoader
+pick 7c523fb80 feat(xqt): add timeline tabs and fix favicon loading
+merge -C 0d218bb5f 0d218bb5f
+fixup a02176306 chore: remove Google Play Services dependencies, fully FOSS now
