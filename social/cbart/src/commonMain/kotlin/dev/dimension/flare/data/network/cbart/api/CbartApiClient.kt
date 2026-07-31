@@ -154,7 +154,7 @@ internal class CbartApiClient(
                 append("Referer", "$LINZIJUN_HOST/login")
                 append("Origin", LINZIJUN_HOST)
             }
-            setBody("_token=$loginCsrf&email=$email&password=$password")
+            setBody("_token=$loginCsrf&username=$email&password=$password")
         }
         if (loginResponse.status.value == 419) return null
 
