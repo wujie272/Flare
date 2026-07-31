@@ -83,7 +83,19 @@ private class CbartWebCookieLoginHandler(
             val service = CbartService(flowOf(credential))
             val refreshed = service.api.refreshLaravelSession()
 
-            val finalCredential = (refreshed ?: credential).copy(laravelSessionLoggedIn = true)
+            var finalCredential = (refreshed ?: credential).copy(laravelSessionLoggedIn = true)
+
+            // 获取用户信息（昵称、头像等）
+            val userInfo = service.fetchUserInfo()
+            if (userInfo != null) {
+                finalCredential = finalCredential.copy(
+                    userId = userInfo.id?.toString() ?: finalCredential.userId,
+                    userName = userInfo.name ?: finalCredential.userName,
+                    nickName = userInfo.nickName ?: finalCredential.nickName,
+                    avatarUrl = userInfo.avatarUrl ?: finalCredential.avatarUrl,
+                )
+            }
+
             val accountKey = MicroBlogKey(id = "cbart_user", host = CBART_HOST)
             context.requireReloginAccount(accountKey)
             accountService.addAccount(

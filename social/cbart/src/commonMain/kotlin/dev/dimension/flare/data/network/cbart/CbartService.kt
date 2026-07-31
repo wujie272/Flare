@@ -36,4 +36,8 @@ internal class CbartService(
 
     /** 收藏/取消收藏 */
     suspend fun toggleVideoFav(videoId: String): Boolean = api.toggleVideoFav(videoId = videoId)
+
+
+    /** 获取当前用户信息 */
+    suspend fun fetchUserInfo() = api.fetchUserInfo()
 }

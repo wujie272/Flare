@@ -108,6 +108,21 @@ internal data class LzjRegisterResponse(
 
 // ==================== 用户信息 (info.php) ====================
 
+/**
+ * GET /api/user 用户信息（Laravel 站）
+ */
+@Serializable
+internal data class CbartUserResponse(
+    val id: Int? = null,
+    val name: String? = null,
+    @SerialName("nick_name") val nickName: String? = null,
+    val email: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    val money: String? = null,
+    val diamond: String? = null,
+    @SerialName("email_verified_at") val emailVerifiedAt: String? = null,
+)
+
 // ==================== 登录响应 (login.php) ====================
 // login.php 返回格式与 register.php 不同：uid 在 setting 对象内
 

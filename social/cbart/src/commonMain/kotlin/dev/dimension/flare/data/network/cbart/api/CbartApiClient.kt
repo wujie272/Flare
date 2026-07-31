@@ -164,7 +164,32 @@ internal class CbartApiClient(
         val finalCsrf = Regex("""<meta name="csrf-token" content="([^"]+)""")
             .find(finalPage.bodyAsText())?.groupValues?.getOrNull(1)
 
-        return cred.copy(csrfToken = finalCsrf ?: cred.csrfToken, sessionCreatedAt = Clock.System.now().toEpochMilliseconds(), laravelSessionLoggedIn = true)
+        // 登录成功后获取用户信息
+        val userInfo = try {
+            val ua = "Mozilla/5.0 (Linux; Android 16; Redmi K80 Pro)"
+            val text = httpClient().get("$LINZIJUN_HOST/api/user") {
+                headers {
+                    append("Cookie", sessionCookie)
+                    append("X-CSRF-TOKEN", finalCsrf ?: csrfToken)
+                    append("X-Requested-With", "XMLHttpRequest")
+                    append("Accept", "application/json")
+                    append("User-Agent", ua)
+                }
+            }.bodyAsText()
+            if (!text.contains("Unauthenticated")) {
+                apiJson.decodeFromString<CbartUserResponse>(text)
+            } else null
+        } catch (_: Exception) { null }
+
+        return cred.copy(
+            csrfToken = finalCsrf ?: cred.csrfToken,
+            sessionCreatedAt = Clock.System.now().toEpochMilliseconds(),
+            laravelSessionLoggedIn = true,
+            userId = userInfo?.id?.toString() ?: cred.userId,
+            userName = userInfo?.name ?: cred.userName,
+            nickName = userInfo?.nickName ?: cred.nickName,
+            avatarUrl = userInfo?.avatarUrl ?: cred.avatarUrl,
+        )
     }
 
     private fun linzijunHeaders(cred: CbartCredential?): Map<String, String> = mapOf(
@@ -276,5 +301,21 @@ internal class CbartApiClient(
             }.bodyAsText()
             text.contains("\"update\":\"+\"") || text.contains("\"update\":\"-\"")
         } catch (_: Exception) { false }
+    }
+
+    /**
+     * 获取当前用户信息
+     * GET /api/user
+     * 需要已登录的 session，未登录返回 401 Unauthenticated
+     */
+    suspend fun fetchUserInfo(): CbartUserResponse? {
+        val headerMap = linzijunHeaders(ensureSession())
+        return try {
+            val text = httpClient().get("$LINZIJUN_HOST/api/user") {
+                headers { headerMap.forEach { (k, v) -> append(k, v) } }
+            }.bodyAsText()
+            if (text.contains("Unauthenticated") || text.contains("message")) return null
+            apiJson.decodeFromString<CbartUserResponse>(text)
+        } catch (_: Exception) { null }
     }
 }
