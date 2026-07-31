@@ -182,12 +182,11 @@ internal class CbartFavVideoLoader(
 
 /**
  * 已购视频 Loader
- * 从 credential.purchasedVideoIds 获取 ID 列表，逐个 fetchVideoDetail
+ * 调 linzijun.app/api/video_list?purchased_video=1
  */
 internal class CbartPurchasedVideoLoader(
     private val service: CbartService,
     private val accountKey: MicroBlogKey,
-    private val credentialFlow: Flow<CbartCredential>,
 ) : CacheableRemoteLoader<UiTimelineV2> {
     override val pagingKey: String = "lzj_purchased_video"
     override val supportPrepend: Boolean = false
@@ -197,26 +196,10 @@ internal class CbartPurchasedVideoLoader(
             is PagingRequest.Refresh -> 1
             is PagingRequest.Append -> request.nextKey.toIntOrNull() ?: 1
         }
-        val cred = credentialFlow.firstOrNull()
-        val ids = cred?.purchasedVideoIds?.split(",")
-            ?.map { it.trim() }
-            ?.filter { it.isNotBlank() && it.all { c -> c.isDigit() } }
-            ?: emptyList()
-        if (ids.isEmpty()) return PagingResult(endOfPaginationReached = true)
-
-        val startIndex = (page - 1) * pageSize
-        val endIndex = minOf(startIndex + pageSize, ids.size)
-        if (startIndex >= ids.size) return PagingResult(endOfPaginationReached = true)
-
-        val pageIds = ids.subList(startIndex, endIndex)
-        val items = kotlinx.coroutines.coroutineScope<List<LzjVideoDetailItem?>> {
-            pageIds.map { id -> async { try { service.fetchVideoDetail(id) } catch (_: Exception) { null } } }
-                .map { it.await() }
-        }.filterNotNull()
-
+        val items = service.fetchVideoList(page = page, limit = pageSize, order = "posttime", purchased = true)
         return PagingResult(
             data = items.map { it.toUiTimelineItem(accountKey) },
-            nextKey = if (endIndex >= ids.size) null else (page + 1).toString(),
+            nextKey = if (items.isEmpty()) null else (page + 1).toString(),
         )
     }
 }

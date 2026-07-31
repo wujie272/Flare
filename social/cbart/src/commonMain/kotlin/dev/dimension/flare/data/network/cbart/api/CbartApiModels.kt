@@ -120,6 +120,7 @@ internal data class CbartUserResponse(
     @SerialName("avatar_url") val avatarUrl: String? = null,
     val money: String? = null,
     val diamond: String? = null,
+    @SerialName("purchased_video_ids") val purchasedVideoIds: String? = null,
     @SerialName("email_verified_at") val emailVerifiedAt: String? = null,
 )
 

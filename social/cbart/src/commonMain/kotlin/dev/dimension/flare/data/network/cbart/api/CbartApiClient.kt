@@ -189,6 +189,7 @@ internal class CbartApiClient(
             userName = userInfo?.name ?: cred.userName,
             nickName = userInfo?.nickName ?: cred.nickName,
             avatarUrl = userInfo?.avatarUrl ?: cred.avatarUrl,
+            purchasedVideoIds = userInfo?.purchasedVideoIds ?: cred.purchasedVideoIds,
         )
     }
 

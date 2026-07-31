@@ -93,6 +93,7 @@ private class CbartWebCookieLoginHandler(
                     userName = userInfo.name ?: finalCredential.userName,
                     nickName = userInfo.nickName ?: finalCredential.nickName,
                     avatarUrl = userInfo.avatarUrl ?: finalCredential.avatarUrl,
+                    purchasedVideoIds = userInfo.purchasedVideoIds ?: finalCredential.purchasedVideoIds,
                 )
             }
 

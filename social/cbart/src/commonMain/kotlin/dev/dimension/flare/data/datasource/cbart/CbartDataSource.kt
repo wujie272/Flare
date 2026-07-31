@@ -180,7 +180,7 @@ internal class CbartDataSource(
         return persistentListOf(
             ProfileTab(name = UiStrings.Posts, loader = CbartUserContentLoader(service = service, accountKey = accountKey, userKey = userKey)),
             ProfileTab(name = UiStrings.Favourite, loader = CbartFavVideoLoader(service = service, accountKey = accountKey)),
-            ProfileTab(name = UiStrings.PurchasedVideo, loader = CbartPurchasedVideoLoader(service = service, accountKey = accountKey, credentialFlow = credentialFlow)),
+            ProfileTab(name = UiStrings.PurchasedVideo, loader = CbartPurchasedVideoLoader(service = service, accountKey = accountKey)),
         ).toImmutableList()
     }
 
