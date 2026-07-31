@@ -5,6 +5,7 @@ import dev.dimension.flare.data.datasource.deviantart.DeviantartHomeLoader
 import dev.dimension.flare.data.datasource.deviantart.DeviantartHotLoader
 import dev.dimension.flare.data.datasource.deviantart.DeviantartNewestLoader
 import dev.dimension.flare.data.datasource.deviantart.DeviantartPopularLoader
+import dev.dimension.flare.data.datasource.deviantart.DeviantartFavouritesLoader
 import dev.dimension.flare.data.datasource.microblog.MicroblogDataSource
 import dev.dimension.flare.data.model.IconType
 import dev.dimension.flare.data.model.tab.TimelineSpec
@@ -80,12 +81,28 @@ public data object DeviantartPlatformSpec :
         },
     )
 
+    internal val favouriteTimelineSpec = TimelineSpec(
+        id = "deviantart.favourite",
+        title = UiStrings.Favourite,
+        icon = IconType.Material(UiIcon.Heart),
+        serializer = TimelineSpec.AccountBasedData.serializer(),
+        targetId = { it.accountKey.toString() },
+        loaderFactory = accountLoader<DeviantartDataSource, TimelineSpec.AccountBasedData> {
+            DeviantartFavouritesLoader(
+                service = service,
+                accountKey = accountKey,
+                username = accountKey.id,
+            )
+        },
+    )
+
     override val timelineSpecs: ImmutableList<TimelineSpec<out TimelineSpec.Data>> =
         persistentListOf(
             homeTimelineSpec,
             hotTimelineSpec,
             popularTimelineSpec,
             newestTimelineSpec,
+            favouriteTimelineSpec,
         )
 
     override fun deepLinks(accountKey: MicroBlogKey): ImmutableList<PlatformDeepLink<*>> =

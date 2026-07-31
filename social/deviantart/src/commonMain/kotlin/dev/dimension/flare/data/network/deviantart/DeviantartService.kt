@@ -542,7 +542,7 @@ internal class DeviantartService(
             val hasMore = root["hasMore"]?.jsonPrimitive?.content?.toBoolean() ?: false
             val nextCursor = root["nextCursor"]?.jsonPrimitive?.content
             val deviations = root["deviations"]?.jsonArray?.mapNotNull { parsePuppyDeviation(it.jsonObject) } ?: emptyList()
-            DeviantartPage(data = deviations, isEnd = !hasMore, nextOffset = nextCursor?.hashCode())
+            DeviantartPage(data = deviations, isEnd = !hasMore, nextOffset = if (hasMore) (page + 1) else null)
         } catch (_: Exception) { DeviantartPage(emptyList(), true) }
     }
 
@@ -554,7 +554,7 @@ internal class DeviantartService(
             val hasMore = root["hasMore"]?.jsonPrimitive?.content?.toBoolean() ?: false
             val nextCursor = root["nextCursor"]?.jsonPrimitive?.content
             val deviations = root["deviations"]?.jsonArray?.mapNotNull { parsePuppyDeviation(it.jsonObject) } ?: emptyList()
-            DeviantartPage(data = deviations, isEnd = !hasMore, nextOffset = nextCursor?.hashCode())
+            DeviantartPage(data = deviations, isEnd = !hasMore, nextOffset = if (hasMore) (page + 1) else null)
         } catch (_: Exception) { DeviantartPage(emptyList(), true) }
     }
 
@@ -566,7 +566,7 @@ internal class DeviantartService(
             val hasMore = root["hasMore"]?.jsonPrimitive?.content?.toBoolean() ?: false
             val nextCursor = root["nextCursor"]?.jsonPrimitive?.content
             val deviations = root["deviations"]?.jsonArray?.mapNotNull { parsePuppyDeviation(it.jsonObject) } ?: emptyList()
-            DeviantartPage(data = deviations, isEnd = !hasMore, nextOffset = nextCursor?.hashCode())
+            DeviantartPage(data = deviations, isEnd = !hasMore, nextOffset = if (hasMore) (page + 1) else null)
         } catch (_: Exception) { DeviantartPage(emptyList(), true) }
     }
 
@@ -586,7 +586,7 @@ internal class DeviantartService(
                 ?.jsonObject?.get("moduleData")?.jsonObject?.get("folderDeviations")?.jsonObject
             val deviations = folderMod?.get("deviations")?.jsonArray?.mapNotNull { parsePuppyDeviation(it.jsonObject) } ?: emptyList()
             val hasMore = folderMod?.get("hasMore")?.jsonPrimitive?.content?.toBoolean() ?: false
-            DeviantartPage(data = deviations, isEnd = !hasMore, nextOffset = (page + 1).toString().hashCode())
+            DeviantartPage(data = deviations, isEnd = !hasMore, nextOffset = if (hasMore) (page + 1) else null)
         } catch (_: Exception) { DeviantartPage(emptyList(), true) }
     }
 

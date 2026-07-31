@@ -550,12 +550,7 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
         ),
         poll = null,
         statusKey = statusKey,
-        card = UiCard(
-            media = null,
-            title = title,
-            description = "$authorName · 👍 $voteCount · 💬 $commentCount",
-            url = url,
-        ),
+        card = null,
         createdAt = if (createdAt > 0) Instant.fromEpochMilliseconds(createdAt * 1000).toUi() else Instant.fromEpochMilliseconds(0).toUi(),
         emojiReactions = persistentListOf(),
         sourceChannel = null,

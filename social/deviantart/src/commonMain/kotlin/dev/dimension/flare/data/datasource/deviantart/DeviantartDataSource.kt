@@ -92,7 +92,7 @@ internal class DeviantartDataSource(
 
     override val defaultTabs: ImmutableList<TimelineCandidate<*>> by lazy {
         persistentListOf(
-            newestTimelineSpec.candidate(
+            newestTimelineSpec.galleryCandidate(
                 data = TimelineSpec.AccountBasedData(accountKey),
                 icon = IconType.Material(UiIcon.Search),
                 title = UiText.Raw("Discover"),
@@ -102,25 +102,28 @@ internal class DeviantartDataSource(
 
     override val builtInTimelineTabs: ImmutableList<TimelineCandidate<*>> by lazy {
         persistentListOf(
-            homeTimelineSpec.candidate(
+            homeTimelineSpec.galleryCandidate(
                 data = TimelineSpec.AccountBasedData(accountKey),
                 icon = IconType.Material(UiIcon.Home),
                 title = UiText.Raw("Home"),
             ),
-            hotTimelineSpec.candidate(
+            hotTimelineSpec.galleryCandidate(
                 data = TimelineSpec.AccountBasedData(accountKey),
                 icon = IconType.Material(UiIcon.Featured),
                 title = UiText.Raw("Hot"),
             ),
-            popularTimelineSpec.candidate(
+            popularTimelineSpec.galleryCandidate(
                 data = TimelineSpec.AccountBasedData(accountKey),
                 icon = IconType.Material(UiIcon.Home),
                 title = UiText.Raw("Popular"),
             ),
-            newestTimelineSpec.candidate(
+            newestTimelineSpec.galleryCandidate(
                 data = TimelineSpec.AccountBasedData(accountKey),
                 icon = IconType.Material(UiIcon.Search),
                 title = UiText.Raw("Discover"),
+            ),
+            favouriteTimelineSpec.galleryCandidate(
+                data = TimelineSpec.AccountBasedData(accountKey),
             ),
         )
     }
@@ -131,14 +134,21 @@ internal class DeviantartDataSource(
                 title = UiStrings.Home,
                 icon = UiIcon.Home,
                 target = ShortcutSpec.Target.Timeline(
-                    homeTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)),
+                    homeTimelineSpec.galleryCandidate(data = TimelineSpec.AccountBasedData(accountKey)),
                 ),
             ),
             ShortcutSpec(
                 title = UiStrings.Featured,
                 icon = UiIcon.Featured,
                 target = ShortcutSpec.Target.Timeline(
-                    hotTimelineSpec.candidate(data = TimelineSpec.AccountBasedData(accountKey)),
+                    hotTimelineSpec.galleryCandidate(data = TimelineSpec.AccountBasedData(accountKey)),
+                ),
+            ),
+            ShortcutSpec(
+                title = UiStrings.Favourite,
+                icon = UiIcon.Heart,
+                target = ShortcutSpec.Target.Timeline(
+                    favouriteTimelineSpec.galleryCandidate(data = TimelineSpec.AccountBasedData(accountKey)),
                 ),
             ),
         )
@@ -300,6 +310,8 @@ internal class DeviantartDataSource(
         persistentListOf(
             ProfileTab(
                 name = UiStrings.Posts,
+                displayType = ProfileTab.DisplayType.Gallery,
+                showAllImagesInGallery = true,
                 loader = DeviantartUserGalleryLoader(service = service, accountKey = accountKey, username = userKey.id),
             ),
         )
@@ -376,6 +388,21 @@ internal class DeviantartDataSource(
         targetId = { it.accountKey.toString() },
         loaderFactory = dev.dimension.flare.data.model.tab.accountLoader<DeviantartDataSource, TimelineSpec.AccountBasedData> {
             DeviantartNewestLoader(service = service, accountKey = accountKey)
+        },
+    )
+
+    internal val favouriteTimelineSpec = TimelineSpec(
+        id = "deviantart.favourite",
+        title = UiStrings.Favourite,
+        icon = IconType.Material(UiIcon.Heart),
+        serializer = TimelineSpec.AccountBasedData.serializer(),
+        targetId = { it.accountKey.toString() },
+        loaderFactory = dev.dimension.flare.data.model.tab.accountLoader<DeviantartDataSource, TimelineSpec.AccountBasedData> {
+            DeviantartFavouritesLoader(
+                service = service,
+                accountKey = accountKey,
+                username = accountKey.id,
+            )
         },
     )
 }
@@ -666,6 +693,26 @@ internal class DeviantartTagSearchLoader(
                     searchContent = tag,
                 )
             },
+            endOfPaginationReached = result.isEnd,
+            nextKey = result.nextOffset?.toString(),
+        )
+    }
+}
+
+internal class DeviantartFavouritesLoader(
+    private val service: DeviantartService,
+    private val accountKey: MicroBlogKey,
+    private val username: String,
+) : CacheableRemoteLoader<UiTimelineV2> {
+    override val pagingKey: String = "deviantart_favourites_${username}_$accountKey"
+    override val supportPrepend: Boolean = false
+
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
+        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
+        val offset = (request as? PagingRequest.Append)?.nextKey?.toIntOrNull() ?: 0
+        val result = service.userFavourites(username, offset = offset, limit = pageSize)
+        return PagingResult(
+            data = result.data.map { it.toUiTimelineItem(accountKey) },
             endOfPaginationReached = result.isEnd,
             nextKey = result.nextOffset?.toString(),
         )

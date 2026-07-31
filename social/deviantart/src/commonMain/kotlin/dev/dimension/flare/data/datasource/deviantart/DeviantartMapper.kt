@@ -1,6 +1,7 @@
 package dev.dimension.flare.data.datasource.deviantart
 
 import dev.dimension.flare.data.datasource.microblog.ActionMenu
+import dev.dimension.flare.data.datasource.microblog.PostEvent
 import dev.dimension.flare.data.network.deviantart.DeviantartDeviation
 import dev.dimension.flare.data.network.deviantart.DeviantartDeviationDetail
 import dev.dimension.flare.model.AccountType
@@ -77,13 +78,6 @@ internal fun DeviantartDeviation.toUiTimelineItem(accountKey: MicroBlogKey): UiT
         }
     }
 
-    val card = UiCard(
-        media = media.firstOrNull(),
-        title = title,
-        description = category?.let { "Category: $it" },
-        url = "https://www.deviantart.com/$artistName/art/$deviationId",
-    )
-
     val post = UiTimelineV2.Post(
         platformType = PlatformType.Deviantart,
         images = media.toImmutableList(),
@@ -96,18 +90,20 @@ internal fun DeviantartDeviation.toUiTimelineItem(accountKey: MicroBlogKey): UiT
                 icon = dev.dimension.flare.ui.model.UiIcon.Heart,
                 text = ActionMenu.Item.Text.Raw("${stats?.favourites ?: 0}"),
                 count = dev.dimension.flare.ui.model.UiNumber(stats?.favourites ?: 0),
-                clickEvent = ClickEvent.Noop,
-            ),
-            ActionMenu.Item(
-                icon = dev.dimension.flare.ui.model.UiIcon.Comment,
-                text = ActionMenu.Item.Text.Raw("${stats?.comments ?: 0}"),
-                count = dev.dimension.flare.ui.model.UiNumber(stats?.comments ?: 0),
-                clickEvent = ClickEvent.Noop,
+                clickEvent = ClickEvent.event(
+                    accountKey,
+                    PostEvent.Deviantart.Favourite(
+                        postKey = statusKey,
+                        favourited = isFavourite,
+                        accountKey = accountKey,
+                    ),
+                ),
+                color = if (isFavourite) ActionMenu.Item.Color.Red else null,
             ),
         ),
         poll = null,
         statusKey = statusKey,
-        card = card,
+        card = null,
         createdAt = if (published > 0) Instant.fromEpochMilliseconds(published * 1000).toUi() else Instant.fromEpochMilliseconds(0).toUi(),
         emojiReactions = persistentListOf(),
         sourceChannel = null,
@@ -115,12 +111,12 @@ internal fun DeviantartDeviation.toUiTimelineItem(accountKey: MicroBlogKey): UiT
         replyToHandle = null,
         references = persistentListOf(),
         clickEvent = ClickEvent.Deeplink(
-            DeeplinkRoute.Status.Detail(
+            DeeplinkRoute.Gallery.Detail(
                 accountType = AccountType.Specific(accountKey),
                 statusKey = statusKey,
             )
         ),
-        mediaClickPolicy = UiTimelineV2.Post.MediaClickPolicy.OpenStatusMedia,
+        mediaClickPolicy = UiTimelineV2.Post.MediaClickPolicy.OpenPostClickEvent,
         accountType = AccountType.Specific(accountKey),
         itemKey = "da_$deviationId",
     )
@@ -232,7 +228,13 @@ internal fun dev.dimension.flare.data.network.deviantart.DeviantartUserProfile.t
         banner = coverUrl?.let {
             UiMedia.Image(url = it, previewUrl = it, description = userName, height = 0f, width = 0f, sensitive = false)
         },
-        description = tagline?.toUiPlainText(),
+        description = buildString {
+            tagline?.let { append(it) }
+            artistLevel?.let {
+                if (tagline != null) append("\n")
+                append("Artist Level: $it")
+            }
+        }.takeIf { it.isNotBlank() }?.toUiPlainText(),
         matrices = UiProfile.Matrices(
             followsCount = friendsCount,
             fansCount = watchersCount,
