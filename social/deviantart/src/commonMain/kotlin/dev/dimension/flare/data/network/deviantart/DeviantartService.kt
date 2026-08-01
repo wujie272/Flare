@@ -76,7 +76,7 @@ internal class DeviantartService(
                 header("User-Agent", DA_UA)
                 header("Accept", "application/json")
                 header("Authorization", "Bearer $token")
-                header("dA-minor-version", "20210526")
+                header("dA-minor-version", "20240701")
             }
         }
     }
@@ -227,8 +227,8 @@ internal class DeviantartService(
     }
 
     /**
-     * /user/favourites/ was removed by DeviantArt in 2024-07.
-     * Use /collections/ endpoints instead.
+     * Fetch user's favourited deviations (collections).
+     * GET /api/v1/oauth2/collections/all
      */
     suspend fun userFavourites(username: String, offset: Int = 0, limit: Int = 24): DeviantartPage<DeviantartDeviation> {
         return try {
@@ -239,9 +239,11 @@ internal class DeviantartService(
 
     suspend fun userProfile(username: String): DeviantartUserProfile? {
         return try {
-            val resp = authClient().get("$DA_API/user/profile/$username?expand=user.watch")
+            val resp = authClient().get("$DA_API/user/profile/$username?expand=user.watch,user.stats")
             val obj = json.parseToJsonElement(resp.bodyAsText()).jsonObject
             val user = obj["user"]?.jsonObject
+            val userStats = user?.get("stats")?.jsonObject  // { watchers, friends }
+            val contentStats = obj["stats"]?.jsonObject      // { user_deviations, user_favourites, ... }
             DeviantartUserProfile(
                 userId = user?.get("userid")?.jsonPrimitive?.content ?: "",
                 userName = user?.get("username")?.jsonPrimitive?.content ?: "",
@@ -249,9 +251,9 @@ internal class DeviantartService(
                 coverUrl = obj["cover"]?.jsonObject?.get("src")?.jsonPrimitive?.content,
                 tagline = obj["tagline"]?.jsonPrimitive?.content,
                 artistLevel = obj["artist_level"]?.jsonPrimitive?.content,
-                favouritesCount = obj["profile_favcount"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
-                watchersCount = obj["watchers"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
-                friendsCount = obj["friends"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                favouritesCount = contentStats?.get("user_favourites")?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                watchersCount = userStats?.get("watchers")?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                friendsCount = userStats?.get("friends")?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                 isWatching = user?.get("watch")?.jsonObject?.get("is_watching")?.jsonPrimitive?.content?.toBoolean() ?: false,
             )
         } catch (_: Exception) { null }
@@ -532,6 +534,43 @@ internal class DeviantartService(
             }
             text
         } catch (_: Exception) { client.close(); null }
+    }
+
+    /**
+     * Fetch home feed — deviations from users you watch.
+     * Uses _puppy API. Falls back to RFY feed if unavailable.
+     */
+    suspend fun fetchHomeFeed(page: Int = 0): DeviantartPage<DeviantartDeviation> {
+        // 确保有 session cookies
+        val cred = currentCredential()
+        if (cred?.sessionCookies == null || cred?.csrfToken == null) {
+            val newCred = fetchSessionCookies()
+            if (newCred != null) {
+                cachedCredential = newCred
+                onCredentialRefreshed(newCred)
+            }
+        }
+
+        // 尝试多种端点，按优先级
+        val endpoints = listOf(
+            "dabrowse/networkbar/watched/deviations?page=$page",
+            "dabrowse/networkbar/deviantsyouwatch?page=$page",
+            "dabrowse/networkbar/rfy/deviations?page=$page",
+        )
+        for (endpoint in endpoints) {
+            val text = puppyGet(endpoint)
+            if (text != null) {
+                return try {
+                    val root = json.parseToJsonElement(text).jsonObject
+                    val hasMore = root["hasMore"]?.jsonPrimitive?.content?.toBoolean() ?: false
+                    val deviations = root["deviations"]?.jsonArray?.mapNotNull { parsePuppyDeviation(it.jsonObject) } ?: emptyList()
+                    if (deviations.isNotEmpty()) {
+                        return DeviantartPage(data = deviations, isEnd = !hasMore, nextOffset = if (hasMore) (page + 1) else null)
+                    }
+                } catch (_: Exception) { }
+            }
+        }
+        return DeviantartPage(emptyList(), true)
     }
 
     suspend fun fetchRfyFeed(page: Int = 0): DeviantartPage<DeviantartDeviation> {

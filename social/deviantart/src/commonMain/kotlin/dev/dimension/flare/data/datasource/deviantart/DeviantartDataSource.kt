@@ -418,11 +418,20 @@ internal class DeviantartHomeLoader(
 
     override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
         if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
-        // /browse/home was removed by DeviantArt in 2024-07
-        // Fallback: daily deviations for featured content
-        val result = service.browseDailyDeviations()
+        // 1. Try _puppy API home feed (deviations from users you watch)
+        val page = (request as? PagingRequest.Append)?.nextKey?.toIntOrNull() ?: 0
+        val puppyResult = service.fetchHomeFeed(page = page)
+        if (puppyResult.data.isNotEmpty()) {
+            return PagingResult(
+                data = puppyResult.data.map { it.toUiTimelineItem(accountKey) },
+                endOfPaginationReached = puppyResult.isEnd,
+                nextKey = puppyResult.nextOffset?.toString(),
+            )
+        }
+        // 2. Fallback: daily deviations
+        val fallback = service.browseDailyDeviations()
         return PagingResult(
-            data = result.map { it.toUiTimelineItem(accountKey) },
+            data = fallback.map { it.toUiTimelineItem(accountKey) },
             endOfPaginationReached = true,
             nextKey = null,
         )

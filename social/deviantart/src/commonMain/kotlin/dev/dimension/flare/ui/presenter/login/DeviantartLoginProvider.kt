@@ -139,7 +139,7 @@ private class DeviantartOAuth2LoginHandler(
                 "?response_type=code" +
                 "&client_id=$DA_CLIENT_ID" +
                 "&redirect_uri=$redirectUri" +
-                "&scope=basic%20browse%20user" +
+                "&scope=basic%20browse%20user%20collection" +
                 "&state=$state" +
                 "&code_challenge=$challenge" +
                 "&code_challenge_method=S256"
