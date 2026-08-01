@@ -560,7 +560,7 @@ internal class DeviantartService(
         for (endpoint in endpoints) {
             val text = puppyGet(endpoint)
             if (text != null) {
-                return try {
+                try {
                     val root = json.parseToJsonElement(text).jsonObject
                     val hasMore = root["hasMore"]?.jsonPrimitive?.content?.toBoolean() ?: false
                     val deviations = root["deviations"]?.jsonArray?.mapNotNull { parsePuppyDeviation(it.jsonObject) } ?: emptyList()
