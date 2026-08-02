@@ -24,6 +24,8 @@ import dev.dimension.flare.ui.model.mapper.xqtRetweet
 import dev.dimension.flare.ui.model.mapper.zhihuVoteUp
 import dev.dimension.flare.ui.model.mapper.zhihuBookmark
 import dev.dimension.flare.ui.model.mapper.cbartFavourite
+import dev.dimension.flare.ui.model.mapper.coolapkLike
+import dev.dimension.flare.ui.model.mapper.bilibiliLike
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 import kotlin.native.HiddenFromObjC
@@ -560,6 +562,46 @@ public sealed interface PostEvent {
             public val favourited: Boolean,
             public val accountKey: MicroBlogKey,
         ) : Deviantart
+    }
+
+    @Serializable
+    public sealed interface Coolapk : PostEvent {
+        @Serializable
+        public data class Like(
+            public override val postKey: MicroBlogKey,
+            public val liked: Boolean,
+            public val count: Long = 0,
+            public val accountKey: MicroBlogKey,
+        ) : Coolapk,
+            UpdatePostActionMenuEvent {
+            public override fun nextActionMenu(): ActionMenu.Item =
+                ActionMenu.coolapkLike(
+                    statusKey = postKey,
+                    liked = !liked,
+                    count = (count + if (!liked) 1 else -1).coerceAtLeast(0),
+                    accountKey = accountKey,
+                )
+        }
+    }
+
+    @Serializable
+    public sealed interface Bilibili : PostEvent {
+        @Serializable
+        public data class Like(
+            public override val postKey: MicroBlogKey,
+            public val liked: Boolean,
+            public val count: Long = 0,
+            public val accountKey: MicroBlogKey,
+        ) : Bilibili,
+            UpdatePostActionMenuEvent {
+            public override fun nextActionMenu(): ActionMenu.Item =
+                ActionMenu.bilibiliLike(
+                    statusKey = postKey,
+                    liked = !liked,
+                    count = (count + if (!liked) 1 else -1).coerceAtLeast(0),
+                    accountKey = accountKey,
+                )
+        }
     }
 }
 

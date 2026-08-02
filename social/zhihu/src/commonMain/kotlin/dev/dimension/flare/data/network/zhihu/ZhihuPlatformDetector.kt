@@ -7,7 +7,7 @@ import dev.dimension.flare.model.PlatformType
 internal const val ZHIHU_HOST = "www.zhihu.com"
 
 internal data object ZhihuPlatformDetector : PlatformDetector {
-    override val priority: Int = 50
+    override val priority: Int = 90
     override suspend fun detect(host: String): NodeData? {
         if (!ZHIHU_HOST.equals(host, ignoreCase = true) &&
             !"zhihu.com".equals(host, ignoreCase = true) &&

@@ -121,6 +121,7 @@ dependencies {
     implementation(projects.social.toutiao)
     implementation(projects.social.deviantart)
     implementation(projects.social.bilibili)
+    implementation(projects.social.coolapk)
     implementation(projects.social.zhihu)
     implementation(projects.social.vvo)
     implementation(projects.social.xqt)

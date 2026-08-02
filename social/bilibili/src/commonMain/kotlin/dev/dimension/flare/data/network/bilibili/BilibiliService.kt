@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import io.ktor.client.request.forms.submitForm
 import kotlinx.serialization.json.Json
+import dev.dimension.flare.data.network.bilibili.BilibiliResponse
+import dev.dimension.flare.data.network.bilibili.PlayUrlData
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -256,6 +258,9 @@ internal class BilibiliService(
                 "bvid" to bvid,
                 "cid" to cid.toString(),
                 "qn" to qn.toString(),
+                "fnval" to "16",  // 16=MP4, 有音视频
+                "fnver" to "0",
+                "fourk" to "1",
                 "platform" to "web",
                 "high_quality" to "1",
             ),
@@ -281,6 +286,41 @@ internal class BilibiliService(
             return video[0].jsonObject["base_url"]?.jsonPrimitive?.content
         }
         return null
+    }
+
+    /**
+     * 获取完整播放地址数据（含 DASH、durl、画质信息）
+     * 返回 [PlayUrlData] 可直接用于 ExoPlayer 播放
+     */
+    suspend fun getPlayUrlData(
+        bvid: String,
+        cid: Long,
+        qn: Int = 80,
+        fnval: Int = 16,  // 16=MP4, 64=DASH, 80=DASH+MP4, 4048=DASH+HDR
+        fnver: Int = 0,
+        fourk: Int = 1,
+    ): PlayUrlData? {
+        val (imgKey, subKey) = getWbiKeys()
+        val params = signWbi(
+            params = mapOf(
+                "bvid" to bvid,
+                "cid" to cid.toString(),
+                "qn" to qn.toString(),
+                "fnval" to fnval.toString(),
+                "fnver" to fnver.toString(),
+                "fourk" to fourk.toString(),
+                "platform" to "web",
+                "high_quality" to "1",
+            ),
+            imgKey = imgKey,
+            subKey = subKey,
+        )
+        val response = httpClient().get("$API_BASE/x/player/wbi/playurl") {
+            header("Referer", "https://www.bilibili.com/video/$bvid")
+            params.forEach { (key, value) -> parameter(key, value) }
+        }.bodyAsText()
+        val result = json.decodeFromString<BilibiliResponse<PlayUrlData>>(response)
+        return if (result.code == 0) result.data else null
     }
 
     // ==================== 通知 ====================

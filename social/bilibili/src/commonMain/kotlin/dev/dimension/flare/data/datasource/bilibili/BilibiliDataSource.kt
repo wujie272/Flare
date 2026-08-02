@@ -4,7 +4,9 @@ import dev.dimension.flare.data.datasource.microblog.AuthenticatedMicroblogDataS
 import dev.dimension.flare.data.datasource.microblog.ComposeDataSource
 import dev.dimension.flare.data.datasource.microblog.ComposeConfig
 import dev.dimension.flare.data.datasource.microblog.ComposeData
+import dev.dimension.flare.ui.model.mapper.bilibiliLike
 import dev.dimension.flare.data.datasource.microblog.ComposeType
+import dev.dimension.flare.data.datasource.microblog.ActionMenu
 import dev.dimension.flare.data.datasource.microblog.DatabaseUpdater
 import dev.dimension.flare.data.datasource.microblog.NotificationFilter
 import dev.dimension.flare.data.datasource.microblog.NotificationTimelineDataSource
@@ -31,6 +33,7 @@ import dev.dimension.flare.data.model.tab.TimelineSpec
 import dev.dimension.flare.data.network.bilibili.BilibiliService
 import dev.dimension.flare.data.platform.bilibili.BilibiliCredential
 import dev.dimension.flare.data.platform.bilibili.BilibiliPlatformSpec
+import kotlinx.serialization.json.jsonPrimitive
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
 import dev.dimension.flare.ui.model.UiHashtag
@@ -132,11 +135,12 @@ internal class BilibiliDataSource(
 
     override fun userTimeline(userKey: MicroBlogKey, mediaOnly: Boolean): RemoteLoader<UiTimelineV2> = notSupported()
 
-    override fun context(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> {
-        // statusKey.id 是 bvid，需要先获取 aid（oid），但 getVideoInfo 是 suspend 函数
-        // 直接返回 BilibiliCommentsLoader，由 Loader 内部获取 oid
-        return BilibiliCommentsLoader(service = service, accountKey = accountKey, oid = 0, bvid = statusKey.id)
-    }
+    override fun context(statusKey: MicroBlogKey): RemoteLoader<UiTimelineV2> =
+        BilibiliVideoDetailMediator(
+            service = service,
+            accountKey = accountKey,
+            bvid = statusKey.id,
+        )
     override fun searchStatus(query: String): RemoteLoader<UiTimelineV2> = BilibiliSearchLoader(service = service, accountKey = accountKey, query = query)
 
     override fun searchUser(query: String): RemoteLoader<UiProfile> = BilibiliSearchUserLoader(service = service, accountKey = accountKey, query = query)
@@ -179,7 +183,34 @@ internal class BilibiliDataSource(
 
     // ==================== Event ====================
 
-    override suspend fun handle(event: PostEvent, updater: DatabaseUpdater) { }
+    override suspend fun handle(
+        event: PostEvent,
+        updater: DatabaseUpdater,
+    ) {
+        require(event is PostEvent.Bilibili)
+        when (event) {
+            is PostEvent.Bilibili.Like -> {
+                // Bilibili API 需要 aid，从 postKey.id (bvid) 获取
+                val videoInfo = service.getVideoInfo(event.postKey.id)
+                val aid = videoInfo?.get("aid")?.jsonPrimitive?.content?.toLongOrNull()
+                if (aid != null) {
+                    val result = service.likeVideo(aid = aid, like = !event.liked)
+                    if (result) {
+                        updater.updateActionMenu(
+                            postKey = event.postKey,
+                            newActionMenu =
+                                ActionMenu.bilibiliLike(
+                                    statusKey = event.postKey,
+                                    liked = !event.liked,
+                                    count = event.count + if (!event.liked) 1 else -1,
+                                    accountKey = event.accountKey,
+                                ),
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     companion object {
         fun guest(): Nothing = throw UnsupportedOperationException("Guest mode not supported")

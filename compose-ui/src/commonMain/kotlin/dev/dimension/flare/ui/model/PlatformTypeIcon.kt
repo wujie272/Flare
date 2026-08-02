@@ -32,6 +32,7 @@ public val PlatformType.brandIcon: ImageVector
         PlatformType.Zhihu -> FontAwesomeIcons.Solid.Newspaper
         PlatformType.Deviantart -> FontAwesomeIcons.Solid.Palette
         PlatformType.Bilibili -> FontAwesomeIcons.Solid.Eye
+        PlatformType.Coolapk -> FontAwesomeIcons.Solid.Eye
         PlatformType.xQt -> FontAwesomeIcons.Brands.Twitter
         PlatformType.VVo -> FontAwesomeIcons.Brands.Weibo
         }
