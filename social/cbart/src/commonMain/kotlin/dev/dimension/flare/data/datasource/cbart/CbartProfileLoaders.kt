@@ -6,6 +6,7 @@ import dev.dimension.flare.data.datasource.microblog.loader.RelationActionType
 import dev.dimension.flare.data.datasource.microblog.loader.RelationLoader
 import dev.dimension.flare.data.datasource.microblog.loader.UserLoader
 import dev.dimension.flare.data.network.cbart.CbartService
+import dev.dimension.flare.data.platform.CBART_HOST
 import dev.dimension.flare.data.platform.CbartCredential
 import dev.dimension.flare.model.MicroBlogKey
 import dev.dimension.flare.model.PlatformType
@@ -40,10 +41,12 @@ internal class CbartLoader(
     override suspend fun userById(id: String): UiProfile {
         val cred = currentCredential()
         val displayName = cred?.nickName ?: cred?.userName ?: "妖狐用户 $id"
-        val avatarUrl = cred?.avatarUrl
+        val avatarUrl = cred?.avatarUrl?.let {
+            if (it.startsWith("http")) it else "https://linzijun.app$it"
+        }
         return UiProfile(
-            key = MicroBlogKey(id = id, host = "cbart.net"),
-            handle = UiHandle(raw = "$id@cbart.net", host = "cbart.net"),
+            key = MicroBlogKey(id = id, host = CBART_HOST),
+            handle = UiHandle(raw = "$id@$CBART_HOST", host = CBART_HOST),
             avatar = avatarUrl?.toUiImage(),
             nameInternal = displayName.toUiPlainText(),
             platformType = PlatformType.Cbart,
