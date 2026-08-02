@@ -12,6 +12,8 @@ import dev.dimension.flare.data.network.bilibili.BilibiliService
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
 import dev.dimension.flare.model.PlatformType
+import dev.dimension.flare.data.datasource.microblog.ActionMenu
+import dev.dimension.flare.ui.model.mapper.bilibiliLike
 import dev.dimension.flare.ui.model.ClickEvent
 import dev.dimension.flare.ui.model.UiCard
 import dev.dimension.flare.ui.model.UiHandle
@@ -154,7 +156,14 @@ private fun BilibiliFeedItem.toUiTimelineV2(accountKey: MicroBlogKey): UiTimelin
         contentWarning = null,
         user = user,
         content = UiTranslatableText(original = title.toUiPlainText()),
-        actions = persistentListOf(),
+        actions = persistentListOf(
+            ActionMenu.bilibiliLike(
+                statusKey = statusKey,
+                liked = false,
+                count = stat?.like ?: 0L,
+                accountKey = accountKey,
+            ),
+        ),
         poll = null,
         statusKey = statusKey,
         card = card,
@@ -169,7 +178,7 @@ private fun BilibiliFeedItem.toUiTimelineV2(accountKey: MicroBlogKey): UiTimelin
     )
 }
 
-private fun BilibiliVideoInfo.toUiTimelineV2(accountKey: MicroBlogKey, playUrl: String? = null): UiTimelineV2 {
+internal fun BilibiliVideoInfo.toUiTimelineV2(accountKey: MicroBlogKey, playUrl: String? = null): UiTimelineV2 {
     val statusKey = MicroBlogKey(id = bvid, host = "bilibili.com")
     val userKey = MicroBlogKey(id = ownerMid.toString(), host = "bilibili.com")
     val media = if (pic.isNotEmpty()) {
@@ -204,7 +213,14 @@ private fun BilibiliVideoInfo.toUiTimelineV2(accountKey: MicroBlogKey, playUrl: 
         contentWarning = null,
         user = user,
         content = UiTranslatableText(original = title.toUiPlainText()),
-        actions = persistentListOf(),
+        actions = persistentListOf(
+            ActionMenu.bilibiliLike(
+                statusKey = statusKey,
+                liked = false,
+                count = stat?.like ?: 0L,
+                accountKey = accountKey,
+            ),
+        ),
         poll = null,
         statusKey = statusKey,
         card = card,

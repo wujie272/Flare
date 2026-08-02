@@ -5,7 +5,7 @@ import dev.dimension.flare.data.network.nodeinfo.PlatformDetector
 import dev.dimension.flare.model.PlatformType
 
 internal data object BilibiliPlatformDetector : PlatformDetector {
-    override val priority: Int = 0
+    override val priority: Int = 90
 
     override suspend fun detect(host: String): NodeData? {
         if (host == "bilibili.com" || host == "www.bilibili.com" || host == "m.bilibili.com") {

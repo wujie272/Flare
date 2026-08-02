@@ -25,6 +25,7 @@ public enum class PlatformType {
     Zhihu,
     Deviantart,
     Bilibili,
+    Coolapk,
 }
 
 @Immutable

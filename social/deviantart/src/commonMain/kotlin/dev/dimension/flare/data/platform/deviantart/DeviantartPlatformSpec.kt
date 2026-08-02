@@ -6,6 +6,7 @@ import dev.dimension.flare.data.datasource.deviantart.DeviantartHotLoader
 import dev.dimension.flare.data.datasource.deviantart.DeviantartNewestLoader
 import dev.dimension.flare.data.datasource.deviantart.DeviantartPopularLoader
 import dev.dimension.flare.data.datasource.deviantart.DeviantartFavouritesLoader
+import dev.dimension.flare.data.datasource.deviantart.DeviantartTopicsLoader
 import dev.dimension.flare.data.datasource.microblog.MicroblogDataSource
 import dev.dimension.flare.data.model.IconType
 import dev.dimension.flare.data.model.tab.TimelineSpec
@@ -81,6 +82,17 @@ public data object DeviantartPlatformSpec :
         },
     )
 
+    internal val topicsTimelineSpec = TimelineSpec(
+        id = "deviantart.topics",
+        title = UiStrings.Featured,
+        icon = IconType.Material(UiIcon.Art),
+        serializer = TimelineSpec.AccountBasedData.serializer(),
+        targetId = { it.accountKey.toString() },
+        loaderFactory = accountLoader<DeviantartDataSource, TimelineSpec.AccountBasedData> {
+            DeviantartTopicsLoader(service = service, accountKey = accountKey)
+        },
+    )
+
     internal val favouriteTimelineSpec = TimelineSpec(
         id = "deviantart.favourite",
         title = UiStrings.Favourite,
@@ -102,6 +114,7 @@ public data object DeviantartPlatformSpec :
             hotTimelineSpec,
             popularTimelineSpec,
             newestTimelineSpec,
+            topicsTimelineSpec,
             favouriteTimelineSpec,
         )
 

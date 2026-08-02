@@ -156,6 +156,54 @@ internal class DeviantartService(
         } catch (_: Exception) { DeviantartPage(emptyList(), true) }
     }
 
+    /**
+     * Browse topics — fetch a paginated list of topics with example deviations.
+     * GET /api/v1/oauth2/browse/topics
+     */
+    suspend fun browseTopics(offset: Int = 0, limit: Int = 10): DeviantartPage<DeviantartTopic> {
+        return try {
+            val resp = authClient().get("$DA_API/browse/topics?offset=$offset&limit=$limit")
+            val text = resp.bodyAsText()
+            val root = json.parseToJsonElement(text).jsonObject
+            val results = root["results"]?.jsonArray ?: return DeviantartPage(emptyList(), true)
+            val hasMore = root["has_more"]?.jsonPrimitive?.content?.toBoolean() ?: false
+            val nextOffset = root["next_offset"]?.jsonPrimitive?.content?.toIntOrNull()
+            val topics = results.mapNotNull { element ->
+                val obj = element.jsonObject
+                try {
+                    DeviantartTopic(
+                        name = obj["name"]?.jsonPrimitive?.content ?: "",
+                        canonicalName = obj["canonical_name"]?.jsonPrimitive?.content ?: "",
+                        exampleDeviations = obj["example_deviations"]?.jsonArray?.mapNotNull { parseDeviation(it.jsonObject) } ?: emptyList(),
+                    )
+                } catch (_: Exception) { null }
+            }
+            DeviantartPage(data = topics, isEnd = !hasMore, nextOffset = nextOffset)
+        } catch (_: Exception) { DeviantartPage(emptyList(), true) }
+    }
+
+    /**
+     * Browse top topics — fetch a list of currently trending topics.
+     * GET /api/v1/oauth2/browse/toptopics
+     */
+    suspend fun browseTopTopics(): List<DeviantartTopic> {
+        return try {
+            val resp = authClient().get("$DA_API/browse/toptopics")
+            val text = resp.bodyAsText()
+            val root = json.parseToJsonElement(text).jsonObject
+            root["results"]?.jsonArray?.mapNotNull { element ->
+                val obj = element.jsonObject
+                try {
+                    DeviantartTopic(
+                        name = obj["name"]?.jsonPrimitive?.content ?: "",
+                        canonicalName = obj["canonical_name"]?.jsonPrimitive?.content ?: "",
+                        exampleDeviations = obj["example_deviations"]?.jsonArray?.mapNotNull { parseDeviation(it.jsonObject) } ?: emptyList(),
+                    )
+                } catch (_: Exception) { null }
+            } ?: emptyList()
+        } catch (_: Exception) { emptyList() }
+    }
+
     suspend fun deviationDetail(deviationId: String): DeviantartDeviationDetail? {
         return try {
             val resp = authClient().get("$DA_API/deviation/$deviationId")
@@ -762,6 +810,12 @@ internal data class DeviantartNotification(
     val body: String,
     val ts: Long = 0,
     val fromUsername: String? = null,
+)
+
+internal data class DeviantartTopic(
+    val name: String = "",
+    val canonicalName: String = "",
+    val exampleDeviations: List<DeviantartDeviation> = emptyList(),
 )
 
 internal data class DeviantartPage<T>(

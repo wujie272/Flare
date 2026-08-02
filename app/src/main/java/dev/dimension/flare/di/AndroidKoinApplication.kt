@@ -6,6 +6,7 @@ import dev.dimension.flare.data.platform.ToutiaoPlatformSpec
 import dev.dimension.flare.data.platform.deviantart.DeviantartPlatformSpec
 import dev.dimension.flare.data.platform.bilibili.BilibiliPlatformSpec
 import dev.dimension.flare.data.platform.ZhihuPlatformSpec
+import dev.dimension.flare.data.platform.CoolapkPlatformSpec
 import dev.dimension.flare.data.platform.BlueskyPlatformSpec
 import dev.dimension.flare.data.platform.FanboxPlatformSpec
 import dev.dimension.flare.data.platform.MastodonPlatformSpec
@@ -45,6 +46,7 @@ internal fun runtimeData(allRssTimelineLoaderFactory: AllRssTimelineLoaderFactor
                 DeviantartPlatformSpec,
                 BilibiliPlatformSpec,
                 ZhihuPlatformSpec,
+                CoolapkPlatformSpec,
                 PixivPlatformSpec,
                 XqtPlatformSpec,
                 VvoPlatformSpec,

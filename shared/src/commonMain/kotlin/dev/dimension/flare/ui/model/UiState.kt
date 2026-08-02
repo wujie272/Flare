@@ -214,7 +214,7 @@ public fun <T : Any> CacheableState<T>.toUi(): UiState<T> =
         when (val state = refreshState) {
             is LoadState.Error -> UiState.Error(state.error)
             LoadState.Loading -> UiState.Loading()
-            is LoadState.NotLoading -> UiState.Error(IllegalStateException("Data is null"))
+            is LoadState.NotLoading -> UiState.Loading()  // wait for cache to emit
         }
     }
 
@@ -226,7 +226,7 @@ public fun <T : Any> CacheData<T>.toUi(): Flow<UiState<T>> =
             when (refresh) {
                 is LoadState.Error -> UiState.Error(refresh.error)
                 LoadState.Loading -> UiState.Loading()
-                is LoadState.NotLoading -> UiState.Error(IllegalStateException("Data is null"))
+                is LoadState.NotLoading -> UiState.Loading()  // wait for cache to emit
             }
         }
     }
