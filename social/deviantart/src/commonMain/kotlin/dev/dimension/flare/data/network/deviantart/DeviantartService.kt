@@ -543,7 +543,7 @@ internal class DeviantartService(
     suspend fun fetchHomeFeed(page: Int = 0): DeviantartPage<DeviantartDeviation> {
         // 确保有 session cookies
         val cred = currentCredential()
-        if (cred?.sessionCookies == null || cred?.csrfToken == null) {
+        if (cred?.sessionCookies == null || cred.csrfToken == null) {
             val newCred = fetchSessionCookies()
             if (newCred != null) {
                 cachedCredential = newCred
