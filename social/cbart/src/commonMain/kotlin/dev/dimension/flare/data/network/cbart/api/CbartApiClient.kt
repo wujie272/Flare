@@ -199,6 +199,7 @@ internal class CbartApiClient(
         "X-Requested-With" to "XMLHttpRequest",
         "Accept" to "application/json, text/javascript, */*; q=0.01",
         "Accept-Language" to "zh-CN,en;q=0.9",
+        "User-Agent" to "Mozilla/5.0 (Linux; Android 16; Redmi K80 Pro)",
     )
 
     private suspend fun heartbeatSession(): CbartCredential? {
