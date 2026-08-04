@@ -66,7 +66,7 @@ public data class CoolapkUser(
     val username: String = "",
     @SerialName("userAvatar")
     val avatar: String = "",
-    @SerialName("verifyStatus")
+    @SerialName("verify_status")
     val verified: Int = 0,
     @SerialName("level")
     val level: Int = 0,

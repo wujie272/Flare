@@ -28,7 +28,7 @@ internal class CoolapkLoader(
     PostLoader {
     override val supportedTypes: Set<RelationActionType> = emptySet()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     // ==================== UserLoader ====================
 
