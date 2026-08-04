@@ -97,6 +97,11 @@ internal class DeviantartDataSource(
                 icon = IconType.Material(UiIcon.Search),
                 title = UiText.Raw("Discover"),
             ),
+            topicsTimelineSpec.galleryCandidate(
+                data = TimelineSpec.AccountBasedData(accountKey),
+                icon = IconType.Material(UiIcon.Art),
+                title = UiText.Raw("Topics"),
+            ),
         )
     }
 
@@ -722,6 +727,29 @@ internal class DeviantartFavouritesLoader(
         val result = service.userFavourites(username, offset = offset, limit = pageSize)
         return PagingResult(
             data = result.data.map { it.toUiTimelineItem(accountKey) },
+            endOfPaginationReached = result.isEnd,
+            nextKey = result.nextOffset?.toString(),
+        )
+    }
+}
+
+internal class DeviantartTopicsLoader(
+    private val service: DeviantartService,
+    private val accountKey: MicroBlogKey,
+) : CacheableRemoteLoader<UiTimelineV2> {
+    override val pagingKey: String = "deviantart_topics_$accountKey"
+    override val supportPrepend: Boolean = false
+
+    override suspend fun load(pageSize: Int, request: PagingRequest): PagingResult<UiTimelineV2> {
+        if (request is PagingRequest.Prepend) return PagingResult(endOfPaginationReached = true)
+        val offset = (request as? PagingRequest.Append)?.nextKey?.toIntOrNull() ?: 0
+        val result = service.browseTopics(offset = offset, limit = pageSize.coerceAtMost(10))
+        // Flatten example deviations from all topics into a single timeline
+        val items = result.data.flatMap { topic ->
+            topic.exampleDeviations.map { it.toUiTimelineItem(accountKey) }
+        }
+        return PagingResult(
+            data = items,
             endOfPaginationReached = result.isEnd,
             nextKey = result.nextOffset?.toString(),
         )
