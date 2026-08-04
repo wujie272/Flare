@@ -818,7 +818,7 @@ internal data class DeviantartTopic(
     val exampleDeviations: List<DeviantartDeviation> = emptyList(),
 )
 
-internal data class DeviantartPageT>(
+internal data class DeviantartPage<T>(
     val data: List<T>,
     val isEnd: Boolean = true,
     val nextOffset: Int? = null,
