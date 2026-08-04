@@ -396,6 +396,17 @@ internal class DeviantartDataSource(
         },
     )
 
+    internal val topicsTimelineSpec = TimelineSpec(
+        id = "deviantart.topics",
+        title = UiStrings.Featured,
+        icon = IconType.Material(UiIcon.Art),
+        serializer = TimelineSpec.AccountBasedData.serializer(),
+        targetId = { it.accountKey.toString() },
+        loaderFactory = dev.dimension.flare.data.model.tab.accountLoader<DeviantartDataSource, TimelineSpec.AccountBasedData> {
+            DeviantartTopicsLoader(service = service, accountKey = accountKey)
+        },
+    )
+
     internal val favouriteTimelineSpec = TimelineSpec(
         id = "deviantart.favourite",
         title = UiStrings.Favourite,
