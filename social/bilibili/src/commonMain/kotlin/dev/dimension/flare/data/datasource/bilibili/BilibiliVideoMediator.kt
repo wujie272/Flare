@@ -56,7 +56,7 @@ internal class BilibiliVideoDetailMediator(
             // 获取播放地址
             val playUrl: String? = try {
                 if (cid > 0) {
-                    service.getPlayUrlLegacy(bvid = bvid, cid = cid)
+                    service.getPlayUrl(bvid = bvid, cid = cid)
                 } else {
                     null
                 }

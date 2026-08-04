@@ -252,38 +252,42 @@ internal class BilibiliService(
 
     /** 获取视频播放地址（从 playurl API 获取 durl 中的第一个视频地址） */
     suspend fun getPlayUrl(bvid: String, cid: Long, qn: Int = 80): String? {
-        val (imgKey, subKey) = getWbiKeys()
-        val params = signWbi(
-            params = mapOf(
-                "bvid" to bvid,
-                "cid" to cid.toString(),
-                "qn" to qn.toString(),
-                "fnval" to "16",  // 16=MP4, 有音视频
-                "fnver" to "0",
-                "fourk" to "1",
-                "platform" to "web",
-                "high_quality" to "1",
-            ),
-            imgKey = imgKey,
-            subKey = subKey,
-        )
-        val response = httpClient().get("$API_BASE/x/player/wbi/playurl") {
-            header("Referer", "https://www.bilibili.com/video/$bvid")
-            params.forEach { (key, value) -> parameter(key, value) }
-        }.bodyAsText()
-        val obj = json.parseToJsonElement(response).jsonObject
-        if (obj["code"]?.jsonPrimitive?.content != "0") return null
-        val data = obj["data"]?.jsonObject ?: return null
-        // 优先用 durl（mp4 直链）
-        val durl = data["durl"]?.jsonArray
-        if (durl != null && durl.isNotEmpty()) {
-            return durl[0].jsonObject["url"]?.jsonPrimitive?.content
-        }
-        // 兜底：dash 第一个视频流
-        val dash = data["dash"]?.jsonObject
-        val video = dash?.get("video")?.jsonArray
-        if (video != null && video.isNotEmpty()) {
-            return video[0].jsonObject["base_url"]?.jsonPrimitive?.content
+        val qualities = listOf(80, 64, 32, 16)
+        val startIdx = qualities.indexOfFirst { it <= qn }.coerceAtLeast(0)
+
+        for (quality in qualities.subList(startIdx, qualities.size)) {
+            try {
+                val (imgKey, subKey) = getWbiKeys()
+                val params = signWbi(
+                    params = mapOf(
+                        "bvid" to bvid,
+                        "cid" to cid.toString(),
+                        "qn" to quality.toString(),
+                        "fnval" to "4048",
+                        "fnver" to "0",
+                        "fourk" to "1",
+                        "platform" to "web",
+                        "high_quality" to "1",
+                    ),
+                    imgKey = imgKey,
+                    subKey = subKey,
+                )
+                val response = httpClient().get("$API_BASE/x/player/wbi/playurl") {
+                    header("Referer", "https://www.bilibili.com/video/$bvid")
+                    params.forEach { (key, value) -> parameter(key, value) }
+                }.bodyAsText()
+                val obj = json.parseToJsonElement(response).jsonObject
+                if (obj["code"]?.jsonPrimitive?.content != "0") continue
+
+                val data = obj["data"]?.jsonObject ?: continue
+                val durl = data["durl"]?.jsonArray
+                if (durl != null && durl.isNotEmpty()) {
+                    val url = durl[0].jsonObject["url"]?.jsonPrimitive?.content
+                    if (!url.isNullOrBlank()) return url
+                }
+            } catch (_: Exception) {
+                continue
+            }
         }
         return null
     }
