@@ -1,8 +1,7 @@
 package dev.dimension.flare.data.network.coolapk
 
 import dev.dimension.flare.data.network.nodeinfo.NodeData
-import dev.dimension.flare.data.network.nodeinfo.PlatformDetector
-import dev.dimension.flare.model.PlatformType
+import dev.dimension.flare.ui.presenter.login.PlatformDetector
 
 internal const val COOLAPK_HOST = "coolapk.com"
 
@@ -18,8 +17,8 @@ internal data object CoolapkPlatformDetector : PlatformDetector {
         }
         return NodeData(
             host = COOLAPK_HOST,
-            platformType = PlatformType.Coolapk,
-            software = PlatformType.Coolapk.name,
+            platformId = "Coolapk",
+            software = "Coolapk",
             compatibleMode = false,
         )
     }

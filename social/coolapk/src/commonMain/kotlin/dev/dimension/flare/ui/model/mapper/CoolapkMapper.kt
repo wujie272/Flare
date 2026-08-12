@@ -7,7 +7,6 @@ import dev.dimension.flare.data.network.coolapk.CoolapkNotificationItem
 import dev.dimension.flare.data.network.coolapk.CoolapkUser
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
 import dev.dimension.flare.ui.model.ClickEvent
 import dev.dimension.flare.ui.model.TranslationDisplayState
 import dev.dimension.flare.ui.model.UiCard
@@ -45,7 +44,7 @@ internal fun CoolapkUser.render(accountKey: MicroBlogKey): UiProfile {
                 null
             },
         nameInternal = username.toUiPlainText(),
-        platformType = PlatformType.Coolapk,
+        platformId = "Coolapk",
         clickEvent =
             ClickEvent.Deeplink(
                 DeeplinkRoute.Profile.User(
@@ -101,7 +100,7 @@ internal fun CoolapkFeedItem.render(accountKey: MicroBlogKey): UiTimelineV2 {
                         null
                     },
                 nameInternal = username.toUiPlainText(),
-                platformType = PlatformType.Coolapk,
+                platformId = "Coolapk",
                 clickEvent =
                     ClickEvent.Deeplink(
                         DeeplinkRoute.Profile.User(
@@ -151,7 +150,7 @@ internal fun CoolapkFeedItem.render(accountKey: MicroBlogKey): UiTimelineV2 {
         }
 
     return UiTimelineV2.Post(
-        platformType = PlatformType.Coolapk,
+        platformId = "Coolapk",
         images = images,
         sensitive = false,
         contentWarning = null,
@@ -226,7 +225,7 @@ internal fun CoolapkNotificationItem.render(accountKey: MicroBlogKey): UiTimelin
                         null
                     },
                 nameInternal = fromUsername.toUiPlainText(),
-                platformType = PlatformType.Coolapk,
+                platformId = "Coolapk",
                 clickEvent =
                     ClickEvent.Deeplink(
                         DeeplinkRoute.Profile.User(
@@ -255,7 +254,7 @@ internal fun CoolapkNotificationItem.render(accountKey: MicroBlogKey): UiTimelin
     val cleanNote = note.replace(Regex("<[^>]*>"), "")
 
     return UiTimelineV2.Post(
-        platformType = PlatformType.Coolapk,
+        platformId = "Coolapk",
         images = persistentListOf<UiMedia>(),
         sensitive = false,
         contentWarning = null,

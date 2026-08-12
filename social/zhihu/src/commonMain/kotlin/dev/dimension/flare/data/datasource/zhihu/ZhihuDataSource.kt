@@ -7,7 +7,6 @@ import dev.dimension.flare.data.datasource.microblog.ComposeDataSource
 import dev.dimension.flare.data.datasource.microblog.ComposeType
 import dev.dimension.flare.data.datasource.microblog.DatabaseUpdater
 import dev.dimension.flare.data.repository.LoginExpiredException
-import dev.dimension.flare.model.PlatformType
 import dev.dimension.flare.data.datasource.microblog.NotificationFilter
 import dev.dimension.flare.data.datasource.microblog.NotificationTimelineDataSource
 import dev.dimension.flare.data.datasource.microblog.PostEvent
@@ -250,7 +249,7 @@ internal class ZhihuDataSource(
         if (!service.checkSessionValid()) {
             throw LoginExpiredException(
                 accountKey = accountKey,
-                platformType = PlatformType.Zhihu,
+                platformId = "Zhihu",
             )
         }
     }

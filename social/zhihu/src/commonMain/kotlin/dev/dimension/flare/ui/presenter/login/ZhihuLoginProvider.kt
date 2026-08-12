@@ -2,15 +2,14 @@ package dev.dimension.flare.ui.presenter.login
 
 import dev.dimension.flare.data.network.zhihu.ZhihuPlatformDetector
 import dev.dimension.flare.data.network.zhihu.ZhihuService
-import dev.dimension.flare.data.network.nodeinfo.PlatformDetector
+import dev.dimension.flare.ui.presenter.login.PlatformDetector
 import dev.dimension.flare.data.platform.ZHIHU_HOST
 import dev.dimension.flare.data.platform.ZhihuCredential
 import dev.dimension.flare.data.platform.ZhihuPlatformSpec
 import dev.dimension.flare.data.repository.AccountService
 import dev.dimension.flare.di.koinInject
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
-import dev.dimension.flare.model.PlatformTypeMetadata
+import dev.dimension.flare.model.PlatformMetadata
 import dev.dimension.flare.model.RecommendedInstance
 import dev.dimension.flare.ui.model.UiAccount
 import dev.dimension.flare.ui.model.UiInstance
@@ -28,8 +27,8 @@ private const val LOGIN_ACTION = "login"
 private const val ZHIHU_LOGIN_URL = "https://www.zhihu.com/signin"
 
 public data object ZhihuLoginProvider : LoginPlatformProvider {
-    override val platformType: PlatformType = PlatformType.Zhihu
-    override val metadata: PlatformTypeMetadata get() = ZhihuPlatformSpec.metadata
+    override val platformId: String = "Zhihu"
+    override val metadata: PlatformMetadata get() = ZhihuPlatformSpec.metadata
     override val detector: PlatformDetector = ZhihuPlatformDetector
     override val methods: List<LoginMethodSpec> = listOf(
         LoginMethodSpec(type = LoginMethodType.WebCookie, title = UiStrings.WebCookieLogin),
@@ -43,7 +42,7 @@ public data object ZhihuLoginProvider : LoginPlatformProvider {
                 description = "中文互联网问答社区",
                 iconUrl = null,
                 domain = ZHIHU_HOST,
-                type = platformType,
+                platformId = platformId,
                 bannerUrl = null,
                 usersCount = 0,
             ),
@@ -51,7 +50,7 @@ public data object ZhihuLoginProvider : LoginPlatformProvider {
         ),
     )
     override suspend fun instanceMetadata(host: String): UiInstanceMetadata =
-        throw UnsupportedOperationException("${platformType.name} metadata is not supported yet")
+        throw UnsupportedOperationException("${platformId} metadata is not supported yet")
 
     override fun createHandler(context: LoginContext): LoginMethodHandler {
         require(context.methodType == LoginMethodType.WebCookie) { "Unsupported Zhihu login method: ${context.methodType}" }
@@ -118,7 +117,7 @@ private class ZhihuWebCookieLoginHandler(
 
             context.requireReloginAccount(accountKey)
             val addJob = accountService.addAccount(
-                account = UiAccount(accountKey = accountKey, platformType = PlatformType.Zhihu),
+                account = UiAccount(accountKey = accountKey, platformId = "Zhihu"),
                 credential = verifiedCredential,
                 serializer = ZhihuCredential.serializer(),
             )

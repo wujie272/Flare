@@ -2,15 +2,14 @@ package dev.dimension.flare.ui.presenter.login
 
 import dev.dimension.flare.data.network.toutiao.ToutiaoPlatformDetector
 import dev.dimension.flare.data.network.toutiao.ToutiaoService
-import dev.dimension.flare.data.network.nodeinfo.PlatformDetector
+import dev.dimension.flare.ui.presenter.login.PlatformDetector
 import dev.dimension.flare.data.platform.TOUTIAO_HOST
 import dev.dimension.flare.data.platform.ToutiaoCredential
 import dev.dimension.flare.data.platform.ToutiaoPlatformSpec
 import dev.dimension.flare.data.repository.AccountService
 import dev.dimension.flare.di.koinInject
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
-import dev.dimension.flare.model.PlatformTypeMetadata
+import dev.dimension.flare.model.PlatformMetadata
 import dev.dimension.flare.model.RecommendedInstance
 import dev.dimension.flare.ui.model.UiAccount
 import dev.dimension.flare.ui.model.UiInstance
@@ -31,8 +30,8 @@ private const val LOGIN_ACTION = "login"
 private const val TOUTIAO_LOGIN_URL = "https://m.toutiao.com/"
 
 public data object ToutiaoLoginProvider : LoginPlatformProvider {
-    override val platformType: PlatformType = PlatformType.Toutiao
-    override val metadata: PlatformTypeMetadata get() = ToutiaoPlatformSpec.metadata
+    override val platformId: String = "Toutiao"
+    override val metadata: PlatformMetadata get() = ToutiaoPlatformSpec.metadata
     override val detector: PlatformDetector = ToutiaoPlatformDetector
     override val methods: List<LoginMethodSpec> = listOf(
         LoginMethodSpec(type = LoginMethodType.WebCookie, title = UiStrings.WebCookieLogin),
@@ -46,7 +45,7 @@ public data object ToutiaoLoginProvider : LoginPlatformProvider {
                 description = "ByteDance news aggregation platform",
                 iconUrl = null,
                 domain = TOUTIAO_HOST,
-                type = platformType,
+                platformId = platformId,
                 bannerUrl = null,
                 usersCount = 0,
             ),
@@ -54,7 +53,7 @@ public data object ToutiaoLoginProvider : LoginPlatformProvider {
         ),
     )
     override suspend fun instanceMetadata(host: String): UiInstanceMetadata =
-        throw UnsupportedOperationException("${platformType.name} metadata is not supported yet")
+        throw UnsupportedOperationException("${platformId} metadata is not supported yet")
 
     override fun createHandler(context: LoginContext): LoginMethodHandler {
         require(context.methodType == LoginMethodType.WebCookie) { "Unsupported Toutiao login method: ${context.methodType}" }
@@ -115,7 +114,7 @@ private class ToutiaoWebCookieLoginHandler(
             )
             context.requireReloginAccount(accountKey)
             accountService.addAccount(
-                account = UiAccount(accountKey = accountKey, platformType = PlatformType.Toutiao),
+                account = UiAccount(accountKey = accountKey, platformId = "Toutiao"),
                 credential = verifiedCredential,
                 serializer = ToutiaoCredential.serializer(),
             )

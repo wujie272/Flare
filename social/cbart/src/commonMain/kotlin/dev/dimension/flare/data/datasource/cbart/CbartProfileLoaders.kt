@@ -9,7 +9,6 @@ import dev.dimension.flare.data.network.cbart.CbartService
 import dev.dimension.flare.data.platform.CBART_HOST
 import dev.dimension.flare.data.platform.CbartCredential
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
 import dev.dimension.flare.ui.model.*
 import dev.dimension.flare.ui.render.toUiPlainText
 import kotlinx.coroutines.flow.Flow
@@ -49,7 +48,7 @@ internal class CbartLoader(
             handle = UiHandle(raw = "$id@$CBART_HOST", host = CBART_HOST),
             avatar = avatarUrl?.toUiImage(),
             nameInternal = displayName.toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null, description = null,
             matrices = UiProfile.Matrices(0, 0, 0),

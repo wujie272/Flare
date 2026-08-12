@@ -12,7 +12,6 @@ import dev.dimension.flare.data.datasource.microblog.paging.PagingResult
 import dev.dimension.flare.data.datasource.microblog.paging.RemoteLoader
 import dev.dimension.flare.data.network.zhihu.ZhihuService
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import dev.dimension.flare.ui.model.ClickEvent
@@ -61,7 +60,7 @@ internal class ZhihuLoader(
             handle = UiHandle(raw = "$userName@www.zhihu.com", host = "www.zhihu.com"),
             avatar = avatarUrl?.let { dev.dimension.flare.ui.model.UiMedia.Image(url = it, previewUrl = it, description = userName, height = 0f, width = 0f, sensitive = false) },
             nameInternal = userName.toUiPlainText(),
-            platformType = PlatformType.Zhihu,
+            platformId = "Zhihu",
             clickEvent = ClickEvent.Noop,
             banner = null,
             description = null,
@@ -79,7 +78,7 @@ internal class ZhihuLoader(
             handle = UiHandle(raw = "$userName@www.zhihu.com", host = "www.zhihu.com"),
             avatar = avatarUrl?.let { dev.dimension.flare.ui.model.UiMedia.Image(url = it, previewUrl = it, description = userName, height = 0f, width = 0f, sensitive = false) },
             nameInternal = userName.toUiPlainText(),
-            platformType = PlatformType.Zhihu,
+            platformId = "Zhihu",
             clickEvent = ClickEvent.Noop,
             banner = null,
             description = null,

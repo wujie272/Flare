@@ -10,8 +10,7 @@ import dev.dimension.flare.model.MicroBlogKey
 import dev.dimension.flare.model.PlatformDataSourceContext
 import dev.dimension.flare.model.PlatformDeepLink
 import dev.dimension.flare.model.PlatformSpec
-import dev.dimension.flare.model.PlatformType
-import dev.dimension.flare.model.PlatformTypeMetadata
+import dev.dimension.flare.model.PlatformMetadata
 import dev.dimension.flare.ui.model.UiIcon
 import dev.dimension.flare.ui.model.UiStrings
 import dev.dimension.flare.ui.model.asType
@@ -29,9 +28,9 @@ public const val ZHIHU_HOST: String = "www.zhihu.com"
 public data object ZhihuPlatformSpec :
     PlatformSpec,
     LoginPlatformProvider by ZhihuLoginProvider {
-    override val type: PlatformType = PlatformType.Zhihu
-    override val metadata: PlatformTypeMetadata =
-        PlatformTypeMetadata(
+    override val platformId: String = "Zhihu"
+    override val metadata: PlatformMetadata =
+        PlatformMetadata(
             displayName = "知乎",
             icon = UiIcon.Zhihu,
         )

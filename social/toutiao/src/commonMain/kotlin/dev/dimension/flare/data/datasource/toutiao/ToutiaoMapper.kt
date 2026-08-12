@@ -5,7 +5,6 @@ import dev.dimension.flare.data.network.toutiao.ToutiaoHotItem
 import dev.dimension.flare.data.platform.TOUTIAO_HOST
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
 import dev.dimension.flare.ui.model.ClickEvent
 import dev.dimension.flare.ui.model.UiCard
 import dev.dimension.flare.ui.model.UiHandle
@@ -42,7 +41,7 @@ internal fun ToutiaoHotItem.toUiTimelineItem(
     }
 
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Toutiao,
+        platformId = "Toutiao",
         images = persistentListOf(),
         sensitive = false,
         contentWarning = null,
@@ -51,7 +50,7 @@ internal fun ToutiaoHotItem.toUiTimelineItem(
             handle = UiHandle(raw = "今日头条", host = TOUTIAO_HOST),
             avatar = null as UiMedia.Image?,
             nameInternal = "今日头条".toUiPlainText(),
-            platformType = PlatformType.Toutiao,
+            platformId = "Toutiao",
             clickEvent = ClickEvent.Noop,
             banner = null as UiMedia.Image?,
             description = contentText.toUiPlainText(),

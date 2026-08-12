@@ -11,7 +11,6 @@ import dev.dimension.flare.data.datasource.microblog.paging.PagingResult
 import dev.dimension.flare.data.network.bilibili.BilibiliService
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
 import dev.dimension.flare.data.datasource.microblog.ActionMenu
 import dev.dimension.flare.ui.model.mapper.bilibiliLike
 import dev.dimension.flare.ui.model.ClickEvent
@@ -137,7 +136,7 @@ private fun BilibiliFeedItem.toUiTimelineV2(accountKey: MicroBlogKey): UiTimelin
         handle = UiHandle(raw = ownerName, host = "bilibili.com"),
         avatar = UiMedia.Image(url = ownerFace, previewUrl = ownerFace, description = ownerName, width = 0f, height = 0f, sensitive = false),
         nameInternal = ownerName.toUiPlainText(),
-        platformType = PlatformType.Bilibili,
+        platformId = "Bilibili",
         clickEvent = ClickEvent.Deeplink(
             dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
                 accountType = AccountType.Specific(accountKey),
@@ -150,7 +149,7 @@ private fun BilibiliFeedItem.toUiTimelineV2(accountKey: MicroBlogKey): UiTimelin
     val card = UiCard(media = media.firstOrNull(), title = title, description = null, url = "https://www.bilibili.com/video/$bvid")
 
     return UiTimelineV2.Post(
-        platformType = PlatformType.Bilibili,
+        platformId = "Bilibili",
         images = media.toImmutableList(),
         sensitive = false,
         contentWarning = null,
@@ -194,7 +193,7 @@ internal fun BilibiliVideoInfo.toUiTimelineV2(accountKey: MicroBlogKey, playUrl:
         handle = UiHandle(raw = ownerName, host = "bilibili.com"),
         avatar = UiMedia.Image(url = ownerFace, previewUrl = ownerFace, description = ownerName, width = 0f, height = 0f, sensitive = false),
         nameInternal = ownerName.toUiPlainText(),
-        platformType = PlatformType.Bilibili,
+        platformId = "Bilibili",
         clickEvent = ClickEvent.Deeplink(
             dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
                 accountType = AccountType.Specific(accountKey),
@@ -207,7 +206,7 @@ internal fun BilibiliVideoInfo.toUiTimelineV2(accountKey: MicroBlogKey, playUrl:
     val card = UiCard(media = media.firstOrNull(), title = title, description = description, url = "https://www.bilibili.com/video/$bvid")
 
     return UiTimelineV2.Post(
-        platformType = PlatformType.Bilibili,
+        platformId = "Bilibili",
         images = media.toImmutableList(),
         sensitive = false,
         contentWarning = null,
@@ -240,7 +239,7 @@ private fun BilibiliUser.toUiProfile(accountKey: MicroBlogKey): UiProfile = UiPr
     handle = UiHandle(raw = name, host = "bilibili.com"),
     avatar = UiMedia.Image(url = face, previewUrl = face, description = name, width = 0f, height = 0f, sensitive = false),
     nameInternal = name.toUiPlainText(),
-    platformType = PlatformType.Bilibili,
+    platformId = "Bilibili",
     clickEvent = ClickEvent.Deeplink(
         dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
             accountType = AccountType.Specific(accountKey),
@@ -400,7 +399,7 @@ private fun parseDynamicItem(obj: kotlinx.serialization.json.JsonObject, account
         handle = UiHandle(raw = uname, host = "bilibili.com"),
         avatar = if (face.isNotEmpty()) UiMedia.Image(url = face, previewUrl = face, description = uname, width = 0f, height = 0f, sensitive = false) else null,
         nameInternal = uname.toUiPlainText(),
-        platformType = PlatformType.Bilibili,
+        platformId = "Bilibili",
         clickEvent = ClickEvent.Deeplink(
             dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
                 accountType = AccountType.Specific(accountKey),
@@ -434,7 +433,7 @@ private fun parseDynamicItem(obj: kotlinx.serialization.json.JsonObject, account
     val contentText = if (desc.isNotEmpty()) desc else title
 
     UiTimelineV2.Post(
-        platformType = PlatformType.Bilibili,
+        platformId = "Bilibili",
         images = media.toImmutableList(),
         sensitive = false,
         contentWarning = null,
@@ -567,7 +566,7 @@ private fun BilibiliComment.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
             UiMedia.Image(url = avatar, previewUrl = avatar, description = uname, width = 0f, height = 0f, sensitive = false)
         } else null,
         nameInternal = uname.toUiPlainText(),
-        platformType = PlatformType.Bilibili,
+        platformId = "Bilibili",
         clickEvent = ClickEvent.Deeplink(
             dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
                 accountType = AccountType.Specific(accountKey),
@@ -577,7 +576,7 @@ private fun BilibiliComment.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
         banner = null, description = null, matrices = UiProfile.Matrices(0, 0, 0), mark = persistentListOf(), bottomContent = null,
     )
     return UiTimelineV2.Post(
-        platformType = PlatformType.Bilibili,
+        platformId = "Bilibili",
         images = persistentListOf(),
         sensitive = false,
         contentWarning = null,

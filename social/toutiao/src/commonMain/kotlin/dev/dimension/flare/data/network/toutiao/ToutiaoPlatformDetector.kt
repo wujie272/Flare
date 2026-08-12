@@ -1,8 +1,7 @@
 package dev.dimension.flare.data.network.toutiao
 
 import dev.dimension.flare.data.network.nodeinfo.NodeData
-import dev.dimension.flare.data.network.nodeinfo.PlatformDetector
-import dev.dimension.flare.model.PlatformType
+import dev.dimension.flare.ui.presenter.login.PlatformDetector
 
 internal const val TOUTIAO_HOST = "www.toutiao.com"
 
@@ -14,8 +13,8 @@ internal data object ToutiaoPlatformDetector : PlatformDetector {
         }
         return NodeData(
             host = TOUTIAO_HOST,
-            platformType = PlatformType.Toutiao,
-            software = PlatformType.Toutiao.name,
+            platformId = "Toutiao",
+            software = "Toutiao",
             compatibleMode = false,
         )
     }

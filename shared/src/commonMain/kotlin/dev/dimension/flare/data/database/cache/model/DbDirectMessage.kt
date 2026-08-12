@@ -4,9 +4,8 @@ import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 import androidx.room3.Index
 import androidx.room3.PrimaryKey
-import dev.dimension.flare.model.DbAccountType
+import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
 import dev.dimension.flare.ui.model.UiDMItem
 import dev.dimension.flare.ui.model.UiDMRoom
 
@@ -22,7 +21,7 @@ import dev.dimension.flare.ui.model.UiDMRoom
     ],
 )
 internal data class DbDirectMessageTimeline(
-    val accountType: DbAccountType,
+    val accountType: AccountType,
     val roomKey: MicroBlogKey,
     val sortId: Long,
     val unreadCount: Long,
@@ -36,7 +35,7 @@ internal data class DbDirectMessageTimeline(
 internal data class DbMessageRoom(
     @PrimaryKey
     val roomKey: MicroBlogKey,
-    val platformType: PlatformType,
+    val platformId: String,
     val messageKey: MicroBlogKey?,
 )
 

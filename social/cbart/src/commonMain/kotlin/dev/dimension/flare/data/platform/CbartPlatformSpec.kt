@@ -10,10 +10,8 @@ import dev.dimension.flare.model.MicroBlogKey
 import dev.dimension.flare.model.PlatformDataSourceContext
 import dev.dimension.flare.model.PlatformDeepLink
 import dev.dimension.flare.model.PlatformSpec
-import dev.dimension.flare.model.PlatformType
-import dev.dimension.flare.model.PlatformTypeMetadata
+import dev.dimension.flare.model.PlatformMetadata
 import dev.dimension.flare.ui.model.UiIcon
-
 import dev.dimension.flare.ui.model.UiStrings
 import dev.dimension.flare.ui.model.asType
 import dev.dimension.flare.ui.presenter.login.CbartLoginProvider
@@ -29,9 +27,9 @@ public const val CBART_HOST: String = "cbart.net"
 public data object CbartPlatformSpec :
     PlatformSpec,
     LoginPlatformProvider by CbartLoginProvider {
-    override val type: PlatformType = PlatformType.Cbart
-    override val metadata: PlatformTypeMetadata =
-        PlatformTypeMetadata(
+    override val platformId: String = "Cbart"
+    override val metadata: PlatformMetadata =
+        PlatformMetadata(
             displayName = "妖狐吧",
             icon = UiIcon.Cbart,
         )

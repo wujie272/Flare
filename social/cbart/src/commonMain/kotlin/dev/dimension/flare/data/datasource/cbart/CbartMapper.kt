@@ -8,7 +8,6 @@ import dev.dimension.flare.data.network.cbart.api.*
 import dev.dimension.flare.data.platform.CBART_HOST
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
 import dev.dimension.flare.ui.model.ClickEvent
 import dev.dimension.flare.ui.route.DeeplinkRoute
 import dev.dimension.flare.ui.model.UiHandle
@@ -41,7 +40,7 @@ internal fun LzjFuliResponse.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
         message?.let { append("\n$it") }
     }
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Cbart,
+        platformId = "Cbart",
         images = persistentListOf(),
         sensitive = false,
         contentWarning = null,
@@ -87,7 +86,7 @@ internal fun LzjArticleItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
     }
 
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Cbart,
+        platformId = "Cbart",
         images = images,
         sensitive = false,
         contentWarning = UiTranslatableText("📢 公告".toUiPlainText()),
@@ -96,7 +95,7 @@ internal fun LzjArticleItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
             handle = UiHandle(raw = displayName, host = CBART_HOST),
             avatar = null,
             nameInternal = displayName.toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null, description = null,
             matrices = UiProfile.Matrices(0, 0, 0),
@@ -137,7 +136,7 @@ internal fun LzjPlaylistItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
     }
 
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Cbart,
+        platformId = "Cbart",
         images = persistentListOf(),
         sensitive = true,
         contentWarning = UiTranslatableText(contentWarning.toUiPlainText()),
@@ -146,7 +145,7 @@ internal fun LzjPlaylistItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
             handle = UiHandle(raw = ownerName, host = CBART_HOST),
             avatar = avatarUrl?.toUiImage(),
             nameInternal = ownerName.toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null, description = null,
             matrices = UiProfile.Matrices(0, 0, 0),
@@ -192,7 +191,7 @@ internal fun LzjPlaylistItem.toGalleryDetail(
             handle = UiHandle(raw = ownerName, host = CBART_HOST),
             avatar = avatarFullUrl?.toUiImage(),
             nameInternal = ownerName.toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null, description = null,
             matrices = UiProfile.Matrices(0, 0, 0),
@@ -230,7 +229,7 @@ internal fun LzjVideoListItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
     val priceDesc = priceDesc ?: if ((price ?: 0) > 0) "$price 金币" else if ((priceDiamond ?: 0) > 0) "$priceDiamond 钻石" else "免费"
 
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Cbart,
+        platformId = "Cbart",
         images = imageUrls.toImmutableList(),
         sensitive = true,
         contentWarning = UiTranslatableText(
@@ -245,7 +244,7 @@ internal fun LzjVideoListItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
             handle = UiHandle(raw = ownerName, host = CBART_HOST),
             avatar = ownerAvatar?.toUiImage(),
             nameInternal = ownerName.toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null, description = null,
             matrices = UiProfile.Matrices(0, 0, 0),
@@ -297,7 +296,7 @@ internal fun LzjVideoListItem.toGalleryDetail(
             handle = UiHandle(raw = "用户 #$uid", host = CBART_HOST),
             avatar = null,
             nameInternal = "用户 #$uid".toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null, description = null,
             matrices = UiProfile.Matrices(0, 0, 0),
@@ -343,7 +342,7 @@ internal fun LzjVideoDetailItem.toGalleryDetail(
             handle = UiHandle(raw = "用户 #$uid", host = CBART_HOST),
             avatar = null,
             nameInternal = "用户 #$uid".toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null, description = null,
             matrices = UiProfile.Matrices(0, 0, 0),
@@ -392,7 +391,7 @@ internal fun LzjFeaturedVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): Ui
     val avatarUrl = avatar?.let { if (it.startsWith("http")) it else "$LZJ_CDN$it" }
 
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Cbart,
+        platformId = "Cbart",
         images = persistentListOf(),
         sensitive = true,
         contentWarning = UiTranslatableText(
@@ -403,7 +402,7 @@ internal fun LzjFeaturedVideoItem.toUiTimelineItem(accountKey: MicroBlogKey): Ui
             handle = UiHandle(raw = postBy ?: "妖狐", host = CBART_HOST),
             avatar = avatarUrl?.toUiImage(),
             nameInternal = (postBy ?: "妖狐").toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null, description = null,
             matrices = UiProfile.Matrices(0, 0, 0),
@@ -436,7 +435,7 @@ internal fun LzjProducerItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
     val fansCount = followerNum?.toLongOrNull() ?: 0
 
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Cbart,
+        platformId = "Cbart",
         images = persistentListOf(),
         sensitive = false,
         contentWarning = UiTranslatableText("🏪 作者".toUiPlainText()),
@@ -445,7 +444,7 @@ internal fun LzjProducerItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
             handle = UiHandle(raw = displayName, host = CBART_HOST),
             avatar = avatarFullUrl?.toUiImage(),
             nameInternal = displayName.toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null,
             description = nickName?.toUiPlainText(),
@@ -481,7 +480,7 @@ internal fun LzjProducerItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimel
 internal fun LzjCommentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimelineV2 {
     val senderName = nickName ?: username ?: "用户 #$uid"
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Cbart,
+        platformId = "Cbart",
         images = persistentListOf(),
         sensitive = false,
         contentWarning = null,
@@ -490,7 +489,7 @@ internal fun LzjCommentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
             handle = UiHandle(raw = senderName, host = CBART_HOST),
             avatar = avatarUrl?.toUiImage(),
             nameInternal = senderName.toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null, description = null,
             matrices = UiProfile.Matrices(0, 0, 0),
@@ -520,7 +519,7 @@ internal fun LzjCommentItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
 internal fun LzjMessageItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimelineV2 {
     val senderName = nickName ?: username ?: "用户 #$uid"
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Cbart,
+        platformId = "Cbart",
         images = persistentListOf(),
         sensitive = false,
         contentWarning = null,
@@ -529,7 +528,7 @@ internal fun LzjMessageItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTimeli
             handle = UiHandle(raw = senderName, host = CBART_HOST),
             avatar = null,
             nameInternal = senderName.toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null, description = null,
             matrices = UiProfile.Matrices(0, 0, 0),
@@ -570,7 +569,7 @@ internal fun LzjVideoDetailItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTi
     val videoId = id?.toString() ?: ""
 
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Cbart,
+        platformId = "Cbart",
         images = imageUrls.toImmutableList(),
         sensitive = true,
         contentWarning = UiTranslatableText(
@@ -585,7 +584,7 @@ internal fun LzjVideoDetailItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTi
             handle = UiHandle(raw = "用户 #$uid", host = CBART_HOST),
             avatar = null,
             nameInternal = "用户 #$uid".toUiPlainText(),
-            platformType = PlatformType.Cbart,
+            platformId = "Cbart",
             clickEvent = ClickEvent.Noop,
             banner = null, description = null,
             matrices = UiProfile.Matrices(0, 0, 0),
