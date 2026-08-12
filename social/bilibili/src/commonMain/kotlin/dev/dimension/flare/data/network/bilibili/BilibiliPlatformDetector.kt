@@ -1,8 +1,7 @@
 package dev.dimension.flare.data.network.bilibili
 
 import dev.dimension.flare.data.network.nodeinfo.NodeData
-import dev.dimension.flare.data.network.nodeinfo.PlatformDetector
-import dev.dimension.flare.model.PlatformType
+import dev.dimension.flare.ui.presenter.login.PlatformDetector
 
 internal data object BilibiliPlatformDetector : PlatformDetector {
     override val priority: Int = 90
@@ -11,7 +10,7 @@ internal data object BilibiliPlatformDetector : PlatformDetector {
         if (host == "bilibili.com" || host == "www.bilibili.com" || host == "m.bilibili.com") {
             return NodeData(
                 host = host,
-                platformType = PlatformType.Bilibili,
+                platformId = "Bilibili",
                 software = "bilibili",
                 compatibleMode = false,
             )

@@ -2,14 +2,13 @@ package dev.dimension.flare.ui.presenter.login
 
 import dev.dimension.flare.data.network.coolapk.CoolapkAuthUtil
 import dev.dimension.flare.data.network.coolapk.CoolapkPlatformDetector
-import dev.dimension.flare.data.network.nodeinfo.PlatformDetector
+import dev.dimension.flare.ui.presenter.login.PlatformDetector
 import dev.dimension.flare.data.platform.CoolapkCredential
 import dev.dimension.flare.data.platform.CoolapkPlatformSpec
 import dev.dimension.flare.data.repository.AccountService
 import dev.dimension.flare.di.koinInject
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
-import dev.dimension.flare.model.PlatformTypeMetadata
+import dev.dimension.flare.model.PlatformMetadata
 import dev.dimension.flare.model.RecommendedInstance
 import dev.dimension.flare.ui.model.UiAccount
 import dev.dimension.flare.ui.model.UiInstance
@@ -25,8 +24,8 @@ private const val LOGIN_ACTION = "login"
 private const val COOLAPK_LOGIN_URL = "https://account.coolapk.com/auth/login"
 
 public data object CoolapkLoginProvider : LoginPlatformProvider {
-    override val platformType: PlatformType = PlatformType.Coolapk
-    override val metadata: PlatformTypeMetadata get() = CoolapkPlatformSpec.metadata
+    override val platformId: String = "Coolapk"
+    override val metadata: PlatformMetadata get() = CoolapkPlatformSpec.metadata
     override val detector: PlatformDetector = CoolapkPlatformDetector
     override val methods: List<LoginMethodSpec> =
         listOf(
@@ -44,7 +43,7 @@ public data object CoolapkLoginProvider : LoginPlatformProvider {
                         description = "分享美好科技生活",
                         iconUrl = null,
                         domain = "coolapk.com",
-                        type = platformType,
+                        platformId = platformId,
                         bannerUrl = null,
                         usersCount = 0,
                     ),
@@ -53,7 +52,7 @@ public data object CoolapkLoginProvider : LoginPlatformProvider {
         )
 
     override suspend fun instanceMetadata(host: String): UiInstanceMetadata =
-        throw UnsupportedOperationException("${platformType.name} metadata is not supported yet")
+        throw UnsupportedOperationException("$platformId metadata is not supported yet")
 
     override fun createHandler(context: LoginContext): LoginMethodHandler {
         require(context.methodType == LoginMethodType.WebCookie) { "Unsupported Coolapk login method: ${context.methodType}" }
@@ -113,7 +112,7 @@ private class CoolapkWebCookieLoginHandler(
             context.requireReloginAccount(accountKey)
             val addJob =
                 accountService.addAccount(
-                    account = UiAccount(accountKey = accountKey, platformType = PlatformType.Coolapk),
+                    account = UiAccount(accountKey = accountKey, platformId = "Coolapk"),
                     credential = credential,
                     serializer = CoolapkCredential.serializer(),
                 )

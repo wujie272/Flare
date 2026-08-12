@@ -9,8 +9,7 @@ import dev.dimension.flare.model.MicroBlogKey
 import dev.dimension.flare.model.PlatformDataSourceContext
 import dev.dimension.flare.model.PlatformDeepLink
 import dev.dimension.flare.model.PlatformSpec
-import dev.dimension.flare.model.PlatformType
-import dev.dimension.flare.model.PlatformTypeMetadata
+import dev.dimension.flare.model.PlatformMetadata
 import dev.dimension.flare.ui.model.UiIcon
 import dev.dimension.flare.ui.model.UiStrings
 import dev.dimension.flare.ui.model.UiText
@@ -26,12 +25,14 @@ import kotlin.native.HiddenFromObjC
 public const val TOUTIAO_HOST: String = "www.toutiao.com"
 
 @HiddenFromObjC
+
+@kotlin.native.HiddenFromObjC
 public data object ToutiaoPlatformSpec :
     PlatformSpec,
     LoginPlatformProvider by ToutiaoLoginProvider {
-    override val type: PlatformType = PlatformType.Toutiao
-    override val metadata: PlatformTypeMetadata =
-        PlatformTypeMetadata(
+    override val platformId: String = "Toutiao"
+    override val metadata: PlatformMetadata =
+        PlatformMetadata(
             displayName = "今日头条",
             icon = UiIcon.Toutiao,
         )

@@ -16,8 +16,7 @@ import dev.dimension.flare.model.MicroBlogKey
 import dev.dimension.flare.model.PlatformDataSourceContext
 import dev.dimension.flare.model.PlatformDeepLink
 import dev.dimension.flare.model.PlatformSpec
-import dev.dimension.flare.model.PlatformType
-import dev.dimension.flare.model.PlatformTypeMetadata
+import dev.dimension.flare.model.PlatformMetadata
 import dev.dimension.flare.ui.model.UiIcon
 import dev.dimension.flare.ui.model.UiStrings
 import dev.dimension.flare.ui.presenter.login.LoginPlatformProvider
@@ -31,9 +30,9 @@ import kotlin.native.HiddenFromObjC
 public data object DeviantartPlatformSpec :
     PlatformSpec,
     LoginPlatformProvider by DeviantartLoginProvider {
-    override val type: PlatformType = PlatformType.Deviantart
-    override val metadata: PlatformTypeMetadata =
-        PlatformTypeMetadata(
+    override val platformId: String = "Deviantart"
+    override val metadata: PlatformMetadata =
+        PlatformMetadata(
             displayName = "DeviantArt",
             icon = UiIcon.Art,
         )

@@ -2,7 +2,7 @@ package dev.dimension.flare.ui.presenter.login
 
 import dev.dimension.flare.data.network.cbart.CbartPlatformDetector
 import dev.dimension.flare.data.network.cbart.CbartService
-import dev.dimension.flare.data.network.nodeinfo.PlatformDetector
+import dev.dimension.flare.ui.presenter.login.PlatformDetector
 import dev.dimension.flare.data.platform.CBART_HOST
 import dev.dimension.flare.data.platform.CbartCredential
 import dev.dimension.flare.data.platform.CbartPlatformSpec
@@ -10,8 +10,7 @@ import dev.dimension.flare.data.repository.AccountService
 import dev.dimension.flare.data.repository.addAccount
 import dev.dimension.flare.di.koinInject
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
-import dev.dimension.flare.model.PlatformTypeMetadata
+import dev.dimension.flare.model.PlatformMetadata
 import dev.dimension.flare.model.RecommendedInstance
 import dev.dimension.flare.ui.model.UiAccount
 import dev.dimension.flare.ui.model.UiInstance
@@ -27,8 +26,8 @@ private const val LOGIN_ACTION = "login"
 private const val LARAVEL_LOGIN_URL = "https://linzijun.app/login"
 
 public data object CbartLoginProvider : LoginPlatformProvider {
-    override val platformType: PlatformType = PlatformType.Cbart
-    override val metadata: PlatformTypeMetadata get() = CbartPlatformSpec.metadata
+    override val platformId: String = "Cbart"
+    override val metadata: PlatformMetadata get() = CbartPlatformSpec.metadata
     override val detector: PlatformDetector = CbartPlatformDetector
     override val methods: List<LoginMethodSpec> = listOf(
         LoginMethodSpec(type = LoginMethodType.WebCookie, title = UiStrings.WebCookieLogin),
@@ -40,13 +39,13 @@ public data object CbartLoginProvider : LoginPlatformProvider {
             instance = UiInstance(
                 name = "林子菌", description = "林子菌内容平台",
                 iconUrl = null, domain = CBART_HOST,
-                type = platformType, bannerUrl = null, usersCount = 0,
+                platformId = platformId, bannerUrl = null, usersCount = 0,
             ), priority = 50,
         ),
     )
 
     override suspend fun instanceMetadata(host: String): UiInstanceMetadata =
-        throw UnsupportedOperationException("${platformType.name} metadata is not supported yet")
+        throw UnsupportedOperationException("${platformId} metadata is not supported yet")
 
     override fun createHandler(context: LoginContext): LoginMethodHandler {
         require(context.methodType == LoginMethodType.WebCookie) { "Unsupported 妖狐吧 login method: ${context.methodType}" }
@@ -100,7 +99,7 @@ private class CbartWebCookieLoginHandler(
             val accountKey = MicroBlogKey(id = "cbart_user", host = CBART_HOST)
             context.requireReloginAccount(accountKey)
             accountService.addAccount(
-                account = UiAccount(accountKey = accountKey, platformType = PlatformType.Cbart),
+                account = UiAccount(accountKey = accountKey, platformId = "Cbart"),
                 credential = finalCredential,
                 serializer = CbartCredential.serializer(),
             )

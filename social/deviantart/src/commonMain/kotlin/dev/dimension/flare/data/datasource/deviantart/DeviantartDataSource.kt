@@ -213,7 +213,7 @@ internal class DeviantartDataSource(
                                             )
                                         },
                                         nameInternal = name.toUiPlainText(),
-                                        platformType = dev.dimension.flare.model.PlatformType.Deviantart,
+                                        platformId = "Deviantart",
                                         clickEvent = dev.dimension.flare.ui.model.ClickEvent.Deeplink(
                                             dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
                                                 accountType = AccountType.Specific(accountKey),

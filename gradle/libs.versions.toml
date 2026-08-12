@@ -19,7 +19,7 @@ espresso-core = "3.7.0"
 lifecycle-runtime-ktx = "2.11.0"
 activity-compose = "1.13.0"
 compose-bom = "2026.06.01"
-ksp = "2.3.10"
+ksp = "2.3.11"
 koog = "1.0.1-SNAPSHOT"
 nucleus = "1.15.7"
 openaiClient = "4.1.0"
@@ -30,23 +30,23 @@ kotlinx-serialization = "1.11.0"
 kotlinx-browser = "0.5.0"
 coil3 = "3.5.0"
 ktorfit = "2.7.5"
-ktor = "3.5.1"
+ktor = "3.5.2"
 prettytime = "5.0.9.Final"
 readability = "1.0.0"
 reorderable = "3.1.0"
 richtextUiMaterial3 = "1.0.0-alpha05"
-sentry = "8.51.0"
+sentry = "8.52.0"
 twitter-parser = "0.5.9"
 molecule = "2.2.0"
 accompanist = "0.37.3"
-compose-lint-checks = "1.5.3"
+compose-lint-checks = "1.5.4"
 ktlintPlugin = "14.2.0"
 apng-android = "3.0.5"
 ktlint = "1.5.0"
 okio = "3.18.1"
 skie = "0.10.14"
 ksoup = "0.2.6"
-versionUpdate = "0.58.0"
+versionUpdate = "0.60.0"
 bluesky = "0.3.4-SNAPSHOT"
 kotlinx-coroutines = "1.11.0"
 koin = "4.2.2"
@@ -66,7 +66,7 @@ navigation3 = "1.1.5"
 zoomable = "0.19.0"
 cupertino = "2.3.1"
 robolectric = "4.16.1"
-nostrSdkKmp = "0.44.6"
+nostrSdkKmp = "0.44.8"
 qrose = "1.1.2"
 
 
@@ -188,6 +188,7 @@ ktor-client-websockets = { group = "io.ktor", name = "ktor-client-websockets", v
 ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-mock = { group = "io.ktor", name = "ktor-client-mock", version.ref = "ktor" }
+ktor-http = { group = "io.ktor", name = "ktor-http", version.ref = "ktor" }
 
 twitter-parser = { group = "moe.tlaster", name = "twitter-parser", version.ref = "twitter-parser" }
 swiper = { group = "com.github.tlaster", name = "swiper", version = "0.7.1" }

@@ -4,7 +4,6 @@ import dev.dimension.flare.data.network.ktorClient
 import dev.dimension.flare.data.platform.CbartCredential
 import dev.dimension.flare.data.repository.LoginExpiredException
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -233,7 +232,7 @@ internal class CbartApiClient(
             val withTs = refreshed.copy(sessionCreatedAt = Clock.System.now().toEpochMilliseconds())
             cachedCredential = withTs; onCredentialUpdated(withTs)
             if (cred.laravelSessionLoggedIn && !refreshed.laravelSessionLoggedIn) {
-                throw LoginExpiredException(accountKey ?: MicroBlogKey("", ""), PlatformType.Cbart)
+                throw LoginExpiredException(accountKey ?: MicroBlogKey("", ""), "Cbart")
             }
             return withTs
         }

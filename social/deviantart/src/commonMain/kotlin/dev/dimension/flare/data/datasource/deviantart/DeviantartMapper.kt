@@ -6,7 +6,6 @@ import dev.dimension.flare.data.network.deviantart.DeviantartDeviation
 import dev.dimension.flare.data.network.deviantart.DeviantartDeviationDetail
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
 import dev.dimension.flare.ui.model.ClickEvent
 import dev.dimension.flare.ui.model.UiCard
 import dev.dimension.flare.ui.model.UiHandle
@@ -56,7 +55,7 @@ internal fun DeviantartDeviation.toUiTimelineItem(accountKey: MicroBlogKey): UiT
             UiMedia.Image(url = it, previewUrl = it, description = artistName, height = 0f, width = 0f, sensitive = false)
         },
         nameInternal = artistName.toUiPlainText(),
-        platformType = PlatformType.Deviantart,
+        platformId = "Deviantart",
         clickEvent = ClickEvent.Deeplink(
             DeeplinkRoute.Profile.User(
                 accountType = AccountType.Specific(accountKey),
@@ -79,7 +78,7 @@ internal fun DeviantartDeviation.toUiTimelineItem(accountKey: MicroBlogKey): UiT
     }
 
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Deviantart,
+        platformId = "Deviantart",
         images = media.toImmutableList(),
         sensitive = false,
         contentWarning = null,
@@ -134,7 +133,7 @@ internal fun DeviantartDeviationDetail.toUiDetailItem(accountKey: MicroBlogKey):
             UiMedia.Image(url = it, previewUrl = it, description = artistName, height = 0f, width = 0f, sensitive = false)
         },
         nameInternal = artistName.toUiPlainText(),
-        platformType = PlatformType.Deviantart,
+        platformId = "Deviantart",
         clickEvent = ClickEvent.Deeplink(
             DeeplinkRoute.Profile.User(
                 accountType = AccountType.Specific(accountKey),
@@ -149,7 +148,7 @@ internal fun DeviantartDeviationDetail.toUiDetailItem(accountKey: MicroBlogKey):
     )
 
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Deviantart,
+        platformId = "Deviantart",
         images = listOfNotNull(
             contentUrl?.let {
                 UiMedia.Image(
@@ -218,7 +217,7 @@ internal fun dev.dimension.flare.data.network.deviantart.DeviantartUserProfile.t
             UiMedia.Image(url = it, previewUrl = it, description = userName, height = 0f, width = 0f, sensitive = false)
         },
         nameInternal = userName.toUiPlainText(),
-        platformType = PlatformType.Deviantart,
+        platformId = "Deviantart",
         clickEvent = ClickEvent.Deeplink(
             DeeplinkRoute.Profile.User(
                 accountType = AccountType.Specific(accountKey),
@@ -248,7 +247,7 @@ internal fun dev.dimension.flare.data.network.deviantart.DeviantartUserProfile.t
 internal fun dev.dimension.flare.data.network.deviantart.DeviantartComment.toUiTimelineItem(accountKey: MicroBlogKey): UiTimelineV2 {
     val statusKey = MicroBlogKey(id = commentId, host = "deviantart.com")
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Deviantart,
+        platformId = "Deviantart",
         images = persistentListOf(),
         sensitive = false,
         contentWarning = null,
@@ -259,7 +258,7 @@ internal fun dev.dimension.flare.data.network.deviantart.DeviantartComment.toUiT
                 UiMedia.Image(url = it, previewUrl = it, description = userName, height = 0f, width = 0f, sensitive = false)
             },
             nameInternal = userName.toUiPlainText(),
-            platformType = PlatformType.Deviantart,
+            platformId = "Deviantart",
             clickEvent = ClickEvent.Deeplink(
                 DeeplinkRoute.Profile.User(
                     accountType = AccountType.Specific(accountKey),
@@ -293,7 +292,7 @@ internal fun dev.dimension.flare.data.network.deviantart.DeviantartNotification.
         if (body.isNotBlank()) { appendLine(); append(body) }
     }
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Deviantart,
+        platformId = "Deviantart",
         images = persistentListOf(),
         sensitive = false, contentWarning = null,
         user = null,
@@ -321,7 +320,7 @@ internal fun dev.dimension.flare.data.network.deviantart.DeviantartUser.toUiProf
             UiMedia.Image(url = it, previewUrl = it, description = userName, height = 0f, width = 0f, sensitive = false)
         },
         nameInternal = userName.toUiPlainText(),
-        platformType = PlatformType.Deviantart,
+        platformId = "Deviantart",
         clickEvent = ClickEvent.Deeplink(
             DeeplinkRoute.Profile.User(
                 accountType = AccountType.Specific(accountKey),

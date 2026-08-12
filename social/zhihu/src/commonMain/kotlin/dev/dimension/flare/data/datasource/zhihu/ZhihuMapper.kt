@@ -12,7 +12,6 @@ import dev.dimension.flare.data.network.zhihu.ZhihuMomentsItem
 import dev.dimension.flare.data.platform.ZHIHU_HOST
 import dev.dimension.flare.model.AccountType
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
 import dev.dimension.flare.ui.model.ClickEvent
 import dev.dimension.flare.ui.model.UiCard
 import dev.dimension.flare.ui.model.UiHandle
@@ -107,7 +106,7 @@ internal fun JsonObject.toDetailUiTimelineItem(
             UiMedia.Image(url = it, previewUrl = it, description = authorName, height = 0f, width = 0f, sensitive = false)
         },
         nameInternal = authorName.toUiPlainText(),
-        platformType = PlatformType.Zhihu,
+        platformId = "Zhihu",
         clickEvent = ClickEvent.Deeplink(
             dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
                 accountType = AccountType.Specific(accountKey),
@@ -164,7 +163,7 @@ internal fun JsonObject.toDetailUiTimelineItem(
     } ?: persistentListOf()
 
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Zhihu,
+        platformId = "Zhihu",
         images = mediaImages,
         sensitive = false,
         contentWarning = null,
@@ -228,7 +227,7 @@ internal fun ZhihuPerson.toUiProfile(
             UiMedia.Image(url = it, previewUrl = it, description = name, height = 0f, width = 0f, sensitive = false)
         },
         nameInternal = name.toUiPlainText(),
-        platformType = PlatformType.Zhihu,
+        platformId = "Zhihu",
         clickEvent = if (accountKey != null) {
             ClickEvent.Deeplink(
                 dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
@@ -287,7 +286,7 @@ internal fun ZhihuNotificationItem.toNotificationUiTimelineItem(
         accountType = AccountType.Specific(accountKey),
     )
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Zhihu,
+        platformId = "Zhihu",
         images = persistentListOf(),
         sensitive = false,
         contentWarning = null,
@@ -340,7 +339,7 @@ internal fun ZhihuHotItem.toUiTimelineItem(
         if (answerCount > 0) append(" · ${answerCount}个回答")
     }
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Zhihu,
+        platformId = "Zhihu",
         images = persistentListOf(),
         sensitive = false,
         contentWarning = null,
@@ -349,7 +348,7 @@ internal fun ZhihuHotItem.toUiTimelineItem(
             handle = UiHandle(raw = "hot", host = ZHIHU_HOST),
             avatar = thumbnailMedia,
             nameInternal = "知乎热榜".toUiPlainText(),
-            platformType = PlatformType.Zhihu,
+            platformId = "Zhihu",
             clickEvent = ClickEvent.Noop,
             banner = null,
             description = contentText.toUiPlainText(),
@@ -391,7 +390,7 @@ internal fun ZhihuDailyStory.toUiTimelineItem(
     // 从 hint 中提取作者名，格式如 "野狸子 · 9 分钟阅读"
     val authorName = hint?.substringBefore(" · ")?.takeIf { it.isNotBlank() } ?: "知乎日报"
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Zhihu,
+        platformId = "Zhihu",
         images = persistentListOf(),
         sensitive = false,
         contentWarning = null,
@@ -400,7 +399,7 @@ internal fun ZhihuDailyStory.toUiTimelineItem(
             handle = UiHandle(raw = "daily", host = ZHIHU_HOST),
             avatar = imageUrl?.let { UiMedia.Image(url = it, previewUrl = it, description = title, height = 0f, width = 0f, sensitive = false) },
             nameInternal = authorName.toUiPlainText(),
-            platformType = PlatformType.Zhihu,
+            platformId = "Zhihu",
             clickEvent = ClickEvent.Noop,
             banner = null,
             description = (hint ?: "").toUiPlainText(),
@@ -496,7 +495,7 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
         }
     }
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Zhihu,
+        platformId = "Zhihu",
         images = pictures,
         sensitive = false,
         contentWarning = null,
@@ -507,7 +506,7 @@ internal fun ZhihuFeedItem.toUiTimelineItem(
                 UiMedia.Image(url = it, previewUrl = it, description = authorName, height = 0f, width = 0f, sensitive = false) 
             },
             nameInternal = authorName.toUiPlainText(),
-            platformType = PlatformType.Zhihu,
+            platformId = "Zhihu",
             clickEvent = if (authorId != null) {
                 ClickEvent.Deeplink(
                     dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
@@ -576,7 +575,7 @@ internal fun ZhihuComment.toUiTimelineItem(
     val statusKey = MicroBlogKey(id = id, host = ZHIHU_HOST)
     val replyTo = replyToAuthorName?.let { "回复 @$it" }
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Zhihu,
+        platformId = "Zhihu",
         images = persistentListOf(),
         sensitive = false,
         contentWarning = null,
@@ -587,7 +586,7 @@ internal fun ZhihuComment.toUiTimelineItem(
                 UiMedia.Image(url = it, previewUrl = it, description = authorName ?: "", height = 0f, width = 0f, sensitive = false)
             },
             nameInternal = (authorName ?: "匿名用户").toUiPlainText(),
-            platformType = PlatformType.Zhihu,
+            platformId = "Zhihu",
             clickEvent = if (authorId != null) {
                 ClickEvent.Deeplink(
                     dev.dimension.flare.ui.route.DeeplinkRoute.Profile.User(
@@ -678,7 +677,7 @@ internal fun ZhihuMomentsItem.toUiTimelineItem(accountKey: MicroBlogKey): UiTime
         accountType = AccountType.Specific(accountKey),
     )
     val post = UiTimelineV2.Post(
-        platformType = PlatformType.Zhihu,
+        platformId = "Zhihu",
         images = persistentListOf(), sensitive = false, contentWarning = null, user = null,
         content = UiTranslatableText(contentText.toUiPlainText()),
         actions = persistentListOf(), poll = null,

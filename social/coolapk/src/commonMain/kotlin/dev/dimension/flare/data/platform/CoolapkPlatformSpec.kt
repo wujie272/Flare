@@ -7,9 +7,8 @@ import dev.dimension.flare.data.model.tab.accountLoader
 import dev.dimension.flare.model.MicroBlogKey
 import dev.dimension.flare.model.PlatformDataSourceContext
 import dev.dimension.flare.model.PlatformDeepLink
+import dev.dimension.flare.model.PlatformMetadata
 import dev.dimension.flare.model.PlatformSpec
-import dev.dimension.flare.model.PlatformType
-import dev.dimension.flare.model.PlatformTypeMetadata
 import dev.dimension.flare.ui.model.UiIcon
 import dev.dimension.flare.ui.model.UiStrings
 import dev.dimension.flare.ui.model.asType
@@ -17,13 +16,15 @@ import dev.dimension.flare.ui.presenter.login.CoolapkLoginProvider
 import dev.dimension.flare.ui.presenter.login.LoginPlatformProvider
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlin.native.HiddenFromObjC
 
-public object CoolapkPlatformSpec :
+@HiddenFromObjC
+public data object CoolapkPlatformSpec :
     PlatformSpec,
     LoginPlatformProvider by CoolapkLoginProvider {
-    override val type: PlatformType = PlatformType.Coolapk
-    override val metadata: PlatformTypeMetadata =
-        PlatformTypeMetadata(
+    override val platformId: String = "Coolapk"
+    override val metadata: PlatformMetadata =
+        PlatformMetadata(
             displayName = "酷安",
             icon = UiIcon.Coolapk,
         )

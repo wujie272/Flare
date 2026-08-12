@@ -4,13 +4,12 @@ import dev.dimension.flare.data.datastore.PlatformOAuthPending
 import dev.dimension.flare.data.datastore.PlatformOAuthPendingRepository
 import dev.dimension.flare.data.network.deviantart.DeviantartPlatformDetector
 import dev.dimension.flare.data.network.deviantart.DeviantartService
-import dev.dimension.flare.data.network.nodeinfo.PlatformDetector
+import dev.dimension.flare.ui.presenter.login.PlatformDetector
 import dev.dimension.flare.data.platform.deviantart.DeviantartCredential
 import dev.dimension.flare.data.repository.AccountService
 import dev.dimension.flare.di.koinInject
 import dev.dimension.flare.model.MicroBlogKey
-import dev.dimension.flare.model.PlatformType
-import dev.dimension.flare.model.PlatformTypeMetadata
+import dev.dimension.flare.model.PlatformMetadata
 import dev.dimension.flare.model.RecommendedInstance
 import dev.dimension.flare.ui.model.UiAccount
 import dev.dimension.flare.ui.model.UiIcon
@@ -64,9 +63,9 @@ private fun ByteArray.encodeBase64Url(): String =
     Base64.encode(this).trimEnd('=').replace('+', '-').replace('/', '_')
 
 public data object DeviantartLoginProvider : LoginPlatformProvider {
-    override val platformType: PlatformType = PlatformType.Deviantart
-    override val metadata: PlatformTypeMetadata
-        get() = PlatformTypeMetadata(
+    override val platformId: String = "Deviantart"
+    override val metadata: PlatformMetadata
+        get() = PlatformMetadata(
             displayName = "DeviantArt",
             icon = UiIcon.Art,
         )
@@ -83,7 +82,7 @@ public data object DeviantartLoginProvider : LoginPlatformProvider {
                 description = "World's largest online art community",
                 iconUrl = null,
                 domain = "deviantart.com",
-                type = platformType,
+                platformId = platformId,
                 bannerUrl = null,
                 usersCount = 0,
             ),
@@ -91,7 +90,7 @@ public data object DeviantartLoginProvider : LoginPlatformProvider {
         ),
     )
     override suspend fun instanceMetadata(host: String): UiInstanceMetadata =
-        throw UnsupportedOperationException("${platformType.name} metadata is not supported yet")
+        throw UnsupportedOperationException("${platformId} metadata is not supported yet")
 
     override fun createHandler(context: LoginContext): LoginMethodHandler {
         require(context.methodType == LoginMethodType.OAuth) { "Unsupported DeviantArt login method: ${context.methodType}" }
@@ -123,7 +122,7 @@ private class DeviantartOAuth2LoginHandler(
             // 保存 pending OAuth 状态
             pendingRepository.save(
                 PlatformOAuthPending(
-                    platformType = PlatformType.Deviantart,
+                    platformId = "Deviantart",
                     host = DA_HOST,
                     flowId = DA_FLOW_ID,
                     createdAtEpochMillis = Clock.System.now().toEpochMilliseconds(),
@@ -157,7 +156,7 @@ private class DeviantartOAuth2LoginHandler(
             requireNotNull(code) { "Authorization code not found in callback" }
 
             // 从持久化存储加载 pending OAuth 状态
-            val pending = pendingRepository.latest(PlatformType.Deviantart, DA_FLOW_ID)
+            val pending = pendingRepository.latest("Deviantart", DA_FLOW_ID)
             requireNotNull(pending) { "No pending OAuth state found" }
 
             val verifier = pending.attributes[ATTR_VERIFIER]
@@ -199,7 +198,7 @@ private class DeviantartOAuth2LoginHandler(
             context.requireReloginAccount(accountKey)
 
             val addJob = accountService.addAccount(
-                account = UiAccount(accountKey = accountKey, platformType = PlatformType.Deviantart),
+                account = UiAccount(accountKey = accountKey, platformId = "Deviantart"),
                 credential = verifiedCredential,
                 serializer = DeviantartCredential.serializer(),
             )
