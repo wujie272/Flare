@@ -24,8 +24,6 @@ import kotlin.native.HiddenFromObjC
 @HiddenFromObjC
 public const val TOUTIAO_HOST: String = "www.toutiao.com"
 
-@HiddenFromObjC
-
 @kotlin.native.HiddenFromObjC
 public data object ToutiaoPlatformSpec :
     PlatformSpec,
