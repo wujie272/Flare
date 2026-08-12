@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.koin.compiler)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -31,6 +32,9 @@ kotlin {
             dependencies {
                 api(projects.shared)
                 api(projects.feature.loginApi)
+                implementation(dependencies.platform(libs.koin.bom))
+                implementation(libs.koin.core)
+                implementation(libs.koin.annotations)
                 implementation(libs.bundles.kotlinx)
                 implementation(libs.bundles.ktor)
                 implementation(libs.ktor.client.resources)

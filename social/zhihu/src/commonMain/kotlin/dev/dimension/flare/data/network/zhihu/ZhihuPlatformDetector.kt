@@ -1,6 +1,6 @@
 package dev.dimension.flare.data.network.zhihu
 
-import dev.dimension.flare.data.network.nodeinfo.NodeData
+import dev.dimension.flare.ui.presenter.login.NodeDetection
 import dev.dimension.flare.ui.presenter.login.PlatformDetector
 
 internal const val ZHIHU_HOST = "www.zhihu.com"
@@ -14,7 +14,7 @@ internal data object ZhihuPlatformDetector : PlatformDetector {
         ) {
             return null
         }
-        return NodeData(
+        return NodeDetection(
             host = ZHIHU_HOST,
             platformId = "Zhihu",
             software = "Zhihu",

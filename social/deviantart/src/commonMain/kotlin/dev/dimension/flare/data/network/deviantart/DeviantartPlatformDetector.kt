@@ -1,6 +1,6 @@
 package dev.dimension.flare.data.network.deviantart
 
-import dev.dimension.flare.data.network.nodeinfo.NodeData
+import dev.dimension.flare.ui.presenter.login.NodeDetection
 import dev.dimension.flare.ui.presenter.login.PlatformDetector
 
 internal data object DeviantartPlatformDetector : PlatformDetector {
@@ -8,7 +8,7 @@ internal data object DeviantartPlatformDetector : PlatformDetector {
 
     override suspend fun detect(host: String): NodeData? {
         if (host == "deviantart.com" || host == "www.deviantart.com") {
-            return NodeData(
+            return NodeDetection(
                 host = host,
                 platformId = "Deviantart",
                 software = "deviantart",
