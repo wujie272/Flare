@@ -6,11 +6,10 @@ import dev.dimension.flare.ui.presenter.login.PlatformDetector
 internal data object DeviantartPlatformDetector : PlatformDetector {
     override val priority: Int = 0
 
-    override suspend fun detect(host: String): NodeData? {
+    override suspend fun detect(host: String): NodeDetection? {
         if (host == "deviantart.com" || host == "www.deviantart.com") {
             return NodeDetection(
                 host = host,
-                platformId = "Deviantart",
                 software = "deviantart",
                 compatibleMode = false,
             )

@@ -7,7 +7,7 @@ internal const val ZHIHU_HOST = "www.zhihu.com"
 
 internal data object ZhihuPlatformDetector : PlatformDetector {
     override val priority: Int = 90
-    override suspend fun detect(host: String): NodeData? {
+    override suspend fun detect(host: String): NodeDetection? {
         if (!ZHIHU_HOST.equals(host, ignoreCase = true) &&
             !"zhihu.com".equals(host, ignoreCase = true) &&
             !"zhuanlan.zhihu.com".equals(host, ignoreCase = true)
@@ -16,7 +16,6 @@ internal data object ZhihuPlatformDetector : PlatformDetector {
         }
         return NodeDetection(
             host = ZHIHU_HOST,
-            platformId = "Zhihu",
             software = "Zhihu",
             compatibleMode = false,
         )

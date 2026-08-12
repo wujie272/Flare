@@ -8,7 +8,7 @@ internal const val COOLAPK_HOST = "coolapk.com"
 internal data object CoolapkPlatformDetector : PlatformDetector {
     override val priority: Int = 90
 
-    override suspend fun detect(host: String): NodeData? {
+    override suspend fun detect(host: String): NodeDetection? {
         if (!COOLAPK_HOST.equals(host, ignoreCase = true) &&
             !"api.coolapk.com".equals(host, ignoreCase = true) &&
             !"account.coolapk.com".equals(host, ignoreCase = true)
@@ -17,7 +17,6 @@ internal data object CoolapkPlatformDetector : PlatformDetector {
         }
         return NodeDetection(
             host = COOLAPK_HOST,
-            platformId = "Coolapk",
             software = "Coolapk",
             compatibleMode = false,
         )
